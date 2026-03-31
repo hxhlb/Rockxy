@@ -118,6 +118,13 @@ final class HTTPProxyHandler: ChannelInboundHandler, RemovableChannelHandler, @u
         head: HTTPRequestHead
     ) {
         pendingBreakpointPhase = nil
+
+        if head.uri.count > ProxyLimits.maxURILength {
+            proxyHandlerLogger.warning("SECURITY: URI exceeds \(ProxyLimits.maxURILength) chars, rejecting with 414")
+            sendErrorResponse(context: context, status: 414, requestData: buildRequestData(from: head))
+            return
+        }
+
         proxyHandlerLogger.info("Processing \(head.method.rawValue) \(head.uri)")
 
         let requestData = buildRequestData(from: head)
@@ -196,7 +203,7 @@ final class HTTPProxyHandler: ChannelInboundHandler, RemovableChannelHandler, @u
     private nonisolated func buildRequestData(from head: HTTPRequestHead) -> HTTPRequestData {
         let headers = head.headers.map { HTTPHeader(name: $0.name, value: $0.value) }
         let host = head.headers["Host"].first ?? ""
-        let uri = String(head.uri.prefix(ProxyLimits.maxURILength))
+        let uri = head.uri
         let url: String = if uri.hasPrefix("http://") || uri.hasPrefix("https://") {
             uri
         } else {

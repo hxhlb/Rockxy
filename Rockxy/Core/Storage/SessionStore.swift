@@ -492,7 +492,7 @@ actor SessionStore {
         }
         let resolvedPath = URL(fileURLWithPath: diskPath).standardizedFileURL.path
         let bodiesPath = bodiesDirectory.standardizedFileURL.path
-        guard resolvedPath.hasPrefix(bodiesPath + "/") || resolvedPath == bodiesPath else {
+        guard resolvedPath.hasPrefix(bodiesPath + "/") else {
             Self.logger.error("SECURITY: Path traversal blocked in body load: \(diskPath)")
             return nil
         }
@@ -510,7 +510,7 @@ actor SessionStore {
         }
         let resolvedPath = URL(fileURLWithPath: path).standardizedFileURL.path
         let bodiesPath = bodiesDirectory.standardizedFileURL.path
-        guard resolvedPath.hasPrefix(bodiesPath + "/") || resolvedPath == bodiesPath else {
+        guard resolvedPath.hasPrefix(bodiesPath + "/") else {
             Self.logger.error("SECURITY: Path traversal blocked in body delete: \(path)")
             return
         }

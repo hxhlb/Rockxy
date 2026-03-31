@@ -31,6 +31,8 @@ enum ScriptBridge {
 
     // MARK: Private
 
+    private static let bridgeLogger = Logger(subsystem: "com.amunx.Rockxy", category: "ScriptBridge")
+
     private static func installLogging(on rockxy: JSValue?, context: JSContext, logger: Logger) {
         let log = JSValue(newObjectIn: context)
 
@@ -100,18 +102,21 @@ enum ScriptBridge {
 
         let getFn: @convention(block) (String) -> Any? = { key in
             guard PluginValidator.isValidKey(key) else {
+                bridgeLogger.debug("storage.get rejected invalid key '\(key)' for \(pluginID)")
                 return nil
             }
             return UserDefaults.standard.object(forKey: prefix + key)
         }
         let setFn: @convention(block) (String, Any) -> Void = { key, value in
             guard PluginValidator.isValidKey(key) else {
+                bridgeLogger.debug("storage.set rejected invalid key '\(key)' for \(pluginID)")
                 return
             }
             UserDefaults.standard.set(value, forKey: prefix + key)
         }
         let deleteFn: @convention(block) (String) -> Void = { key in
             guard PluginValidator.isValidKey(key) else {
+                bridgeLogger.debug("storage.delete rejected invalid key '\(key)' for \(pluginID)")
                 return
             }
             UserDefaults.standard.removeObject(forKey: prefix + key)
@@ -130,6 +135,7 @@ enum ScriptBridge {
 
         let getFn: @convention(block) (String) -> Any? = { key in
             guard PluginValidator.isValidKey(key) else {
+                bridgeLogger.debug("env.get rejected invalid key '\(key)' for \(pluginID)")
                 return nil
             }
             return UserDefaults.standard.object(forKey: prefix + key)

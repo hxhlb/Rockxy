@@ -458,8 +458,13 @@ final class HelperService: NSObject, RockxyHelperProtocol {
     private func setTrustSettings(derData: Data) throws {
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("rockxy-root-ca-\(UUID().uuidString).der")
-        try derData.write(to: tempURL)
-        try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: tempURL.path)
+        guard FileManager.default.createFile(
+            atPath: tempURL.path,
+            contents: derData,
+            attributes: [.posixPermissions: 0o600]
+        ) else {
+            throw CertificateInstallError.trustSettingsFailed(detail: "Failed to create temp DER file")
+        }
         defer { try? FileManager.default.removeItem(at: tempURL) }
 
         let process = Process()
@@ -500,10 +505,12 @@ final class HelperService: NSObject, RockxyHelperProtocol {
     private func removeTrustSettings(derData: Data) {
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("rockxy-remove-cert-\(UUID().uuidString).der")
-        do {
-            try derData.write(to: tempURL)
-        } catch {
-            Self.logger.warning("SECURITY: Failed to write temp cert for trust removal: \(error.localizedDescription)")
+        guard FileManager.default.createFile(
+            atPath: tempURL.path,
+            contents: derData,
+            attributes: [.posixPermissions: 0o600]
+        ) else {
+            Self.logger.warning("SECURITY: Failed to create temp DER file for trust removal")
             return
         }
         defer { try? FileManager.default.removeItem(at: tempURL) }

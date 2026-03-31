@@ -8,6 +8,7 @@ final class WebSocketConnection: @unchecked Sendable {
     init(upgradeRequest: HTTPRequestData, frames: [WebSocketFrameData] = []) {
         self.upgradeRequest = upgradeRequest
         self._frames = frames
+        self.totalPayloadSize = frames.reduce(0) { $0 + $1.payload.count }
     }
 
     // MARK: Internal

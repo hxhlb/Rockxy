@@ -134,24 +134,29 @@ enum ProxyConfigurator {
             throw ProxyConfiguratorError.noActiveService
         }
 
-        let validDomains = domains.filter { domain in
-            let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: ".-_*"))
-            return !domain.isEmpty && domain.count <= 253
-                && domain.unicodeScalars.allSatisfy { allowed.contains($0) }
+        let asciiAllowed =
+            CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-_*")
+        let indomains = domains.filter { domain in
+            domain.isEmpty || domain.count > 253
+                || !domain.unicodeScalars.allSatisfy { $0.isASCII && asciiAllowed.contains($0) }
         }
-        if validDomains.count != domains.count {
-            logger.warning("SECURITY: Filtered \(domains.count - validDomains.count) invalid bypass domains")
+        if !indomains.isEmpty {
+            logger.warning("SECURITY: Rejected \(indomains.count) invalid bypass domain(s): \(indomains)")
+            throw ProxyConfiguratorError.executionFailed(
+                command: "-setproxybypassdomains",
+                reason: "Invalid bypass domains: \(indomains.joined(separator: ", "))"
+            )
         }
 
         for service in services {
             do {
-                if validDomains.isEmpty {
+                if domains.isEmpty {
                     try runNetworkSetup(["-setproxybypassdomains", service, "Empty"])
                 } else {
-                    let args = ["-setproxybypassdomains", service] + validDomains
+                    let args = ["-setproxybypassdomains", service] + domains
                     try runNetworkSetup(args)
                 }
-                logger.debug("Set bypass domains on '\(service)': \(validDomains)")
+                logger.debug("Set bypass domains on '\(service)': \(domains)")
             } catch {
                 logger.debug("Failed to set bypass domains for '\(service)': \(error.localizedDescription)")
             }

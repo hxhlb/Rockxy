@@ -31,7 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- Uinitial open-source release of Rockxy
+- Initial open-source release of Rockxy
 ## 2026-03-22
 
 ### Added

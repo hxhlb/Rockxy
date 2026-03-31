@@ -113,13 +113,22 @@ enum ProcessLogSource {
 
     private static let logger = Logger(subsystem: "com.amunx.Rockxy", category: "ProcessLogSource")
 
+    private static let bearerRegex = try? NSRegularExpression(pattern: #"(?i)Bearer\s+\S+"#)
+    private static let passwordRegex = try? NSRegularExpression(pattern: #"(?i)password\s*(?:=|:)\s*\S+"#)
+
     private static func redactCredentials(_ line: String) -> String {
         var result = line
-        if let range = result.range(of: #"Bearer\s+\S+"#, options: .regularExpression) {
-            result.replaceSubrange(range, with: "Bearer [REDACTED]")
+        let fullRange = NSRange(result.startIndex..., in: result)
+        if let regex = bearerRegex {
+            result = regex.stringByReplacingMatches(in: result, range: fullRange, withTemplate: "Bearer [REDACTED]")
         }
-        if let range = result.range(of: #"(?i)password[=:]\s*\S+"#, options: .regularExpression) {
-            result.replaceSubrange(range, with: "password=[REDACTED]")
+        let updatedRange = NSRange(result.startIndex..., in: result)
+        if let regex = passwordRegex {
+            result = regex.stringByReplacingMatches(
+                in: result,
+                range: updatedRange,
+                withTemplate: "password=[REDACTED]"
+            )
         }
         return result
     }

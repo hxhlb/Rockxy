@@ -12,6 +12,8 @@ enum HostPortParser {
     enum ParseError: Error, LocalizedError {
         case emptyURI
         case emptyHost
+        case invalidHostCharacters
+        case malformedIPv6
         case invalidPort(String)
         case portOutOfRange(Int)
 
@@ -23,6 +25,10 @@ enum HostPortParser {
                 "URI is empty"
             case .emptyHost:
                 "Host is empty"
+            case .invalidHostCharacters:
+                "Host contains invalid characters"
+            case .malformedIPv6:
+                "Malformed IPv6 address (missing closing bracket)"
             case let .invalidPort(value):
                 "Invalid port: \(value)"
             case let .portOutOfRange(port):
@@ -42,12 +48,15 @@ enum HostPortParser {
 
         if trimmed.hasPrefix("[") {
             guard let closingBracket = trimmed.firstIndex(of: "]") else {
-                throw ParseError.invalidPort(trimmed)
+                throw ParseError.malformedIPv6
             }
             host = String(trimmed[trimmed.index(after: trimmed.startIndex) ..< closingBracket])
             let afterBracket = trimmed.index(after: closingBracket)
             if afterBracket < trimmed.endIndex, trimmed[afterBracket] == ":" {
                 let portString = String(trimmed[trimmed.index(after: afterBracket)...])
+                guard !portString.isEmpty, portString.allSatisfy(\.isASCII), portString.allSatisfy(\.isNumber) else {
+                    throw ParseError.invalidPort(portString)
+                }
                 guard let parsed = Int(portString) else {
                     throw ParseError.invalidPort(portString)
                 }
@@ -70,10 +79,10 @@ enum HostPortParser {
         let hasInvalidChars = host.unicodeScalars.contains { $0.value < 0x20 || $0 == " " }
         if hasInvalidChars {
             logger.error("SECURITY: Host contains invalid characters")
-            throw ParseError.emptyHost
+            throw ParseError.invalidHostCharacters
         }
 
-        guard (1 ... 65_535).contains(portValue) else {
+        guard (1 ... 65535).contains(portValue) else {
             throw ParseError.portOutOfRange(portValue)
         }
 

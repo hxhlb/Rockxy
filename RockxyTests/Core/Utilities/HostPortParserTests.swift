@@ -144,4 +144,25 @@ struct HostPortParserTests {
             try HostPortParser.parse("example .com:443")
         }
     }
+
+    @Test("Rejects empty brackets")
+    func emptyBrackets() {
+        #expect(throws: HostPortParser.ParseError.self) {
+            try HostPortParser.parse("[]:443")
+        }
+    }
+
+    @Test("Rejects missing closing bracket")
+    func missingClosingBracket() {
+        #expect(throws: HostPortParser.ParseError.self) {
+            try HostPortParser.parse("[::1:8080")
+        }
+    }
+
+    @Test("Rejects trailing colon with no port")
+    func trailingColonNoPort() {
+        #expect(throws: HostPortParser.ParseError.self) {
+            try HostPortParser.parse("example.com:")
+        }
+    }
 }

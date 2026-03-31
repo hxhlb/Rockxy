@@ -1,5 +1,6 @@
-// TODO: Re-enable when analytics analyzers (ErrorAnalyzer, PerformanceAnalyzer,
-// TimelineDependencyAnalyzer) are implemented.
+// Disabled: analytics analyzers (ErrorAnalyzer, PerformanceAnalyzer,
+// TimelineDependencyAnalyzer) are not yet implemented. These tests will not
+// compile until the Analytics module is added. Remove #if false when ready.
 #if false
 
 import Foundation

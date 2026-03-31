@@ -55,4 +55,10 @@ struct NetworkValidatorTests {
     func emptyString() {
         #expect(NetworkValidator.sanitizeHeaderValue("") == "")
     }
+
+    @Test("Strips C0 control characters U+0001-U+001F except tab")
+    func stripsOtherC0Controls() {
+        let input = "value\u{01}\u{02}\u{03}\u{04}\u{05}\u{06}\u{07}\u{08}\u{0B}\u{0C}\u{0E}\u{0F}\u{10}\u{1F}end"
+        #expect(NetworkValidator.sanitizeHeaderValue(input) == "valueend")
+    }
 }

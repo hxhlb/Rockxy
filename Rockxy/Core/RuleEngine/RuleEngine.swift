@@ -49,6 +49,7 @@ actor RuleEngine {
 
     func removeRule(id: UUID) {
         rules.removeAll { $0.id == id }
+        compiledPatterns.removeValue(forKey: id)
     }
 
     func toggleRule(id: UUID) {
@@ -61,6 +62,12 @@ actor RuleEngine {
     func updateRule(_ rule: ProxyRule) {
         if let index = rules.firstIndex(where: { $0.id == rule.id }) {
             rules[index] = rule
+            compiledPatterns.removeValue(forKey: rule.id)
+            if let pattern = rule.matchCondition.urlPattern,
+               case let .success(regex) = RegexValidator.compile(pattern)
+            {
+                compiledPatterns[rule.id] = regex
+            }
         }
     }
 
