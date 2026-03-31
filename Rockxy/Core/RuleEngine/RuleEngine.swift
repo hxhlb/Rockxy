@@ -15,6 +15,7 @@ actor RuleEngine {
 
     func loadRules(from store: RuleStore) throws {
         rules = try store.loadRules()
+        compilePatterns()
         let count = rules.count
         Self.logger.info("Loaded \(count) rules")
     }
@@ -28,7 +29,8 @@ actor RuleEngine {
     /// Used by Map Local Directory to extract the URL pattern for subpath resolution.
     func evaluateRule(method: String, url: URL, headers: [HTTPHeader]) -> ProxyRule? {
         for rule in rules where rule.isEnabled {
-            if rule.matchCondition.matches(method: method, url: url, headers: headers) {
+            let compiled = compiledPatterns[rule.id]
+            if rule.matchCondition.matches(method: method, url: url, headers: headers, compiledPattern: compiled) {
                 Self.logger.debug("Rule matched: \(rule.name)")
                 return rule
             }
@@ -38,6 +40,11 @@ actor RuleEngine {
 
     func addRule(_ rule: ProxyRule) {
         rules.append(rule)
+        if let pattern = rule.matchCondition.urlPattern {
+            if case let .success(regex) = RegexValidator.compile(pattern) {
+                compiledPatterns[rule.id] = regex
+            }
+        }
     }
 
     func removeRule(id: UUID) {
@@ -59,6 +66,7 @@ actor RuleEngine {
 
     func replaceAll(_ newRules: [ProxyRule]) {
         rules = newRules
+        compilePatterns()
     }
 
     func setEnabled(id: UUID, enabled: Bool) {
@@ -109,4 +117,23 @@ actor RuleEngine {
     private static let logger = Logger(subsystem: "com.amunx.Rockxy", category: "RuleEngine")
 
     private var rules: [ProxyRule] = []
+    private var compiledPatterns: [UUID: NSRegularExpression] = [:]
+
+    private func compilePatterns() {
+        compiledPatterns.removeAll()
+        for i in rules.indices {
+            guard let pattern = rules[i].matchCondition.urlPattern else {
+                continue
+            }
+            switch RegexValidator.compile(pattern) {
+            case let .success(regex):
+                compiledPatterns[rules[i].id] = regex
+            case let .failure(error):
+                let ruleName = rules[i].name
+                Self.logger
+                    .warning("SECURITY: Disabling rule '\(ruleName)' — invalid regex: \(error.localizedDescription)")
+                rules[i].isEnabled = false
+            }
+        }
+    }
 }

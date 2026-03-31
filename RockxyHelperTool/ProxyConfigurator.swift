@@ -134,15 +134,24 @@ enum ProxyConfigurator {
             throw ProxyConfiguratorError.noActiveService
         }
 
+        let validDomains = domains.filter { domain in
+            let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: ".-_*"))
+            return !domain.isEmpty && domain.count <= 253
+                && domain.unicodeScalars.allSatisfy { allowed.contains($0) }
+        }
+        if validDomains.count != domains.count {
+            logger.warning("SECURITY: Filtered \(domains.count - validDomains.count) invalid bypass domains")
+        }
+
         for service in services {
             do {
-                if domains.isEmpty {
+                if validDomains.isEmpty {
                     try runNetworkSetup(["-setproxybypassdomains", service, "Empty"])
                 } else {
-                    let args = ["-setproxybypassdomains", service] + domains
+                    let args = ["-setproxybypassdomains", service] + validDomains
                     try runNetworkSetup(args)
                 }
-                logger.debug("Set bypass domains on '\(service)': \(domains)")
+                logger.debug("Set bypass domains on '\(service)': \(validDomains)")
             } catch {
                 logger.debug("Failed to set bypass domains for '\(service)': \(error.localizedDescription)")
             }
@@ -294,6 +303,8 @@ enum ProxyConfigurator {
                 services.append(trimmed)
             }
         }
+        services = services
+            .filter { !$0.isEmpty && !$0.contains("\0") && !$0.contains("\n") && !$0.contains("\r") && $0.count <= 128 }
         logger.info("Enabled network services: \(services)")
         return services
     }

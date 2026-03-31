@@ -99,12 +99,21 @@ enum ScriptBridge {
         let prefix = "com.amunx.Rockxy.plugin.\(pluginID).storage."
 
         let getFn: @convention(block) (String) -> Any? = { key in
-            UserDefaults.standard.object(forKey: prefix + key)
+            guard PluginValidator.isValidKey(key) else {
+                return nil
+            }
+            return UserDefaults.standard.object(forKey: prefix + key)
         }
         let setFn: @convention(block) (String, Any) -> Void = { key, value in
+            guard PluginValidator.isValidKey(key) else {
+                return
+            }
             UserDefaults.standard.set(value, forKey: prefix + key)
         }
         let deleteFn: @convention(block) (String) -> Void = { key in
+            guard PluginValidator.isValidKey(key) else {
+                return
+            }
             UserDefaults.standard.removeObject(forKey: prefix + key)
         }
 
@@ -120,7 +129,10 @@ enum ScriptBridge {
         let prefix = "com.amunx.Rockxy.plugin.\(pluginID).config."
 
         let getFn: @convention(block) (String) -> Any? = { key in
-            UserDefaults.standard.object(forKey: prefix + key)
+            guard PluginValidator.isValidKey(key) else {
+                return nil
+            }
+            return UserDefaults.standard.object(forKey: prefix + key)
         }
 
         env?.setObject(getFn, forKeyedSubscript: "get" as NSString)

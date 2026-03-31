@@ -122,6 +122,12 @@ final class HelperService: NSObject, RockxyHelperProtocol {
     func setBypassDomains(_ domains: [String], withReply reply: @escaping (Bool, String?) -> Void) {
         Self.logger.info("setBypassDomains called with \(domains.count) domain(s)")
 
+        guard domains.count <= 500 else {
+            Self.logger.warning("SECURITY: Too many bypass domains: \(domains.count)")
+            reply(false, "Too many bypass domains (max 500)")
+            return
+        }
+
         do {
             try ProxyConfigurator.setBypassDomains(domains)
             reply(true, nil)
@@ -453,6 +459,7 @@ final class HelperService: NSObject, RockxyHelperProtocol {
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("rockxy-root-ca-\(UUID().uuidString).der")
         try derData.write(to: tempURL)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: tempURL.path)
         defer { try? FileManager.default.removeItem(at: tempURL) }
 
         let process = Process()

@@ -60,7 +60,7 @@ enum ProcessLogSource {
                     id: UUID(),
                     timestamp: Date(),
                     level: .info,
-                    message: line,
+                    message: Self.redactCredentials(line),
                     source: .processStdout(pid: pid),
                     processName: processName,
                     subsystem: nil,
@@ -84,7 +84,7 @@ enum ProcessLogSource {
                     id: UUID(),
                     timestamp: Date(),
                     level: .warning,
-                    message: line,
+                    message: Self.redactCredentials(line),
                     source: .processStderr(pid: pid),
                     processName: processName,
                     subsystem: nil,
@@ -112,4 +112,15 @@ enum ProcessLogSource {
     // MARK: Private
 
     private static let logger = Logger(subsystem: "com.amunx.Rockxy", category: "ProcessLogSource")
+
+    private static func redactCredentials(_ line: String) -> String {
+        var result = line
+        if let range = result.range(of: #"Bearer\s+\S+"#, options: .regularExpression) {
+            result.replaceSubrange(range, with: "Bearer [REDACTED]")
+        }
+        if let range = result.range(of: #"(?i)password[=:]\s*\S+"#, options: .regularExpression) {
+            result.replaceSubrange(range, with: "password=[REDACTED]")
+        }
+        return result
+    }
 }

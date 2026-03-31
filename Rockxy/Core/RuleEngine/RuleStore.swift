@@ -28,13 +28,16 @@ struct RuleStore {
 
     enum RuleStoreError: LocalizedError {
         case importFileTooLarge(UInt64)
+        case invalidRegexInImport(pattern: String, reason: String)
 
         // MARK: Internal
 
         var errorDescription: String? {
             switch self {
             case let .importFileTooLarge(size):
-                "Import file is too large (\(size / 1024 / 1024) MB). Maximum allowed is 5 MB."
+                "Import file is too large (\(size / 1_024 / 1_024) MB). Maximum allowed is 5 MB."
+            case let .invalidRegexInImport(pattern, reason):
+                "Invalid regex pattern '\(pattern)': \(reason)"
             }
         }
     }
@@ -66,7 +69,15 @@ struct RuleStore {
             throw RuleStoreError.importFileTooLarge(fileSize)
         }
         let data = try Data(contentsOf: url)
-        return try JSONDecoder().decode([ProxyRule].self, from: data)
+        let rules = try JSONDecoder().decode([ProxyRule].self, from: data)
+        for rule in rules {
+            if let pattern = rule.matchCondition.urlPattern {
+                if case let .failure(error) = RegexValidator.compile(pattern) {
+                    throw RuleStoreError.invalidRegexInImport(pattern: pattern, reason: error.localizedDescription)
+                }
+            }
+        }
+        return rules
     }
 
     // MARK: Private
@@ -74,7 +85,7 @@ struct RuleStore {
     private static let logger = Logger(subsystem: "com.amunx.Rockxy", category: "RuleStore")
 
     /// Maximum import file size: 5 MB.
-    private static let maxImportSize: UInt64 = 5 * 1024 * 1024
+    private static let maxImportSize: UInt64 = 5 * 1_024 * 1_024
 
     private let fileURL: URL
 }
