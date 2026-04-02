@@ -10,20 +10,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
-- Uupdate menu links, fix Modify Headers empty state, add About credits
-- Uclean up Window and Flow menus to match standard macOS patterns
-- Uaddress CodeRabbit review findings on security hardening PR
-- Uharden proxy engine, storage, and helper against security vulnerabilities
+- Fix unbounded memory accumulation in HTTP body and WebSocket handlers
+- Fix CONNECT tunnel URI parsing for IPv6 and invalid ports
+- Fix ReDoS vulnerability in rule regex matching — patterns now validated at import
+- Fix SQL interpolation in schema migration
+- Fix path traversal in body file loading
+- Fix TOCTOU race in MapLocal file validator
+- Fix CRLF injection in MapRemote host header
+- Harden helper tool input validation for bypass domains and service names
+- Add sensitive data redaction in proxy logs
+- Tighten file permissions on stored body files
 
 ### Changed
 
-- UMerge pull request #3 from LocNguyenHuu/develop
-- UMerge pull request #2 from LocNguyenHuu/fix/ui-issues
-- Uupdate README to match current codebase, fix stale URLs
-- Uadd feature comparison table vs commercial alternatives
-- UMerge pull request #1 from LocNguyenHuu/fix/security-hardening
-- U@LocNguyenHuu has signed the CLA in LocNguyenHuu/Rockxy#1
-- UCreating file for storing CLA Signatures
+- Clean up Window menu — remove feature window entries, keep standard macOS items only
+- Restructure View menu with standard labels and keyboard shortcuts
+- Restructure Flow menu with Repeat, Edit and Repeat, Save, Export, Comment, Highlight, Delete
+- Fix Modify Headers window empty state layout
+- Update menu links and About dialog to correct URLs
+- Update README with current architecture, security documentation, and feature comparison table
+
 ## [0.1.0] - 2026-03-30
 
 ### Added
