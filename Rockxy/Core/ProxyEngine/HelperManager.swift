@@ -74,13 +74,15 @@ final class HelperManager {
         let previousInfo = installedInfo
         lastErrorMessage = nil
         isBusy = true
-        defer { isBusy = false }
+        defer {
+            isBusy = false
+            postStatusChangeIfNeeded(
+                previousStatus: previousStatus,
+                previousReachable: previousReachable,
+                previousInfo: previousInfo
+            )
+        }
         try await performUninstall()
-        postStatusChangeIfNeeded(
-            previousStatus: previousStatus,
-            previousReachable: previousReachable,
-            previousInfo: previousInfo
-        )
     }
 
     /// Check whether the helper is installed, responding, and at the correct version.
@@ -196,7 +198,7 @@ final class HelperManager {
     ) {
         let changed = status != previousStatus
             || isReachable != previousReachable
-            || installedInfo?.buildNumber != previousInfo?.buildNumber
+            || installedInfo != previousInfo
         if changed {
             NotificationCenter.default.post(name: .helperStatusChanged, object: nil)
         }

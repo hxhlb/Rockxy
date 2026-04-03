@@ -47,7 +47,6 @@
 --importgrouping alpha
 --header strip
 --stripunusedargs closure-only
---modifierorder
 --emptybraces no-space
 
 # Enabled rules (comment out to disable)

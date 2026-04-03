@@ -189,6 +189,7 @@ nonisolated enum CertificateStore {
             return
         }
         guard (try? KeychainHelper.loadPrivateKey(label: keychainKeyLabel)) != nil else {
+            logger.debug("Skipping .bak cleanup — Keychain has no matching key")
             return
         }
         try? FileManager.default.removeItem(at: backupPath)

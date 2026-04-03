@@ -47,7 +47,7 @@ struct CALifecycleTests {
         let overrides = installSharedTestOverrides()
         defer { overrides.cleanup() }
 
-        // Probe Keychain availability
+        // Probe Keychain — early return if inaccessible (sandbox/CI)
         let probeKey = P256.Signing.PrivateKey()
         do {
             try KeychainHelper.savePrivateKey(Data(probeKey.x963Representation), label: overrides.label)
@@ -85,7 +85,7 @@ struct CALifecycleTests {
         let overrides = installSharedTestOverrides()
         defer { overrides.cleanup() }
 
-        // Probe Keychain availability
+        // Probe Keychain — early return if inaccessible (sandbox/CI)
         let probeKey = P256.Signing.PrivateKey()
         do {
             try KeychainHelper.savePrivateKey(Data(probeKey.x963Representation), label: overrides.label)

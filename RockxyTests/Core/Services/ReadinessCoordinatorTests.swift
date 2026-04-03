@@ -24,14 +24,12 @@ struct ReadinessCoordinatorTests {
         let coordinator = ReadinessCoordinator.shared
         coordinator.setCaptureActive(true)
 
-        // Step 1: set proxy failure
         coordinator.setProxyEnableFailed(message: "Port in use")
         #expect(coordinator.activeWarning != nil)
         #expect(coordinator.activeWarning?.action == .retry)
         #expect(coordinator.activeWarning?.message == "Port in use")
         #expect(coordinator.activeWarning?.isDismissible == true)
 
-        // Step 2: clear failure — warning should transition to next priority or nil
         coordinator.clearProxyEnableFailure()
         #expect(coordinator.activeWarning?.action != .retry)
 
@@ -44,12 +42,10 @@ struct ReadinessCoordinatorTests {
         let coordinator = ReadinessCoordinator.shared
         coordinator.setCaptureActive(true)
 
-        // Whatever the cert/helper state is, proxy failure must be shown first
         coordinator.setProxyEnableFailed(message: "Test failure")
         #expect(coordinator.activeWarning?.action == .retry)
         #expect(coordinator.activeWarning?.message == "Test failure")
 
-        // Clear and verify it's gone
         coordinator.clearProxyEnableFailure()
         #expect(coordinator.activeWarning?.message != "Test failure")
 
@@ -61,12 +57,10 @@ struct ReadinessCoordinatorTests {
     func captureStopClearsAllState() {
         let coordinator = ReadinessCoordinator.shared
 
-        // Build up multiple state signals
         coordinator.setCaptureActive(true)
         coordinator.setProxyEnableFailed(message: "error")
         #expect(coordinator.activeWarning != nil)
 
-        // Stop capture — everything must clear
         coordinator.setCaptureActive(false)
         #expect(coordinator.activeWarning == nil)
     }
@@ -77,7 +71,6 @@ struct ReadinessCoordinatorTests {
         let coordinator = ReadinessCoordinator.shared
         coordinator.setCaptureActive(true)
 
-        // Proxy failure is dismissible
         coordinator.setProxyEnableFailed(message: "Port in use")
         #expect(coordinator.activeWarning?.isDismissible == true)
         coordinator.dismissWarning()
@@ -93,14 +86,11 @@ struct ReadinessCoordinatorTests {
         coordinator.setCaptureActive(true)
         await coordinator.refresh()
 
-        // Capture baseline warning (cert or helper or nil depending on machine)
         let baselineWarning = coordinator.activeWarning
 
-        // Add proxy failure — must override baseline
         coordinator.setProxyEnableFailed(message: "port conflict")
         #expect(coordinator.activeWarning?.action == .retry)
 
-        // Clear failure — must return to baseline
         coordinator.clearProxyEnableFailure()
         #expect(coordinator.activeWarning == baselineWarning)
 
@@ -161,33 +151,45 @@ struct ReadinessCoordinatorTests {
 
     @Test("certificateStatusChanged notification refreshes cert snapshot")
     @MainActor
-    func certNotificationRefreshesSnapshot() async {
+    func certNotificationRefreshesSnapshot() async throws {
         let coordinator = ReadinessCoordinator.shared
         coordinator.startObserving()
         defer { coordinator.stopObserving() }
 
         NotificationCenter.default.post(name: .certificateStatusChanged, object: nil)
-        try? await Task.sleep(nanoseconds: 500_000_000)
+
+        for _ in 0 ..< 60 {
+            if coordinator.lastCertSnapshot != nil {
+                break
+            }
+            try await Task.sleep(for: .milliseconds(50))
+        }
 
         #expect(coordinator.lastCertSnapshot != nil)
     }
 
     @Test("helperStatusChanged notification refreshes helper state")
     @MainActor
-    func helperNotificationRefreshesState() async {
+    func helperNotificationRefreshesState() async throws {
         let coordinator = ReadinessCoordinator.shared
         coordinator.startObserving()
         defer { coordinator.stopObserving() }
 
         NotificationCenter.default.post(name: .helperStatusChanged, object: nil)
-        try? await Task.sleep(nanoseconds: 200_000_000)
+
+        for _ in 0 ..< 40 {
+            if coordinator.helperReadiness == HelperManager.shared.status {
+                break
+            }
+            try await Task.sleep(for: .milliseconds(50))
+        }
 
         #expect(coordinator.helperReadiness == HelperManager.shared.status)
     }
 
     @Test("app-active refresh updates cert state without proxy start")
     @MainActor
-    func appActiveRefreshUpdatesCertState() async {
+    func appActiveRefreshUpdatesCertState() async throws {
         let coordinator = ReadinessCoordinator.shared
         coordinator.startObserving()
         defer { coordinator.stopObserving() }
@@ -195,7 +197,13 @@ struct ReadinessCoordinatorTests {
         NotificationCenter.default.post(
             name: NSApplication.didBecomeActiveNotification, object: nil
         )
-        try? await Task.sleep(nanoseconds: 1_500_000_000)
+
+        for _ in 0 ..< 100 {
+            if coordinator.lastCertSnapshot != nil {
+                break
+            }
+            try await Task.sleep(for: .milliseconds(50))
+        }
 
         #expect(coordinator.lastCertSnapshot != nil)
     }
@@ -204,22 +212,20 @@ struct ReadinessCoordinatorTests {
 
     @Test("certReadiness is consistent with lastCertSnapshot after refresh")
     @MainActor
-    func certReadinessMatchesSnapshotAfterRefresh() async {
+    func certReadinessMatchesSnapshotAfterRefresh() async throws {
         let coordinator = ReadinessCoordinator.shared
         await coordinator.refresh()
 
-        let snapshot = try? #require(coordinator.lastCertSnapshot)
+        let snapshot = try #require(coordinator.lastCertSnapshot)
 
-        if let snapshot {
-            if snapshot.isSystemTrustValidated {
-                #expect(coordinator.certReadiness == .trusted)
-            } else if snapshot.hasTrustSettings || snapshot.isInstalledInKeychain {
-                #expect(coordinator.certReadiness == .installedNotTrusted)
-            } else if snapshot.hasGeneratedCertificate {
-                #expect(coordinator.certReadiness == .generatedNotInstalled)
-            } else {
-                #expect(coordinator.certReadiness == .notGenerated)
-            }
+        if snapshot.isSystemTrustValidated {
+            #expect(coordinator.certReadiness == .trusted)
+        } else if snapshot.hasTrustSettings || snapshot.isInstalledInKeychain {
+            #expect(coordinator.certReadiness == .installedNotTrusted)
+        } else if snapshot.hasGeneratedCertificate {
+            #expect(coordinator.certReadiness == .generatedNotInstalled)
+        } else {
+            #expect(coordinator.certReadiness == .notGenerated)
         }
     }
 
