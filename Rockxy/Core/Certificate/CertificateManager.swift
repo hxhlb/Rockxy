@@ -204,25 +204,37 @@ actor CertificateManager {
         let derData = try certToDER(certificate)
         let fingerprint = computeFingerprint(certificate) ?? KeychainHelper.computeFingerprintSHA256(derData)
 
-        // Step 1: Use helper to install cert + set trust in System.keychain.
-        // The helper runs as root and uses `security add-trusted-cert` CLI to set trust
-        // directly on the system keychain copy. This is the primary trust path.
         var helperHandledTrust = false
-        do {
-            let helperConnection = await MainActor.run { HelperConnection.shared }
-            let staleCount = try await helperConnection.cleanupStaleCertificates(activeFingerprint: fingerprint)
-            if staleCount > 0 {
-                Self.logger.info("Cleaned up \(staleCount) stale root CA certificate(s)")
-            }
-            try await helperConnection.installRootCertificate(derData: derData)
-            Self.logger.info("Root CA installed and trusted in system keychain via helper")
-            helperHandledTrust = true
+        let helperTrustAvailable = await MainActor.run {
+            Self.shouldUseHelperForTrustInstall(
+                status: HelperManager.shared.status,
+                isReachable: HelperManager.shared.isReachable
+            )
+        }
 
-            // Clean up any stale login-keychain copies from previous installs.
-            // Duplicate copies in login keychain can confuse SecTrust evaluation.
-            KeychainHelper.removeAllRockxyCertsFromLoginKeychain(label: Self.keychainCertLabel)
-        } catch {
-            Self.logger.info("Helper unavailable, falling back to app-side trust: \(error.localizedDescription)")
+        // Step 1: Use helper to install cert + set trust in System.keychain only when the
+        // cached helper state already says the daemon is usable. Otherwise skip straight to
+        // app-side trust so the macOS security prompt appears immediately.
+        if helperTrustAvailable {
+            do {
+                let helperConnection = await MainActor.run { HelperConnection.shared }
+                let staleCount = try await helperConnection.cleanupStaleCertificates(activeFingerprint: fingerprint)
+                if staleCount > 0 {
+                    Self.logger.info("Cleaned up \(staleCount) stale root CA certificate(s)")
+                }
+                try await helperConnection.installRootCertificate(derData: derData)
+                Self.logger.info("Root CA installed and trusted in system keychain via helper")
+                helperHandledTrust = true
+
+                // Clean up any stale login-keychain copies from previous installs.
+                // Duplicate copies in login keychain can confuse SecTrust evaluation.
+                KeychainHelper.removeAllRockxyCertsFromLoginKeychain(label: Self.keychainCertLabel)
+            } catch {
+                Self.logger.info("Helper unavailable, falling back to app-side trust: \(error.localizedDescription)")
+                KeychainHelper.cleanupStaleRockxyCerts(activeFingerprint: fingerprint, label: Self.keychainCertLabel)
+            }
+        } else {
+            Self.logger.info("Skipping helper trust path and using app-side trust immediately")
             KeychainHelper.cleanupStaleRockxyCerts(activeFingerprint: fingerprint, label: Self.keychainCertLabel)
         }
 
@@ -249,6 +261,26 @@ actor CertificateManager {
                 )
         }
         postCertificateStatusChanged()
+    }
+
+    nonisolated static func shouldUseHelperForTrustInstall(
+        status: HelperManager.HelperStatus,
+        isReachable: Bool
+    ) -> Bool {
+        guard isReachable else {
+            return false
+        }
+
+        switch status {
+        case .installedCompatible,
+             .installedOutdated:
+            return true
+        case .notInstalled,
+             .requiresApproval,
+             .installedIncompatible,
+             .unreachable:
+            return false
+        }
     }
 
     /// Removes trust settings and certificate from keychain.

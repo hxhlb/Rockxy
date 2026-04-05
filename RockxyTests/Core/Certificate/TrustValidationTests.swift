@@ -9,6 +9,35 @@ import Testing
 /// Uses `CertificateManager.shared` singleton — serialized to avoid cross-test races.
 @Suite(.serialized)
 struct TrustCacheRecoveryTests {
+    @Test("helper trust install only runs when helper is reachable and compatible")
+    func helperTrustInstallAvailability() {
+        #expect(CertificateManager.shouldUseHelperForTrustInstall(
+            status: .installedCompatible,
+            isReachable: true
+        ))
+        #expect(CertificateManager.shouldUseHelperForTrustInstall(
+            status: .installedOutdated,
+            isReachable: true
+        ))
+
+        #expect(CertificateManager.shouldUseHelperForTrustInstall(
+            status: .notInstalled,
+            isReachable: false
+        ) == false)
+        #expect(CertificateManager.shouldUseHelperForTrustInstall(
+            status: .requiresApproval,
+            isReachable: false
+        ) == false)
+        #expect(CertificateManager.shouldUseHelperForTrustInstall(
+            status: .installedCompatible,
+            isReachable: false
+        ) == false)
+        #expect(CertificateManager.shouldUseHelperForTrustInstall(
+            status: .unreachable,
+            isReachable: false
+        ) == false)
+    }
+
     @Test("cached false does not block real revalidation via isRootCATrustValidated")
     func cachedFalseDoesNotBlockRealRevalidation() async throws {
         let manager = CertificateManager.shared
@@ -469,6 +498,38 @@ struct CertificateStatusStateTests {
 /// function used before proxy start to ensure the root CA is truly trusted.
 @Suite(.serialized)
 struct ProxyGatingTests {
+    @Test("helper trust path is skipped when helper is not installed")
+    func helperTrustPathSkippedWhenNotInstalled() {
+        #expect(CertificateManager.shouldUseHelperForTrustInstall(
+            status: .notInstalled,
+            isReachable: false
+        ) == false)
+    }
+
+    @Test("helper trust path is skipped when helper requires approval")
+    func helperTrustPathSkippedWhenApprovalPending() {
+        #expect(CertificateManager.shouldUseHelperForTrustInstall(
+            status: .requiresApproval,
+            isReachable: false
+        ) == false)
+    }
+
+    @Test("helper trust path only runs for reachable compatible helper")
+    func helperTrustPathRequiresReachableCompatibleHelper() {
+        #expect(CertificateManager.shouldUseHelperForTrustInstall(
+            status: .installedCompatible,
+            isReachable: true
+        ))
+        #expect(CertificateManager.shouldUseHelperForTrustInstall(
+            status: .installedCompatible,
+            isReachable: false
+        ) == false)
+        #expect(CertificateManager.shouldUseHelperForTrustInstall(
+            status: .installedOutdated,
+            isReachable: true
+        ))
+    }
+
     @Test("proxy gating uses real validation not just metadata check")
     func proxyGatingUsesRealValidation() async throws {
         let manager = CertificateManager.shared
