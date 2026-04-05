@@ -286,10 +286,10 @@ struct HeaderColumnStoreTests {
     // MARK: - Helpers
 
     private func makeCleanStore() -> HeaderColumnStore {
-        UserDefaults.standard.removeObject(forKey: "com.amunx.Rockxy.headerColumns")
-        UserDefaults.standard.removeObject(forKey: "com.amunx.Rockxy.discoveredReqHeaders")
-        UserDefaults.standard.removeObject(forKey: "com.amunx.Rockxy.discoveredResHeaders")
-        UserDefaults.standard.removeObject(forKey: "com.amunx.Rockxy.hiddenBuiltInColumns")
+        UserDefaults.standard.removeObject(forKey: TestIdentity.headerColumnStorageKey)
+        UserDefaults.standard.removeObject(forKey: TestIdentity.discoveredRequestHeadersKey)
+        UserDefaults.standard.removeObject(forKey: TestIdentity.discoveredResponseHeadersKey)
+        UserDefaults.standard.removeObject(forKey: TestIdentity.hiddenBuiltInColumnsKey)
         return HeaderColumnStore()
     }
 }

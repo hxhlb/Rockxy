@@ -469,15 +469,24 @@ actor CertificateManager {
 
     // MARK: - Status Snapshot
 
-    /// Performs one real validation pass and returns a full diagnostic snapshot of the
-    /// root CA state. Useful for settings UI and troubleshooting displays.
-    func rootCAStatusSnapshot() async -> RootCAStatusSnapshot {
+    /// Returns a diagnostic snapshot of the root CA state.
+    /// When `performValidation` is false, reuse cached validation and cheap keychain
+    /// trust metadata so routine UI refreshes do not re-run full SecTrust work.
+    func rootCAStatusSnapshot(performValidation: Bool = false) async -> RootCAStatusSnapshot {
         let hasGenerated = rootCACertificate != nil
         let installed = isRootCAInstalled()
         let trustPresent = hasTrustSettingsPresent()
-        // Run real validation only when trust settings are present — Strategy A
-        // (system trust) is what real TLS clients actually check.
-        let systemTrusted = trustPresent ? validateSystemTrust() : false
+        let systemTrusted: Bool
+
+        if performValidation, trustPresent {
+            systemTrusted = validateSystemTrust()
+        } else if let cachedValidation = lastTrustValidationResult {
+            systemTrusted = cachedValidation
+        } else if trustPresent {
+            systemTrusted = isRootCATrusted()
+        } else {
+            systemTrusted = false
+        }
 
         let validityBefore = rootCACertificate?.notValidBefore
         let validityAfter = rootCACertificate?.notValidAfter
@@ -520,10 +529,10 @@ actor CertificateManager {
 
     // MARK: Private
 
-    private static let logger = Logger(subsystem: "com.amunx.Rockxy", category: "CertificateManager")
+    private static let logger = Logger(subsystem: RockxyIdentity.current.logSubsystem, category: "CertificateManager")
 
-    private static let keychainKeyLabel = "com.amunx.Rockxy.rootCA.key"
-    private static let keychainCertLabel = "com.amunx.Rockxy.rootCA"
+    private static let keychainKeyLabel = RockxyIdentity.current.rootCAKeyLabel
+    private static let keychainCertLabel = RockxyIdentity.current.rootCACertificateLabel
     private static let maxCacheSize = Int(1e3)
 
     private var rootCACertificate: Certificate?

@@ -55,7 +55,7 @@ struct CALifecycleTests {
             return
         }
 
-        let bakPath = overrides.storageDir.appendingPathComponent("rootCA-key.pem.bak")
+        let bakPath = overrides.storageDir.appendingPathComponent(TestIdentity.rootCABackupFilename)
         try FileManager.default.createDirectory(at: overrides.storageDir, withIntermediateDirectories: true)
         try "legacy key data".write(to: bakPath, atomically: true, encoding: .utf8)
         #expect(FileManager.default.fileExists(atPath: bakPath.path))
@@ -70,7 +70,7 @@ struct CALifecycleTests {
         let overrides = installSharedTestOverrides()
         defer { overrides.cleanup() }
 
-        let bakPath = overrides.storageDir.appendingPathComponent("rootCA-key.pem.bak")
+        let bakPath = overrides.storageDir.appendingPathComponent(TestIdentity.rootCABackupFilename)
         try FileManager.default.createDirectory(at: overrides.storageDir, withIntermediateDirectories: true)
         try "legacy key data".write(to: bakPath, atomically: true, encoding: .utf8)
         #expect(FileManager.default.fileExists(atPath: bakPath.path))
@@ -99,10 +99,10 @@ struct CALifecycleTests {
         let key = P256.Signing.PrivateKey()
         let derBytes = Array(key.x963Representation)
         let pemDocument = PEMDocument(type: "EC PRIVATE KEY", derBytes: derBytes)
-        let bakPath = overrides.storageDir.appendingPathComponent("rootCA-key.pem.bak")
+        let bakPath = overrides.storageDir.appendingPathComponent(TestIdentity.rootCABackupFilename)
         try Data(pemDocument.pemString.utf8).write(to: bakPath)
 
-        let primaryPath = overrides.storageDir.appendingPathComponent("rootCA-key.pem")
+        let primaryPath = overrides.storageDir.appendingPathComponent(TestIdentity.rootCAKeyFilename)
         #expect(!FileManager.default.fileExists(atPath: primaryPath.path))
 
         let loaded = try CertificateStore.loadRootCAPrivateKey()

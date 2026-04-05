@@ -61,7 +61,7 @@ struct AdvancedProxySettingsView: View {
 
     // MARK: Private
 
-    private static let logger = Logger(subsystem: "com.amunx.Rockxy", category: "AdvancedProxySettings")
+    private static let logger = Logger(subsystem: RockxyIdentity.current.logSubsystem, category: "AdvancedProxySettings")
 
     @State private var settings = AppSettingsManager.shared.settings
     @State private var portText: String = ""

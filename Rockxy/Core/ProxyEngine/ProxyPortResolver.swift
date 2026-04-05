@@ -96,5 +96,5 @@ enum ProxyPortResolver {
 
     // MARK: Private
 
-    private static let logger = Logger(subsystem: "com.amunx.Rockxy", category: "ProxyPortResolver")
+    private static let logger = Logger(subsystem: RockxyIdentity.current.logSubsystem, category: "ProxyPortResolver")
 }

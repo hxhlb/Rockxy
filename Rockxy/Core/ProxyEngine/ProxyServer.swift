@@ -7,7 +7,7 @@ import os
 /// Logger must be nonisolated(unsafe) because NIO channel handlers are called
 /// from event loop threads outside Swift's structured concurrency.
 private nonisolated(unsafe) let proxyServerLogger = Logger(
-    subsystem: "com.amunx.Rockxy",
+    subsystem: RockxyIdentity.current.logSubsystem,
     category: "ProxyServer"
 )
 
@@ -195,7 +195,7 @@ actor ProxyServer {
 
     // MARK: Private
 
-    private static let logger = Logger(subsystem: "com.amunx.Rockxy", category: "ProxyServer")
+    private static let logger = Logger(subsystem: RockxyIdentity.current.logSubsystem, category: "ProxyServer")
 
     private let configuration: ProxyConfiguration
     private let certificateManager: CertificateManager

@@ -193,8 +193,8 @@ struct KeychainPrimaryStorageTests {
 
         // Probe keychain availability — skip in sandbox/CI where keychain is inaccessible
         do {
-            try KeychainHelper.savePrivateKey(Data([0x01]), label: "com.amunx.Rockxy.test.probe")
-            try KeychainHelper.deletePrivateKey(label: "com.amunx.Rockxy.test.probe")
+            try KeychainHelper.savePrivateKey(Data([0x01]), label: TestIdentity.keychainProbeLabel)
+            try KeychainHelper.deletePrivateKey(label: TestIdentity.keychainProbeLabel)
         } catch {
             return
         }
@@ -217,8 +217,8 @@ struct KeychainPrimaryStorageTests {
 
         // Probe keychain availability — skip in sandbox/CI where keychain is inaccessible
         do {
-            try KeychainHelper.savePrivateKey(Data([0x01]), label: "com.amunx.Rockxy.test.probe")
-            try KeychainHelper.deletePrivateKey(label: "com.amunx.Rockxy.test.probe")
+            try KeychainHelper.savePrivateKey(Data([0x01]), label: TestIdentity.keychainProbeLabel)
+            try KeychainHelper.deletePrivateKey(label: TestIdentity.keychainProbeLabel)
         } catch {
             return
         }
@@ -233,7 +233,7 @@ struct KeychainPrimaryStorageTests {
         let derBytes = Array(ca.privateKey.x963Representation)
         let pemDocument = PEMDocument(type: "EC PRIVATE KEY", derBytes: derBytes)
         let pemString = pemDocument.pemString
-        let filePath = overrides.storageDir.appendingPathComponent("rootCA-key.pem")
+        let filePath = overrides.storageDir.appendingPathComponent(TestIdentity.rootCAKeyFilename)
         try Data(pemString.utf8).write(to: filePath)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: filePath.path)
 
@@ -247,7 +247,7 @@ struct KeychainPrimaryStorageTests {
         #expect(keychainData != nil)
 
         // Verify disk file was renamed to .bak
-        let backupPath = overrides.storageDir.appendingPathComponent("rootCA-key.pem.bak")
+        let backupPath = overrides.storageDir.appendingPathComponent(TestIdentity.rootCABackupFilename)
         #expect(FileManager.default.fileExists(atPath: backupPath.path))
         #expect(!FileManager.default.fileExists(atPath: filePath.path))
     }
@@ -259,8 +259,8 @@ struct KeychainPrimaryStorageTests {
 
         // Probe keychain availability — skip in sandbox/CI where keychain is inaccessible
         do {
-            try KeychainHelper.savePrivateKey(Data([0x01]), label: "com.amunx.Rockxy.test.probe")
-            try KeychainHelper.deletePrivateKey(label: "com.amunx.Rockxy.test.probe")
+            try KeychainHelper.savePrivateKey(Data([0x01]), label: TestIdentity.keychainProbeLabel)
+            try KeychainHelper.deletePrivateKey(label: TestIdentity.keychainProbeLabel)
         } catch {
             return
         }
@@ -273,7 +273,7 @@ struct KeychainPrimaryStorageTests {
 
         // Ensure no disk PEM exists
         try CertificateStore.ensureDirectoryExists()
-        let filePath = overrides.storageDir.appendingPathComponent("rootCA-key.pem")
+        let filePath = overrides.storageDir.appendingPathComponent(TestIdentity.rootCAKeyFilename)
         if FileManager.default.fileExists(atPath: filePath.path) {
             try FileManager.default.removeItem(at: filePath)
         }
@@ -291,8 +291,8 @@ struct KeychainPrimaryStorageTests {
 
         // Probe keychain availability — skip in sandbox/CI where keychain is inaccessible
         do {
-            try KeychainHelper.savePrivateKey(Data([0x01]), label: "com.amunx.Rockxy.test.probe")
-            try KeychainHelper.deletePrivateKey(label: "com.amunx.Rockxy.test.probe")
+            try KeychainHelper.savePrivateKey(Data([0x01]), label: TestIdentity.keychainProbeLabel)
+            try KeychainHelper.deletePrivateKey(label: TestIdentity.keychainProbeLabel)
         } catch {
             return
         }
@@ -307,12 +307,12 @@ struct KeychainPrimaryStorageTests {
         let derBytes = Array(ca.privateKey.x963Representation)
         let pemDocument = PEMDocument(type: "EC PRIVATE KEY", derBytes: derBytes)
         let pemString = pemDocument.pemString
-        let backupPath = overrides.storageDir.appendingPathComponent("rootCA-key.pem.bak")
+        let backupPath = overrides.storageDir.appendingPathComponent(TestIdentity.rootCABackupFilename)
         try Data(pemString.utf8).write(to: backupPath)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: backupPath.path)
 
         // Ensure no active disk PEM exists
-        let filePath = overrides.storageDir.appendingPathComponent("rootCA-key.pem")
+        let filePath = overrides.storageDir.appendingPathComponent(TestIdentity.rootCAKeyFilename)
         if FileManager.default.fileExists(atPath: filePath.path) {
             try FileManager.default.removeItem(at: filePath)
         }

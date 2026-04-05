@@ -14,7 +14,7 @@ import os
 final class MainContentCoordinator {
     // MARK: Internal
 
-    static let logger = Logger(subsystem: "com.amunx.Rockxy", category: "MainContentCoordinator")
+    static let logger = Logger(subsystem: RockxyIdentity.current.logSubsystem, category: "MainContentCoordinator")
 
     // MARK: - Engine References
 

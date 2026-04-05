@@ -56,7 +56,7 @@ struct ContentView: View {
             coordinator.loadInitialRules()
         }
         .onReceive(NotificationCenter.default.publisher(
-            for: NSNotification.Name("com.amunx.Rockxy.openCustomColumnsWindow")
+            for: RockxyIdentity.current.notificationName("openCustomColumnsWindow")
         )) { _ in
             openWindow(id: "customColumns")
         }

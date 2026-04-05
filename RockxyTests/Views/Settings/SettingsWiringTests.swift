@@ -8,7 +8,7 @@ import Testing
 struct SettingsWiringTests {
     @Test("showAlertOnQuit runtime value matches UI default after toggle cycle")
     func showAlertOnQuitRegisteredDefault() {
-        let key = "com.amunx.Rockxy.showAlertOnQuit"
+        let key = TestIdentity.showAlertOnQuitKey
         let original = UserDefaults.standard.object(forKey: key)
         defer {
             if let original {
@@ -29,7 +29,7 @@ struct SettingsWiringTests {
 
     @Test("showAlertOnQuit respects explicit toggle to false")
     func showAlertOnQuitExplicitFalse() {
-        let key = "com.amunx.Rockxy.showAlertOnQuit"
+        let key = TestIdentity.showAlertOnQuitKey
         let original = UserDefaults.standard.object(forKey: key)
 
         UserDefaults.standard.set(false, forKey: key)
@@ -66,7 +66,7 @@ struct SettingsWiringTests {
         let cleanup = installSettingsTestGuard()
         defer { cleanup() }
 
-        let key = "com.amunx.Rockxy.recordOnLaunch"
+        let key = TestIdentity.recordOnLaunchKey
         UserDefaults.standard.set(true, forKey: key)
         UserDefaults.standard.synchronize()
         let settingsTrue = AppSettingsStorage.load()

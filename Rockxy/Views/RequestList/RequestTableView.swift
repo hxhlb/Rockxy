@@ -77,7 +77,7 @@ struct RequestTableView: NSViewRepresentable {
         tableView.headerView?.menu = headerMenu
 
         // Column state persistence: AppKit owns width and order, HeaderColumnStore owns visibility
-        tableView.autosaveName = "com.amunx.Rockxy.requestTable"
+        tableView.autosaveName = RockxyIdentity.current.defaultsKey("requestTable")
         tableView.autosaveTableColumns = true
 
         // Re-apply HeaderColumnStore visibility after AppKit restores autosaved state
@@ -755,7 +755,7 @@ extension RequestTableView {
         @objc
         func handleOpenColumnManager(_ sender: NSMenuItem) {
             NotificationCenter.default.post(
-                name: NSNotification.Name("com.amunx.Rockxy.openCustomColumnsWindow"),
+                name: RockxyIdentity.current.notificationName("openCustomColumnsWindow"),
                 object: nil
             )
         }
@@ -780,7 +780,7 @@ extension RequestTableView {
         // MARK: Private
 
         private static let logger = Logger(
-            subsystem: "com.amunx.Rockxy",
+            subsystem: RockxyIdentity.current.logSubsystem,
             category: "RequestTableView"
         )
 

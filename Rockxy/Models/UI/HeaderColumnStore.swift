@@ -197,12 +197,11 @@ final class HeaderColumnStore {
 
     // MARK: Private
 
-    private static let logger = Logger(subsystem: "com.amunx.Rockxy", category: "HeaderColumnStore")
-    private static let storageKey = "com.amunx.Rockxy.headerColumns"
-    private static let discoveredReqKey = "com.amunx.Rockxy.discoveredReqHeaders"
-    private static let discoveredResKey = "com.amunx.Rockxy.discoveredResHeaders"
-
-    private static let hiddenColumnsKey = "com.amunx.Rockxy.hiddenBuiltInColumns"
+    private static let logger = Logger(subsystem: RockxyIdentity.current.logSubsystem, category: "HeaderColumnStore")
+    private static let storageKey = RockxyIdentity.current.defaultsKey("headerColumns")
+    private static let discoveredReqKey = RockxyIdentity.current.defaultsKey("discoveredReqHeaders")
+    private static let discoveredResKey = RockxyIdentity.current.defaultsKey("discoveredResHeaders")
+    private static let hiddenColumnsKey = RockxyIdentity.current.defaultsKey("hiddenBuiltInColumns")
 
     // Internal dedup sets for O(1) membership checks during incremental discovery
     private var discoveredRequestHeaderSet: Set<String> = []

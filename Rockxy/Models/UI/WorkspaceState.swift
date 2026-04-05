@@ -21,7 +21,7 @@ final class WorkspaceState: Identifiable {
 
     // MARK: Internal
 
-    static let logger = Logger(subsystem: "com.amunx.Rockxy", category: "WorkspaceState")
+    static let logger = Logger(subsystem: RockxyIdentity.current.logSubsystem, category: "WorkspaceState")
 
     let id: UUID
     var title: String

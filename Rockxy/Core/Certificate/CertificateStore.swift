@@ -13,7 +13,7 @@ import X509
 //          Plaintext PEM on disk (even with 0o600) is vulnerable to disk imaging and swap dumps.
 
 /// Handles persistence of the root CA certificate (disk PEM) and private key (Keychain-primary,
-/// disk as recovery fallback). Files are stored under `~/Library/Application Support/Rockxy/Certificates/`.
+/// disk as recovery fallback). Files are stored under the shared Rockxy support directory.
 nonisolated enum CertificateStore {
     // MARK: Internal
 
@@ -202,21 +202,21 @@ nonisolated enum CertificateStore {
     nonisolated(unsafe) private static var _keychainKeyLabelOverride: String?
     nonisolated(unsafe) private static var _storageDirectoryOverride: URL?
 
-    private static let logger = Logger(subsystem: "com.amunx.Rockxy", category: "CertificateStore")
+    private static let logger = Logger(subsystem: RockxyIdentity.current.logSubsystem, category: "CertificateStore")
 
     private static let rootCACertFilename = "rootCA.pem"
     private static let rootCAKeyFilename = "rootCA-key.pem"
 
     private static var keychainKeyLabel: String {
-        keychainKeyLabelOverride ?? "com.amunx.Rockxy.rootCA.key"
+        keychainKeyLabelOverride ?? RockxyIdentity.current.rootCAKeyLabel
     }
 
     private static var storageDirectory: URL {
         if let override = storageDirectoryOverride {
             return override
         }
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        return appSupport.appendingPathComponent("Rockxy/Certificates", isDirectory: true)
+        return RockxyIdentity.current.sharedSupportDirectory()
+            .appendingPathComponent("Certificates", isDirectory: true)
     }
 
     /// Migrates a private key from disk PEM to Keychain. On success, renames the disk

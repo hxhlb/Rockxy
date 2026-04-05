@@ -208,6 +208,48 @@ struct ReadinessCoordinatorTests {
         #expect(coordinator.lastCertSnapshot != nil)
     }
 
+    @Test("activation refresh is skipped while one is already in flight")
+    func activationRefreshIsSkippedWhenInFlight() {
+        let clock = ContinuousClock()
+        #expect(
+            !ReadinessCoordinator.shouldPerformActivationDeepRefresh(
+                lastCompletedAt: nil,
+                now: clock.now,
+                isInFlight: true
+            )
+        )
+    }
+
+    @Test("activation refresh is skipped during cooldown window")
+    func activationRefreshIsSkippedDuringCooldown() {
+        let clock = ContinuousClock()
+        let now = clock.now
+        let recent = now - .seconds(1)
+
+        #expect(
+            !ReadinessCoordinator.shouldPerformActivationDeepRefresh(
+                lastCompletedAt: recent,
+                now: now,
+                isInFlight: false
+            )
+        )
+    }
+
+    @Test("activation refresh runs after cooldown window elapses")
+    func activationRefreshRunsAfterCooldown() {
+        let clock = ContinuousClock()
+        let now = clock.now
+        let earlier = now - .seconds(3)
+
+        #expect(
+            ReadinessCoordinator.shouldPerformActivationDeepRefresh(
+                lastCompletedAt: earlier,
+                now: now,
+                isInFlight: false
+            )
+        )
+    }
+
     // MARK: - State Consistency
 
     @Test("certReadiness is consistent with lastCertSnapshot after refresh")

@@ -78,6 +78,7 @@ final class ReadinessCoordinator {
     // MARK: Internal
 
     static let shared = ReadinessCoordinator()
+    nonisolated static let activationRefreshCooldown: Duration = .seconds(2)
 
     // MARK: - State
 
@@ -185,7 +186,7 @@ final class ReadinessCoordinator {
                 forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
             ) { [weak self] _ in
                 Task { @MainActor in
-                    await self?.deepRefresh()
+                    await self?.refreshOnActivationIfNeeded()
                 }
             }
         )
@@ -214,7 +215,7 @@ final class ReadinessCoordinator {
     /// Use for app-activation refresh and user-triggered actions where external state may have changed.
     func deepRefresh() async {
         await HelperManager.shared.checkStatus()
-        await refreshCertState()
+        await refreshCertState(performValidation: true)
         refreshHelperState()
         refreshProxyMode(isEnabled: SystemProxyManager.shared.isSystemProxyEnabled())
         recomputeWarning()
@@ -261,7 +262,7 @@ final class ReadinessCoordinator {
 
     // MARK: Private
 
-    private static let logger = Logger(subsystem: "com.amunx.Rockxy", category: "ReadinessCoordinator")
+    private static let logger = Logger(subsystem: RockxyIdentity.current.logSubsystem, category: "ReadinessCoordinator")
 
     private var observers: [NSObjectProtocol] = []
     private var tlsRejectionHosts: Set<String> = []
@@ -269,11 +270,14 @@ final class ReadinessCoordinator {
     private var proxyEnableFailed = false
     private var proxyEnableErrorMessage: String?
     private var dismissedWarningMessage: String?
+    private let activationRefreshClock = ContinuousClock()
+    private var isActivationRefreshInFlight = false
+    private var lastActivationRefreshFinishedAt: ContinuousClock.Instant?
 
     // MARK: - State Refresh
 
-    private func refreshCertState() async {
-        let snapshot = await CertificateManager.shared.rootCAStatusSnapshot()
+    private func refreshCertState(performValidation: Bool = false) async {
+        let snapshot = await CertificateManager.shared.rootCAStatusSnapshot(performValidation: performValidation)
         lastCertSnapshot = snapshot
 
         let previousReadiness = certReadiness
@@ -315,6 +319,45 @@ final class ReadinessCoordinator {
         } else {
             proxyMode = .direct
         }
+    }
+
+    private func refreshOnActivationIfNeeded() async {
+        let now = activationRefreshClock.now
+        guard Self.shouldPerformActivationDeepRefresh(
+            lastCompletedAt: lastActivationRefreshFinishedAt,
+            now: now,
+            isInFlight: isActivationRefreshInFlight
+        ) else {
+            if isActivationRefreshInFlight {
+                Self.logger.debug("Skipping activation deep refresh because one is already in flight")
+            } else {
+                Self.logger.debug("Skipping activation deep refresh because the last one completed recently")
+            }
+            return
+        }
+
+        isActivationRefreshInFlight = true
+        defer {
+            isActivationRefreshInFlight = false
+            lastActivationRefreshFinishedAt = activationRefreshClock.now
+        }
+
+        await deepRefresh()
+    }
+
+    nonisolated static func shouldPerformActivationDeepRefresh(
+        lastCompletedAt: ContinuousClock.Instant?,
+        now: ContinuousClock.Instant,
+        isInFlight: Bool,
+        cooldown: Duration = activationRefreshCooldown
+    ) -> Bool {
+        guard !isInFlight else {
+            return false
+        }
+        guard let lastCompletedAt else {
+            return true
+        }
+        return now - lastCompletedAt >= cooldown
     }
 
     // MARK: - Warning Priority

@@ -24,6 +24,12 @@ final class HelperManager {
         case unreachable
     }
 
+    enum InstallDisposition: Equatable {
+        case register
+        case requiresApproval
+        case alreadyEnabled
+    }
+
     static let shared = HelperManager()
 
     private(set) var status: HelperStatus = .notInstalled
@@ -64,7 +70,9 @@ final class HelperManager {
             )
         }
         try performInstall()
-        await performCheckStatus()
+        if status != .requiresApproval {
+            await performCheckStatus()
+        }
     }
 
     /// Uninstall the helper by preparing it via XPC, then unregistering from launchd.
@@ -133,7 +141,9 @@ final class HelperManager {
                 SMAppService.openSystemSettingsLoginItems()
                 return
             }
-            await performCheckStatus()
+            if status != .requiresApproval {
+                await performCheckStatus()
+            }
         } catch {
             lastErrorMessage = error.localizedDescription
             throw error
@@ -177,7 +187,9 @@ final class HelperManager {
         do {
             try await performUninstall()
             try performInstall()
-            await performCheckStatus()
+            if status != .requiresApproval {
+                await performCheckStatus()
+            }
         } catch {
             lastErrorMessage = error.localizedDescription
             throw error
@@ -186,8 +198,14 @@ final class HelperManager {
 
     // MARK: Private
 
-    private static let logger = Logger(subsystem: "com.amunx.Rockxy", category: "HelperManager")
-    private static let plistName: String = Bundle.main.infoDictionary?["RockxyHelperPlistName"] as? String ?? "com.amunx.Rockxy.HelperTool.plist"
+    private static let logger = Logger(
+        subsystem: RockxyIdentity.current.logSubsystem,
+        category: "HelperManager"
+    )
+    private static let plistName = RockxyIdentity.current.helperPlistName
+    nonisolated private static let helperApprovalMessage = String(
+        localized: "Approve the helper tool in System Settings > Login Items to finish installation."
+    )
     private static let helperProbeAttempts = 3
     private static let helperProbeRetryDelay = Duration.milliseconds(750)
 
@@ -204,40 +222,75 @@ final class HelperManager {
         }
     }
 
+    static func installDisposition(for status: SMAppService.Status) -> InstallDisposition {
+        switch status {
+        case .requiresApproval:
+            .requiresApproval
+        case .enabled:
+            .alreadyEnabled
+        case .notRegistered,
+             .notFound:
+            .register
+        @unknown default:
+            .register
+        }
+    }
+
     /// Core install logic without busy/error wrapper.
-    /// Always unregisters first to clear stale BTM cache entries that may
-    /// reference old binary paths from previous builds.
     private func performInstall() throws {
         Self.logger.info("Installing helper tool")
+        let service = SMAppService.daemon(plistName: Self.plistName)
+
+        switch Self.installDisposition(for: service.status) {
+        case .requiresApproval:
+            Self.logger.info("Helper already registered and awaiting user approval")
+            status = .requiresApproval
+            registrationStatus = "Awaiting Approval"
+            lastErrorMessage = Self.helperApprovalMessage
+            SMAppService.openSystemSettingsLoginItems()
+            return
+        case .alreadyEnabled:
+            Self.logger.info("Helper tool is already registered")
+            registrationStatus = "Enabled"
+            lastErrorMessage = nil
+            return
+        case .register:
+            break
+        }
+
         do {
-            let service = SMAppService.daemon(plistName: Self.plistName)
-
-            // Clear any stale BTM registration before fresh install.
-            // This ensures launchd picks up the current binary path.
-            if service.status != .notRegistered {
-                try? service.unregister()
-                Self.logger.info("Cleared stale helper registration before fresh install")
-            }
-
             try service.register()
-
-            let currentStatus = service.status
-            if currentStatus == .requiresApproval {
-                Self.logger.info("Helper requires user approval in System Settings")
-                status = .requiresApproval
-                SMAppService.openSystemSettingsLoginItems()
-            } else if currentStatus == .enabled {
-                Self.logger.info("Helper tool installed and enabled")
-                status = .installedCompatible
-            } else {
-                Self.logger.warning(
-                    "Unexpected SMAppService status after register: \(String(describing: currentStatus))"
-                )
-                status = .notInstalled
-            }
         } catch {
+            if Self.requiresApproval(error: error, serviceStatus: service.status) {
+                Self.logger.info("Helper registration requires user approval in System Settings")
+                status = .requiresApproval
+                registrationStatus = "Awaiting Approval"
+                lastErrorMessage = Self.approvalMessage(error: error, serviceStatus: service.status)
+                SMAppService.openSystemSettingsLoginItems()
+                return
+            }
+
             lastErrorMessage = error.localizedDescription
             throw error
+        }
+
+        let currentStatus = service.status
+        if currentStatus == .requiresApproval {
+            Self.logger.info("Helper requires user approval in System Settings")
+            status = .requiresApproval
+            registrationStatus = "Awaiting Approval"
+            lastErrorMessage = Self.helperApprovalMessage
+            SMAppService.openSystemSettingsLoginItems()
+        } else if currentStatus == .enabled {
+            Self.logger.info("Helper tool installed and enabled")
+            registrationStatus = "Enabled"
+            lastErrorMessage = nil
+            status = .installedCompatible
+        } else {
+            Self.logger.warning(
+                "Unexpected SMAppService status after register: \(String(describing: currentStatus))"
+            )
+            status = .notInstalled
         }
     }
 
@@ -384,5 +437,32 @@ final class HelperManager {
         ) {
             try await HelperConnection.shared.getHelperInfo()
         }
+    }
+
+    nonisolated static func requiresApproval(error: Error, serviceStatus: SMAppService.Status) -> Bool {
+        let nsError = error as NSError
+        return serviceStatus == .requiresApproval
+            || nsError.code == 1
+            || nsError.code == kSMErrorLaunchDeniedByUser
+    }
+
+    nonisolated static func approvalMessage(error: Error, serviceStatus: SMAppService.Status) -> String {
+        let nsError = error as NSError
+
+        if serviceStatus == .requiresApproval || nsError.code == kSMErrorLaunchDeniedByUser {
+            return helperApprovalMessage
+        }
+
+        if nsError.code == 1, serviceStatus == .notRegistered || serviceStatus == .notFound {
+            return String(
+                localized: """
+                macOS blocked helper registration before Rockxy could finish installing it. \
+                Open System Settings > Login Items and approve Rockxy if it appears there. \
+                If Rockxy is not listed, clear stale Rockxy helper registrations and try installing again.
+                """
+            )
+        }
+
+        return helperApprovalMessage
     }
 }

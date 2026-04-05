@@ -2,14 +2,7 @@ import Foundation
 @testable import Rockxy
 
 /// All UserDefaults keys written by AppSettingsStorage.
-let appSettingsKeys = [
-    "com.amunx.Rockxy.proxyPort",
-    "com.amunx.Rockxy.autoStart",
-    "com.amunx.Rockxy.recordOnLaunch",
-    "com.amunx.Rockxy.onlyListenOnLocalhost",
-    "com.amunx.Rockxy.listenIPv6",
-    "com.amunx.Rockxy.autoSelectPort",
-]
+let appSettingsKeys = TestIdentity.appSettingsKeys
 
 /// Shared lock ensuring tests that mutate AppSettings UserDefaults keys do not race.
 let settingsTestLock = NSLock()

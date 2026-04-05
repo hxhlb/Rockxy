@@ -2,7 +2,7 @@ import Foundation
 import os
 
 /// Reads and writes `AppSettings` values to `UserDefaults`.
-/// Each setting uses a namespaced key (`com.amunx.Rockxy.*`) to avoid collisions.
+/// Each setting uses a namespaced key to avoid collisions.
 enum AppSettingsStorage {
     // MARK: Internal
 
@@ -36,12 +36,12 @@ enum AppSettingsStorage {
 
     // MARK: Private
 
-    private static let logger = Logger(subsystem: "com.amunx.Rockxy", category: "AppSettingsStorage")
+    private static let logger = Logger(subsystem: RockxyIdentity.current.logSubsystem, category: "AppSettingsStorage")
 
-    private static let proxyPortKey = "com.amunx.Rockxy.proxyPort"
-    private static let autoStartKey = "com.amunx.Rockxy.autoStart"
-    private static let recordOnLaunchKey = "com.amunx.Rockxy.recordOnLaunch"
-    private static let onlyListenOnLocalhostKey = "com.amunx.Rockxy.onlyListenOnLocalhost"
-    private static let listenIPv6Key = "com.amunx.Rockxy.listenIPv6"
-    private static let autoSelectPortKey = "com.amunx.Rockxy.autoSelectPort"
+    private static let proxyPortKey = RockxyIdentity.current.defaultsKey("proxyPort")
+    private static let autoStartKey = RockxyIdentity.current.defaultsKey("autoStart")
+    private static let recordOnLaunchKey = RockxyIdentity.current.defaultsKey("recordOnLaunch")
+    private static let onlyListenOnLocalhostKey = RockxyIdentity.current.defaultsKey("onlyListenOnLocalhost")
+    private static let listenIPv6Key = RockxyIdentity.current.defaultsKey("listenIPv6")
+    private static let autoSelectPortKey = RockxyIdentity.current.defaultsKey("autoSelectPort")
 }

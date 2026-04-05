@@ -501,10 +501,10 @@ final class SystemProxyManager: @unchecked Sendable {
 
     // MARK: Private
 
-    private static let logger = Logger(subsystem: "com.amunx.Rockxy", category: "SystemProxyManager")
+    private static let logger = Logger(subsystem: RockxyIdentity.current.logSubsystem, category: "SystemProxyManager")
     private static let networkSetupPath = "/usr/sbin/networksetup"
     private static let routePath = "/sbin/route"
-    private static let helperBackupPath = "/Library/Application Support/com.amunx.Rockxy/proxy-backup.plist"
+    private static let helperBackupPath = "/Library/Application Support/\(RockxyIdentity.current.sharedSupportDirectoryName)/proxy-backup.plist"
 
     // MARK: - Direct Backup Persistence
 
@@ -515,7 +515,7 @@ final class SystemProxyManager: @unchecked Sendable {
         ).first ?? FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Application Support", isDirectory: true)
         return appSupport
-            .appendingPathComponent("com.amunx.Rockxy", isDirectory: true)
+            .appendingPathComponent(RockxyIdentity.current.appSupportDirectoryName, isDirectory: true)
             .appendingPathComponent("proxy-backup-direct.plist")
     }
 

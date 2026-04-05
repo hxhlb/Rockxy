@@ -3,7 +3,8 @@ import os
 
 // Boots the privileged helper, restores stale proxy state, and starts the XPC listener.
 
-private let logger = Logger(subsystem: "com.amunx.Rockxy.HelperTool", category: "Main")
+private let identity = RockxyIdentity.current
+private let logger = Logger(subsystem: identity.logSubsystem, category: "Main")
 
 logger.info("RockxyHelperTool starting up")
 
@@ -11,7 +12,7 @@ logger.info("RockxyHelperTool starting up")
 CrashRecovery.restoreIfNeeded()
 
 let delegate = HelperDelegate()
-let machServiceName = Bundle.main.infoDictionary?["RockxyHelperMachServiceName"] as? String ?? "com.amunx.Rockxy.HelperTool"
+let machServiceName = identity.helperMachServiceName
 let listener = NSXPCListener(machServiceName: machServiceName)
 listener.delegate = delegate
 listener.resume()

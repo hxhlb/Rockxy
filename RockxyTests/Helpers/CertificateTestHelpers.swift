@@ -13,7 +13,7 @@ let sharedCertificateTestLock = NSLock()
 func installSharedTestOverrides() -> (label: String, storageDir: URL, cleanup: () -> Void) {
     sharedCertificateTestLock.lock()
 
-    let testLabel = "com.amunx.Rockxy.test.rootCA.key.\(UUID().uuidString)"
+    let testLabel = TestIdentity.keychainProbeLabel + ".\(UUID().uuidString)"
     let testDir = FileManager.default.temporaryDirectory
         .appendingPathComponent("RockxyTests-\(UUID().uuidString)", isDirectory: true)
 
