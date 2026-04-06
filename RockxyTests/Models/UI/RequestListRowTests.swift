@@ -267,7 +267,7 @@ struct RequestListRowTests {
             WebSocketFrameData(
                 direction: i % 2 == 0 ? .sent : .received,
                 opcode: .text,
-                payload: "Frame \(i)".data(using: .utf8)!
+                payload: Data("Frame \(i)".utf8)
             )
         }
         let connection = WebSocketConnection(upgradeRequest: request, frames: frames)
