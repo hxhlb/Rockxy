@@ -119,7 +119,8 @@ actor SessionStore {
             .limit(limit, offset: offset)
 
         var results: [HTTPTransaction] = []
-        for row in try db.prepare(query) {
+        let rows = try db.prepareRowIterator(query)
+        while let row = try rows.failableNext() {
             if let transaction = try deserializeTransaction(from: row) {
                 results.append(transaction)
             }
@@ -135,7 +136,8 @@ actor SessionStore {
             .order(Self.txTimestamp.desc)
 
         var results: [HTTPTransaction] = []
-        for row in try db.prepare(query) {
+        let rows = try db.prepareRowIterator(query)
+        while let row = try rows.failableNext() {
             if let transaction = try deserializeTransaction(from: row) {
                 results.append(transaction)
             }
@@ -178,7 +180,8 @@ actor SessionStore {
         }
 
         var results: [LogEntry] = []
-        for row in try db.prepare(query) {
+        let rows = try db.prepareRowIterator(query)
+        while let row = try rows.failableNext() {
             if let entry = deserializeLogEntry(from: row) {
                 results.append(entry)
             }
@@ -192,10 +195,10 @@ actor SessionStore {
         let cutoff = date.timeIntervalSince1970
         let oldTransactions = Self.transactions.filter(Self.txTimestamp < cutoff)
 
-        let bodyPaths = try db.prepare(
+        let bodyPaths = try db.prepareRowIterator(
             oldTransactions.select(Self.txRequestBodyPath, Self.txResponseBodyPath)
         )
-        for row in bodyPaths {
+        while let row = try bodyPaths.failableNext() {
             deleteBodyFile(at: row[Self.txRequestBodyPath])
             deleteBodyFile(at: row[Self.txResponseBodyPath])
         }
@@ -205,13 +208,17 @@ actor SessionStore {
     }
 
     func deleteTransactions(byIDs ids: Set<UUID>) throws {
+        guard !ids.isEmpty else {
+            return
+        }
+
         let idStrings = ids.map(\.uuidString)
         let matching = Self.transactions.filter(idStrings.contains(Self.txId))
 
-        let bodyPaths = try db.prepare(
+        let bodyPaths = try db.prepareRowIterator(
             matching.select(Self.txRequestBodyPath, Self.txResponseBodyPath)
         )
-        for row in bodyPaths {
+        while let row = try bodyPaths.failableNext() {
             deleteBodyFile(at: row[Self.txRequestBodyPath])
             deleteBodyFile(at: row[Self.txResponseBodyPath])
         }
@@ -456,7 +463,8 @@ actor SessionStore {
             .order(Self.wsTimestamp.asc)
 
         var frames: [WebSocketFrameData] = []
-        for row in try db.prepare(query) {
+        let rows = try db.prepareRowIterator(query)
+        while let row = try rows.failableNext() {
             guard let frameId = UUID(uuidString: row[Self.wsId]),
                   let direction = FrameDirection(rawValue: row[Self.wsDirection]),
                   let opcode = FrameOpcode(rawValue: UInt8(row[Self.wsOpcode])) else
