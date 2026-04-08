@@ -8,7 +8,7 @@ this project, you agree to the following terms:
 You grant the Rockxy maintainers a perpetual, worldwide, non-exclusive,
 royalty-free, irrevocable license to use, reproduce, modify, display, perform,
 sublicense, and distribute your contribution as part of Rockxy — including
-in derivative works and commercial editions — under the GNU Affero General
+in derivative works — under the GNU Affero General
 Public License v3.0 or any compatible open-source or commercial license.
 
 ## 2. Patent License
@@ -35,9 +35,8 @@ You represent that:
 ## 4. Commercial Use
 
 You understand and agree that the Rockxy maintainers may use your contribution
-in both open-source (community) and commercial (pro/enterprise) editions of
-Rockxy. The community edition will always remain available under the GNU
-Affero General Public License v3.0.
+in both open-source and commercial editions of Rockxy. The open-source edition
+will always remain available under the GNU Affero General Public License v3.0.
 
 ## 5. No Obligation
 

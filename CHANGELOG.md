@@ -88,7 +88,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Helper tool `unreachable` status with XPC diagnostic properties (`installedVersion`, `isReachable`, `registrationStatus`, `lastErrorMessage`, `isBusy`) and `retryConnection()`/`reinstall()` actions
 - Advanced Proxy Settings helper section redesigned with 3-zone layout: summary row with status-mapped icons/colors/subtitles, diagnostics grid (bundled vs installed version, registration status, XPC reachability), conditional error detail, and state-dependent action buttons with inline progress indicator
 - Uninstall confirmation alert for helper tool removal in Advanced Proxy Settings
-- Deferred settings controls in General, Tools, and Advanced tabs now visually disabled (`.disabled(true)` + `.opacity(0.6)`) with "(Preview)" labels so users can see planned features without confusing them for functional settings
+- Deferred settings controls in General, Tools, and Advanced tabs cleaned up — non-functional settings removed entirely rather than shown as disabled previews
 - Behavior-oriented settings wiring tests covering `NoCacheHeaderMutator.isEnabled` integration and `ImportSizePolicy` oversized-file rejection, replacing shallow UserDefaults round-trip tests
 - `RuleEngine` converted from struct to shared singleton actor for thread-safe rule evaluation across proxy handlers; async rule evaluation in HTTPS handler via `makeFutureWithTask`
 - `RuleSyncService` centralizes all rule mutations (add, remove, toggle, load) with automatic disk persistence, `BreakpointWindowModel` refresh, and `rulesDidChange` notification broadcasting
@@ -100,14 +100,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Import error dialogs now show specific titles and messages per failure type (size exceeded, invalid format, deserialization error) instead of a generic "Import Failed"
 - README roadmap updated: `.rockxy format` corrected to `.rockxysession format`
-- Removed iOS Simulator Certificate step from Welcome screen — Community edition ships with 4 steps (Install Cert, Trust Cert, Install Helper, Enable Proxy)
-- Hidden Platform settings tab from Community edition; file retained for future use
+- Removed iOS Simulator Certificate step from Welcome screen — Rockxy Community ships with 4 setup steps (Install Cert, Trust Cert, Install Helper, Enable Proxy)
+- Removed Platform settings tab
 - Removed "Restore previous proxy settings on quit" toggle from Advanced Settings — restore-on-quit is now mandatory and always-on via persistent backup
 - `stopProxy()` no longer gates `disableSystemProxy()` behind `isSystemProxyConfigured` flag — the ownership-aware disable handles all cases internally
 - Privacy Settings tab rewritten with honest disclosure: Data Storage locations (SQLite path, large bodies path), Exports & Sharing warning about sensitive content in exports, and Analytics & Telemetry section with "No Data Collected" badge confirming zero telemetry; removed fake analytics/crash report toggles
-- MCP Settings tab replaced with informational Labs Preview surface showing feature status and planned capabilities; removed non-functional toggle, status indicator, config snippet, and privacy controls
-- HTTP/2 row in General Settings replaced fake "Download..." link with clean informational row showing "Planned" badge
-- Certificate inspector placeholder updated to say "planned for a future release" instead of generic "will appear here"
+- Removed MCP Settings tab — MCP will be re-added when the backend implementation is functional
+- Removed HTTP/2 placeholder row from General Settings
+- Removed certificate inspector placeholder view
 
 ### Fixed
 

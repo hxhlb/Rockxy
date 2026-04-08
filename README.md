@@ -164,7 +164,7 @@ The design goal is to keep packet processing off the main thread, keep privilege
 
 ```mermaid
 flowchart TB
-    subgraph UI["UI Process: Rockxy.app"]
+    subgraph UI["UI Process: Rockxy Community.app"]
         Menus["Menus / Commands"]
         Windows["SwiftUI + AppKit Windows"]
         Coordinator["MainContentCoordinator (@MainActor)"]
@@ -312,7 +312,7 @@ Rockxy uses a layered security model because it terminates TLS, stores sensitive
 
 ```mermaid
 flowchart TB
-    App["Rockxy.app"]
+    App["Rockxy Community.app"]
     XPC["NSXPCConnection + code signing requirement"]
     Validator["Helper ConnectionValidator"]
     Helper["RockxyHelperTool (root)"]
@@ -402,7 +402,7 @@ Rockxy/
 │   ├── Network/           # HTTPTransaction, Request/Response, TimingInfo, WebSocket
 │   ├── Log/               # LogEntry, LogLevel, LogSource
 │   ├── Analytics/         # ErrorGroup, PerformanceMetric, SessionTrend
-│   ├── Certificate/       # CertificateInfo, RootCA
+│   ├── Certificate/       # RootCA, RootCAStatusSnapshot
 │   ├── Rules/             # ProxyRule, RuleAction
 │   ├── Settings/          # AppSettings, ProxySettings
 │   ├── UI/                # SidebarItem, FilterState
@@ -609,7 +609,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed setup instructions, code sty
 
 Good first issues are labeled [`good first issue`](https://github.com/LocNguyenHuu/Rockxy/labels/good%20first%20issue) on GitHub.
 
-By opening a pull request, you agree to the [Contributor License Agreement](CLA.md). This grants the maintainers the right to use your contribution in both the open-source community edition and any future editions of Rockxy.
+By opening a pull request, you agree to the [Contributor License Agreement](CLA.md).
 
 ## Support
 
