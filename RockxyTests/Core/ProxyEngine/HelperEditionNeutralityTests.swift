@@ -11,14 +11,16 @@ struct HelperEditionNeutralityTests {
     // MARK: - Tests
 
     @Test("Shared/ does not reference ProductEdition or EditionCapabilities")
-    func sharedIsNeutral() {
-        let violations = Self.swiftFiles(in: "Shared").filter(Self.containsEditionImport)
+    func sharedIsNeutral() throws {
+        let root = try Self.resolveProjectRoot()
+        let violations = Self.swiftFiles(in: "Shared", root: root).filter(Self.containsEditionImport)
         #expect(violations.isEmpty, "Shared/ must not reference edition types: \(violations.map(\.lastPathComponent))")
     }
 
     @Test("RockxyHelperTool/ does not reference ProductEdition or EditionCapabilities")
-    func helperIsNeutral() {
-        let violations = Self.swiftFiles(in: "RockxyHelperTool").filter(Self.containsEditionImport)
+    func helperIsNeutral() throws {
+        let root = try Self.resolveProjectRoot()
+        let violations = Self.swiftFiles(in: "RockxyHelperTool", root: root).filter(Self.containsEditionImport)
         #expect(
             violations.isEmpty,
             "RockxyHelperTool/ must not reference edition types: \(violations.map(\.lastPathComponent))"
@@ -26,25 +28,43 @@ struct HelperEditionNeutralityTests {
     }
 
     @Test("Core/ does not reference ProductEdition or EditionCapabilities")
-    func coreIsNeutral() {
-        let violations = Self.swiftFiles(in: "Rockxy/Core").filter(Self.containsEditionImport)
+    func coreIsNeutral() throws {
+        let root = try Self.resolveProjectRoot()
+        let violations = Self.swiftFiles(in: "Rockxy/Core", root: root).filter(Self.containsEditionImport)
         #expect(violations.isEmpty, "Core/ must not reference edition types: \(violations.map(\.lastPathComponent))")
     }
 
     // MARK: Private
 
-    private static let projectRoot: URL = {
+    private enum ResolveError: Error, CustomStringConvertible {
+        case rootNotFound(filePath: String)
+
+        // MARK: Internal
+
+        var description: String {
+            switch self {
+            case let .rootNotFound(filePath):
+                "Could not locate RockxyTests directory from \(filePath)"
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
+    private static func resolveProjectRoot() throws -> URL {
         var url = URL(fileURLWithPath: #filePath)
         while url.lastPathComponent != "RockxyTests", url.path != "/" {
             url.deleteLastPathComponent()
         }
-        precondition(url.lastPathComponent == "RockxyTests", "Could not locate RockxyTests directory from \(#filePath)")
+        guard url.lastPathComponent == "RockxyTests" else {
+            throw ResolveError.rootNotFound(filePath: #filePath)
+        }
         url.deleteLastPathComponent()
         return url
-    }()
+    }
 
-    private static func swiftFiles(in directory: String) -> [URL] {
-        let dir = projectRoot.appendingPathComponent(directory)
+    private static func swiftFiles(in directory: String, root: URL) -> [URL] {
+        let dir = root.appendingPathComponent(directory)
         guard let enumerator = FileManager.default.enumerator(
             at: dir,
             includingPropertiesForKeys: nil,
