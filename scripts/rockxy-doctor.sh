@@ -14,6 +14,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+if [ ! -f "$SCRIPT_DIR/_release-common.sh" ] || [ ! -f "$SCRIPT_DIR/_release-intelligence.sh" ]; then
+    echo "Error: Release support scripts not found. This script requires local release tooling not included in the public repo."
+    exit 1
+fi
 source "$SCRIPT_DIR/_release-common.sh"
 source "$SCRIPT_DIR/_release-intelligence.sh"
 

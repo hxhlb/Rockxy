@@ -10,6 +10,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
+if [ ! -f "$SCRIPT_DIR/_release-common.sh" ]; then
+    echo "Error: _release-common.sh not found. This script requires local release tooling not included in the public repo."
+    exit 1
+fi
+source "$SCRIPT_DIR/_release-common.sh"
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -18,7 +24,6 @@ NC='\033[0m'
 VERSION=""
 BUILD=""
 WEB_DIR="${ROCKXY_WEB_DIR:-$(cd "$PROJECT_DIR/.." && pwd)/RockxyWeb}"
-REPO_SLUG="LocNguyenHuu/Rockxy"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -40,6 +45,8 @@ if [ -z "$VERSION" ] || [ -z "$BUILD" ]; then
     echo -e "${RED}Error: --version and --build are required.${NC}"
     exit 1
 fi
+
+REPO_SLUG="$(require_rockxy_repo_slug)"
 
 if [ ! -d "$WEB_DIR/.git" ]; then
     echo -e "${RED}Error: RockxyWeb git repo not found at $WEB_DIR${NC}"
@@ -74,7 +81,7 @@ build = sys.argv[3]
 repo_slug = sys.argv[4]
 
 tag = f"v{version}"
-dmg_filename = f"Rockxy-{version}-{build}.dmg"
+dmg_filename = f"Rockxy-Community-{version}-{build}.dmg"
 dmg_url = f"https://github.com/{repo_slug}/releases/download/{tag}/{dmg_filename}"
 sha_url = f"{dmg_url}.sha256"
 tag_url = f"https://github.com/{repo_slug}/releases/tag/{tag}"
@@ -98,16 +105,17 @@ relative_paths = [
 ]
 
 version_pattern = re.compile(r"v\d+\.\d+\.\d+")
+repo_slug_pattern = re.escape(repo_slug)
 dmg_url_pattern = re.compile(
-    r"https://github\.com/LocNguyenHuu/Rockxy/releases/download/v\d+\.\d+\.\d+/Rockxy-\d+\.\d+\.\d+-\d+\.dmg"
+    rf"https://github\.com/{repo_slug_pattern}/releases/download/v\d+\.\d+\.\d+/Rockxy-Community-\d+\.\d+\.\d+-\d+\.dmg"
 )
 sha_url_pattern = re.compile(
-    r"https://github\.com/LocNguyenHuu/Rockxy/releases/download/v\d+\.\d+\.\d+/Rockxy-\d+\.\d+\.\d+-\d+\.dmg\.sha256"
+    rf"https://github\.com/{repo_slug_pattern}/releases/download/v\d+\.\d+\.\d+/Rockxy-Community-\d+\.\d+\.\d+-\d+\.dmg\.sha256"
 )
 tag_url_pattern = re.compile(
-    r"https://github\.com/LocNguyenHuu/Rockxy/releases/tag/v\d+\.\d+\.\d+"
+    rf"https://github\.com/{repo_slug_pattern}/releases/tag/v\d+\.\d+\.\d+"
 )
-dmg_filename_pattern = re.compile(r"Rockxy-\d+\.\d+\.\d+-\d+\.dmg")
+dmg_filename_pattern = re.compile(r"Rockxy-Community-\d+\.\d+\.\d+-\d+\.dmg")
 software_version_pattern = re.compile(r'("softwareVersion":\s*")[^"]+(")')
 
 literal_replacements = {

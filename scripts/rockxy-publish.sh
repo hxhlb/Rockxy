@@ -12,6 +12,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+if [ ! -f "$SCRIPT_DIR/_release-common.sh" ]; then
+    echo "Error: _release-common.sh not found. This script requires local release tooling not included in the public repo."
+    exit 1
+fi
 source "$SCRIPT_DIR/_release-common.sh"
 
 # ---------------------------------------------------------------------------
@@ -49,12 +54,14 @@ done
 # Constants
 # ---------------------------------------------------------------------------
 
-REPO_URL="https://github.com/LocNguyenHuu/Rockxy"
-REPO_SLUG="LocNguyenHuu/Rockxy"
 CHANNEL="community-prod"
 CHANNEL_DIR="$PROJECT_DIR/build/release/$CHANNEL"
 WEB_PROJECT_DIR="${ROCKXY_WEB_DIR:-$(cd "$PROJECT_DIR/.." && pwd)/RockxyWeb}"
 WEB_REQUIRED_BRANCH="develop"
+
+REPO_URL="$(require_rockxy_repo_url)"
+REPO_SLUG="$(require_rockxy_repo_slug)"
+PRODUCT_NAME="$(rockxy_product_name)"
 
 # ---------------------------------------------------------------------------
 # Find and verify prepared artifacts
@@ -281,7 +288,7 @@ echo -e "${YELLOW}==> Creating GitHub Release...${NC}"
 RELEASE_URL=""
 if ! RELEASE_URL=$(gh release create "$TAG" \
     --repo "$REPO_SLUG" \
-    --title "Rockxy $APP_VERSION (build $APP_BUILD)" \
+    --title "$PRODUCT_NAME $APP_VERSION (build $APP_BUILD)" \
     $NOTES_FLAG \
     "$DMG_PATH" \
     "$SHA_PATH" \
