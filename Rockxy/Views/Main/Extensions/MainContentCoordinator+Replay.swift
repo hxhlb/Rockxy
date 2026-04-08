@@ -17,7 +17,7 @@ extension MainContentCoordinator {
     }
 
     func performReplay(for transaction: HTTPTransaction) {
-        Task {
+        Task { @MainActor in
             do {
                 let response = try await RequestReplay.replay(transaction.request)
                 Self.logger.info("Replay completed: \(response.statusCode)")

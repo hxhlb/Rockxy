@@ -290,8 +290,9 @@ struct WorkspaceStoreTests {
 
     // MARK: - Edition Capability
 
-    @Test("maxWorkspaces matches edition capabilities")
-    func maxWorkspacesMatchesEdition() {
-        #expect(WorkspaceStore.maxWorkspaces == EditionCapabilities.current.maxWorkspaceTabs)
+    @Test("community edition limits workspace tabs to 8")
+    func communityWorkspaceTabLimit() {
+        #expect(ProductEdition.current == .community)
+        #expect(WorkspaceStore.maxWorkspaces == 8)
     }
 }

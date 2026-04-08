@@ -523,7 +523,7 @@ final class SystemProxyManager: @unchecked Sendable {
     /// left behind by a crash or force-quit.
     func recoverStaleProxyIfNeeded() async {
         if let backup = loadDirectBackup() {
-            if Date().timeIntervalSince(backup.timestamp) > 86400 {
+            if Date().timeIntervalSince(backup.timestamp) > 86_400 {
                 Self.logger.info("Stale direct backup >24h old, clearing without restore")
                 clearDirectBackup()
             } else {

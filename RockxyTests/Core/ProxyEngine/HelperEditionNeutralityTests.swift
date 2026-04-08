@@ -34,11 +34,11 @@ struct HelperEditionNeutralityTests {
     // MARK: Private
 
     private static let projectRoot: URL = {
-        // RockxyTests is at <root>/RockxyTests; walk up to root
         var url = URL(fileURLWithPath: #filePath)
-        while url.lastPathComponent != "RockxyTests" {
+        while url.lastPathComponent != "RockxyTests", url.path != "/" {
             url.deleteLastPathComponent()
         }
+        precondition(url.lastPathComponent == "RockxyTests", "Could not locate RockxyTests directory from \(#filePath)")
         url.deleteLastPathComponent()
         return url
     }()

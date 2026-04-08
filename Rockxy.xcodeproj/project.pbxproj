@@ -622,6 +622,7 @@
 		};
 		DCA99FE22F61ADCC005B1552 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = DCA9D0202F700100005B1552 /* Configuration/Developer.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -636,12 +637,13 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Rockxy Community.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Rockxy";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/$(ROCKXY_PRODUCT_NAME).app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/$(ROCKXY_EXECUTABLE_NAME)";
 			};
 			name = Debug;
 		};
 		DCA99FE32F61ADCC005B1552 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = DCA9D0202F700100005B1552 /* Configuration/Developer.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -656,7 +658,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Rockxy Community.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Rockxy";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/$(ROCKXY_PRODUCT_NAME).app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/$(ROCKXY_EXECUTABLE_NAME)";
 			};
 			name = Release;
 		};
