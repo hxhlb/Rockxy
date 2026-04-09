@@ -136,18 +136,21 @@ final class ScriptingViewModel {
         }
     }
 
-    func selectPlugin(id: String) {
+    @discardableResult
+    func selectPlugin(id: String) -> Bool {
         selectedPluginID = id
         guard let plugin = plugins.first(where: { $0.id == id }) else {
-            return
+            return false
         }
         let scriptURL = plugin.bundlePath.appendingPathComponent(plugin.manifest.entryPoints["script"] ?? "index.js")
         do {
             scriptContent = try String(contentsOf: scriptURL, encoding: .utf8)
+            return true
         } catch {
             scriptContent = ""
             setRunStatus(.failure, message: "Load failed")
             appendConsole("Load failed: \(error.localizedDescription)", level: .error)
+            return false
         }
     }
 
@@ -242,19 +245,21 @@ final class ScriptingViewModel {
             let template = foundTemplate ?? blankScript
             try template.write(to: pluginsDir.appendingPathComponent("index.js"), atomically: true, encoding: .utf8)
             await loadPlugins()
-            selectPlugin(id: id)
-            let statusMessage: String
-            if let name = templateName {
-                if foundTemplate != nil {
-                    statusMessage = "Created from \(name)"
+            let loadedOK = selectPlugin(id: id)
+            if loadedOK {
+                let statusMessage: String
+                if let name = templateName {
+                    if foundTemplate != nil {
+                        statusMessage = "Created from \(name)"
+                    } else {
+                        statusMessage = "Template '\(name)' not found — created blank script"
+                        appendConsole("Template '\(name)' not found, falling back to blank script", level: .warning)
+                    }
                 } else {
-                    statusMessage = "Template '\(name)' not found — created blank script"
-                    appendConsole("Template '\(name)' not found, falling back to blank script", level: .warning)
+                    statusMessage = "Created blank script"
                 }
-            } else {
-                statusMessage = "Created blank script"
+                setRunStatus(.success, message: statusMessage)
             }
-            setRunStatus(.success, message: statusMessage)
             appendConsole("Created new script: \(name)", level: .info)
         } catch {
             setRunStatus(.failure, message: "Create failed")
