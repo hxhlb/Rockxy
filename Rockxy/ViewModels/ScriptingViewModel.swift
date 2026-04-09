@@ -227,15 +227,30 @@ final class ScriptingViewModel {
             )","version":"1.0.0","author":{"name":"User"},"description":"","types":["script"],"entryPoints":{"script":"index.js"},"capabilities":["modifyRequest"]}
             """
             try manifest.write(to: pluginsDir.appendingPathComponent("plugin.json"), atomically: true, encoding: .utf8)
-            let blankScript = "function onRequest(request) {\n  return request;\n}\n\nfunction onResponse(response) {\n  return response;\n}\n"
+            let blankScript = """
+            function onRequest(request) {
+              return request;
+            }
+
+            function onResponse(response) {
+              return response;
+            }
+
+            module.exports = { onRequest, onResponse };
+            """
             let foundTemplate = templateName.flatMap { Self.scriptTemplates[$0] }
             let template = foundTemplate ?? blankScript
             try template.write(to: pluginsDir.appendingPathComponent("index.js"), atomically: true, encoding: .utf8)
             await loadPlugins()
             selectPlugin(id: id)
             let statusMessage: String
-            if let name = templateName, foundTemplate != nil {
-                statusMessage = "Created from \(name)"
+            if let name = templateName {
+                if foundTemplate != nil {
+                    statusMessage = "Created from \(name)"
+                } else {
+                    statusMessage = "Template '\(name)' not found — created blank script"
+                    appendConsole("Template '\(name)' not found, falling back to blank script", level: .warning)
+                }
             } else {
                 statusMessage = "Created blank script"
             }

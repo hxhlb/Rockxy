@@ -468,12 +468,20 @@ private struct AddBlockRuleSheet: View {
                     switch context.origin {
                     case .selectedTransaction:
                         if let method = context.sourceMethod {
-                            Text("Created from: \(method) \(context.sourceHost)\(context.sourcePath ?? "")")
+                            Text(
+                                String(
+                                    localized: "Created from: \(method) \(context.sourceHost)\(context.sourcePath ?? "")"
+                                )
+                            )
                         } else {
-                            Text("Created from: \(context.sourceHost)\(context.sourcePath ?? "")")
+                            Text(
+                                String(
+                                    localized: "Created from: \(context.sourceHost)\(context.sourcePath ?? "")"
+                                )
+                            )
                         }
                     case .domainQuickCreate:
-                        Text("Created from domain: \(context.sourceHost)")
+                        Text(String(localized: "Created from domain: \(context.sourceHost)"))
                     }
                 }
                 .font(.caption)
@@ -519,13 +527,15 @@ private struct AddBlockRuleSheet: View {
         }
     }
 
-    private var conditionalFields: some View {
-        HStack(spacing: 8) {
-            Spacer()
-                .frame(width: Self.labelWidth + Theme.Layout.sectionSpacing)
-            Toggle(String(localized: "Include all subpaths of this URL"), isOn: $includeSubpaths)
-                .toggleStyle(.checkbox)
-                .font(.system(size: 13))
+    @ViewBuilder private var conditionalFields: some View {
+        if matchType == .wildcard {
+            HStack(spacing: 8) {
+                Spacer()
+                    .frame(width: Self.labelWidth + Theme.Layout.sectionSpacing)
+                Toggle(String(localized: "Include all subpaths of this URL"), isOn: $includeSubpaths)
+                    .toggleStyle(.checkbox)
+                    .font(.system(size: 13))
+            }
         }
     }
 
