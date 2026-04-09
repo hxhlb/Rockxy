@@ -43,41 +43,13 @@ struct HTTPMethodFilterTests {
 struct BlockMatchTypeTests {
     @Test("All cases are defined")
     func allCases() {
-        #expect(BlockMatchType.allCases.count == 3)
-    }
-
-    @Test("Wildcard shows subpaths toggle")
-    func wildcardShowsSubpaths() {
-        #expect(BlockMatchType.wildcard.showsSubpathsToggle == true)
-        #expect(BlockMatchType.wildcard.showsGraphQLField == false)
-    }
-
-    @Test("Regex shows subpaths toggle")
-    func regexShowsSubpaths() {
-        #expect(BlockMatchType.regex.showsSubpathsToggle == true)
-        #expect(BlockMatchType.regex.showsGraphQLField == false)
-    }
-
-    @Test("GraphQL QueryName shows GraphQL field")
-    func graphQLShowsField() {
-        #expect(BlockMatchType.graphQLQueryName.showsSubpathsToggle == false)
-        #expect(BlockMatchType.graphQLQueryName.showsGraphQLField == true)
+        #expect(BlockMatchType.allCases.count == 2)
     }
 
     @Test("Display names match design spec")
     func displayNames() {
         #expect(BlockMatchType.wildcard.rawValue == "Use Wildcard")
         #expect(BlockMatchType.regex.rawValue == "Use Regex")
-        #expect(BlockMatchType.graphQLQueryName.rawValue == "GraphQL QueryName")
-    }
-
-    @Test("Subpath and GraphQL toggles are mutually exclusive across all cases")
-    func mutuallyExclusiveFlags() {
-        for matchType in BlockMatchType.allCases {
-            let subpath = matchType.showsSubpathsToggle
-            let graphql = matchType.showsGraphQLField
-            #expect(!(subpath && graphql), "Both flags should never be true simultaneously for \(matchType)")
-        }
     }
 }
 
@@ -86,42 +58,25 @@ struct BlockMatchTypeTests {
 struct BlockActionTypeTests {
     @Test("All cases are defined")
     func allCases() {
-        #expect(BlockActionType.allCases.count == 3)
+        #expect(BlockActionType.allCases.count == 2)
     }
 
-    @Test("blockAndHide returns 403 and hides")
-    func blockAndHideProperties() {
-        let action = BlockActionType.blockAndHide
+    @Test("returnForbidden returns 403")
+    func returnForbiddenProperties() {
+        let action = BlockActionType.returnForbidden
         #expect(action.statusCode == 403)
-        #expect(action.hidesFromList == true)
     }
 
-    @Test("blockAndDisplay returns 403 and shows")
-    func blockAndDisplayProperties() {
-        let action = BlockActionType.blockAndDisplay
-        #expect(action.statusCode == 403)
-        #expect(action.hidesFromList == false)
-    }
-
-    @Test("hideOnly returns 0 status and hides")
-    func hideOnlyProperties() {
-        let action = BlockActionType.hideOnly
+    @Test("dropConnection returns 0 status")
+    func dropConnectionProperties() {
+        let action = BlockActionType.dropConnection
         #expect(action.statusCode == 0)
-        #expect(action.hidesFromList == true)
     }
 
     @Test("Display names match design spec")
     func displayNames() {
-        #expect(BlockActionType.blockAndHide.rawValue == "Block & Hide Request")
-        #expect(BlockActionType.blockAndDisplay.rawValue == "Block & Display Requests")
-        #expect(BlockActionType.hideOnly.rawValue == "Hide, but not Block")
-    }
-
-    @Test("Only blockAndDisplay does not hide from list")
-    func onlyBlockAndDisplayIsVisible() {
-        let visibleActions = BlockActionType.allCases.filter { !$0.hidesFromList }
-        #expect(visibleActions.count == 1)
-        #expect(visibleActions.first == .blockAndDisplay)
+        #expect(BlockActionType.returnForbidden.rawValue == "Return 403 Forbidden")
+        #expect(BlockActionType.dropConnection.rawValue == "Drop Connection")
     }
 
     @Test("All blocking actions have non-negative status codes")
@@ -145,10 +100,8 @@ struct BlockListViewModelTests {
             urlPattern: "*chatgpt.com/*",
             httpMethod: .any,
             matchType: .wildcard,
-            blockAction: .blockAndHide,
-            includeSubpaths: true,
-            graphQLQueryName: nil,
-            blockAppBundleID: nil
+            blockAction: .returnForbidden,
+            includeSubpaths: true
         )
 
         #expect(vm.blockRules.count == 1)
@@ -169,10 +122,8 @@ struct BlockListViewModelTests {
             urlPattern: rawRegex,
             httpMethod: .get,
             matchType: .regex,
-            blockAction: .blockAndDisplay,
-            includeSubpaths: false,
-            graphQLQueryName: nil,
-            blockAppBundleID: nil
+            blockAction: .returnForbidden,
+            includeSubpaths: false
         )
 
         #expect(vm.blockRules.count == 1)
@@ -180,28 +131,6 @@ struct BlockListViewModelTests {
         #expect(rule?.name == "Block Tracker")
         #expect(rule?.matchCondition.urlPattern == rawRegex)
         #expect(rule?.matchCondition.method == "GET")
-    }
-
-    @Test("addBlockRule with GraphQL QueryName match type")
-    @MainActor
-    func addGraphQLRule() {
-        let vm = BlockListViewModel()
-
-        vm.addBlockRule(
-            ruleName: "Block createUser",
-            urlPattern: "https://api.example.com/graphql",
-            httpMethod: .post,
-            matchType: .graphQLQueryName,
-            blockAction: .blockAndHide,
-            includeSubpaths: false,
-            graphQLQueryName: "createUser",
-            blockAppBundleID: nil
-        )
-
-        #expect(vm.blockRules.count == 1)
-        let rule = vm.blockRules.first
-        #expect(rule?.name == "Block createUser")
-        #expect(rule?.matchCondition.method == "POST")
     }
 
     @Test("addBlockRule with empty name uses URL pattern as name")
@@ -214,10 +143,8 @@ struct BlockListViewModelTests {
             urlPattern: "*.ads.example.com/*",
             httpMethod: .any,
             matchType: .wildcard,
-            blockAction: .blockAndHide,
-            includeSubpaths: true,
-            graphQLQueryName: nil,
-            blockAppBundleID: nil
+            blockAction: .returnForbidden,
+            includeSubpaths: true
         )
 
         #expect(vm.blockRules.first?.name == "*.ads.example.com/*")
@@ -233,10 +160,8 @@ struct BlockListViewModelTests {
             urlPattern: "*.example.com/*",
             httpMethod: .post,
             matchType: .wildcard,
-            blockAction: .blockAndHide,
-            includeSubpaths: true,
-            graphQLQueryName: nil,
-            blockAppBundleID: nil
+            blockAction: .returnForbidden,
+            includeSubpaths: true
         )
 
         #expect(vm.blockRules.first?.matchCondition.method == "POST")
@@ -252,29 +177,25 @@ struct BlockListViewModelTests {
             urlPattern: "*.example.com/*",
             httpMethod: .any,
             matchType: .wildcard,
-            blockAction: .blockAndHide,
-            includeSubpaths: true,
-            graphQLQueryName: nil,
-            blockAppBundleID: nil
+            blockAction: .returnForbidden,
+            includeSubpaths: true
         )
 
         #expect(vm.blockRules.first?.matchCondition.method == nil)
     }
 
-    @Test("addBlockRule with hideOnly action uses status code 0")
+    @Test("addBlockRule with dropConnection action uses status code 0")
     @MainActor
-    func hideOnlyUsesZeroStatusCode() {
+    func dropConnectionUsesZeroStatusCode() {
         let vm = BlockListViewModel()
 
         vm.addBlockRule(
-            ruleName: "Hide Only",
+            ruleName: "Drop Connection",
             urlPattern: "*.example.com/*",
             httpMethod: .any,
             matchType: .wildcard,
-            blockAction: .hideOnly,
-            includeSubpaths: true,
-            graphQLQueryName: nil,
-            blockAppBundleID: nil
+            blockAction: .dropConnection,
+            includeSubpaths: true
         )
 
         if case let .block(statusCode) = vm.blockRules.first?.action {
@@ -284,9 +205,9 @@ struct BlockListViewModelTests {
         }
     }
 
-    @Test("addBlockRule with blockAndHide uses status code 403")
+    @Test("addBlockRule with returnForbidden uses status code 403")
     @MainActor
-    func blockAndHideUses403() {
+    func returnForbiddenUses403() {
         let vm = BlockListViewModel()
 
         vm.addBlockRule(
@@ -294,33 +215,8 @@ struct BlockListViewModelTests {
             urlPattern: "*.example.com/*",
             httpMethod: .any,
             matchType: .wildcard,
-            blockAction: .blockAndHide,
-            includeSubpaths: true,
-            graphQLQueryName: nil,
-            blockAppBundleID: nil
-        )
-
-        if case let .block(statusCode) = vm.blockRules.first?.action {
-            #expect(statusCode == 403)
-        } else {
-            Issue.record("Expected .block action")
-        }
-    }
-
-    @Test("addBlockRule with blockAndDisplay uses status code 403")
-    @MainActor
-    func blockAndDisplayUses403() {
-        let vm = BlockListViewModel()
-
-        vm.addBlockRule(
-            ruleName: "Block visible",
-            urlPattern: "*.example.com/*",
-            httpMethod: .any,
-            matchType: .wildcard,
-            blockAction: .blockAndDisplay,
-            includeSubpaths: true,
-            graphQLQueryName: nil,
-            blockAppBundleID: nil
+            blockAction: .returnForbidden,
+            includeSubpaths: true
         )
 
         if case let .block(statusCode) = vm.blockRules.first?.action {
@@ -340,19 +236,17 @@ struct BlockListViewModelTests {
             urlPattern: "https://example.com",
             httpMethod: .any,
             matchType: .wildcard,
-            blockAction: .blockAndHide,
-            includeSubpaths: true,
-            graphQLQueryName: nil,
-            blockAppBundleID: nil
+            blockAction: .returnForbidden,
+            includeSubpaths: true
         )
 
         let pattern = vm.blockRules.first?.matchCondition.urlPattern ?? ""
         #expect(pattern.hasSuffix(".*"))
     }
 
-    @Test("Wildcard without includeSubpaths does not append suffix")
+    @Test("Wildcard without includeSubpaths anchors with end-of-path assertion")
     @MainActor
-    func noSubpathsNoSuffix() {
+    func noSubpathsAnchorsEnd() {
         let vm = BlockListViewModel()
 
         vm.addBlockRule(
@@ -360,14 +254,13 @@ struct BlockListViewModelTests {
             urlPattern: "https://example.com",
             httpMethod: .any,
             matchType: .wildcard,
-            blockAction: .blockAndHide,
-            includeSubpaths: false,
-            graphQLQueryName: nil,
-            blockAppBundleID: nil
+            blockAction: .returnForbidden,
+            includeSubpaths: false
         )
 
         let pattern = vm.blockRules.first?.matchCondition.urlPattern ?? ""
         #expect(!pattern.hasSuffix(".*"))
+        #expect(pattern.hasSuffix("($|[?#])"))
     }
 
     @Test("blockRules filters only block-type rules")
@@ -379,10 +272,8 @@ struct BlockListViewModelTests {
             urlPattern: "*.test.com/*",
             httpMethod: .any,
             matchType: .wildcard,
-            blockAction: .blockAndHide,
-            includeSubpaths: true,
-            graphQLQueryName: nil,
-            blockAppBundleID: nil
+            blockAction: .returnForbidden,
+            includeSubpaths: true
         )
 
         #expect(vm.blockRules.count == 1)
@@ -398,20 +289,16 @@ struct BlockListViewModelTests {
             urlPattern: "*.a.com/*",
             httpMethod: .any,
             matchType: .wildcard,
-            blockAction: .blockAndHide,
-            includeSubpaths: true,
-            graphQLQueryName: nil,
-            blockAppBundleID: nil
+            blockAction: .returnForbidden,
+            includeSubpaths: true
         )
         vm.addBlockRule(
             ruleName: "Rule B",
             urlPattern: "*.b.com/*",
             httpMethod: .any,
             matchType: .wildcard,
-            blockAction: .blockAndHide,
-            includeSubpaths: true,
-            graphQLQueryName: nil,
-            blockAppBundleID: nil
+            blockAction: .returnForbidden,
+            includeSubpaths: true
         )
 
         #expect(vm.blockRules.count == 2)
@@ -431,10 +318,8 @@ struct BlockListViewModelTests {
             urlPattern: "*.toggle.com/*",
             httpMethod: .any,
             matchType: .wildcard,
-            blockAction: .blockAndHide,
-            includeSubpaths: true,
-            graphQLQueryName: nil,
-            blockAppBundleID: nil
+            blockAction: .returnForbidden,
+            includeSubpaths: true
         )
 
         let ruleID = try #require(vm.blockRules.first?.id)
@@ -456,10 +341,8 @@ struct BlockListViewModelTests {
                 urlPattern: "*.example.com/*",
                 httpMethod: method,
                 matchType: .wildcard,
-                blockAction: .blockAndHide,
-                includeSubpaths: true,
-                graphQLQueryName: nil,
-                blockAppBundleID: nil
+                blockAction: .returnForbidden,
+                includeSubpaths: true
             )
         }
 
@@ -478,9 +361,7 @@ struct BlockListViewModelTests {
                 httpMethod: .any,
                 matchType: .wildcard,
                 blockAction: action,
-                includeSubpaths: true,
-                graphQLQueryName: nil,
-                blockAppBundleID: nil
+                includeSubpaths: true
             )
         }
 
@@ -498,10 +379,8 @@ struct BlockListViewModelTests {
                 urlPattern: "*.example.com/*",
                 httpMethod: .any,
                 matchType: matchType,
-                blockAction: .blockAndHide,
-                includeSubpaths: true,
-                graphQLQueryName: matchType == .graphQLQueryName ? "testQuery" : nil,
-                blockAppBundleID: nil
+                blockAction: .returnForbidden,
+                includeSubpaths: true
             )
         }
 
@@ -518,15 +397,15 @@ struct BlockListViewModelTests {
             urlPattern: "https://example.com/path?q=1",
             httpMethod: .any,
             matchType: .wildcard,
-            blockAction: .blockAndHide,
-            includeSubpaths: false,
-            graphQLQueryName: nil,
-            blockAppBundleID: nil
+            blockAction: .returnForbidden,
+            includeSubpaths: false
         )
 
         let pattern = vm.blockRules.first?.matchCondition.urlPattern ?? ""
-        // The ? should be escaped by NSRegularExpression then converted to .
-        #expect(!pattern.contains("?"))
+        // The ? in ?q=1 should be escaped by NSRegularExpression then converted to .
+        // The pattern should contain ".q" (the escaped ?) but not the literal "?q"
+        #expect(!pattern.contains("?q"))
+        #expect(pattern.contains(".q"))
     }
 
     @Test("Wildcard converts * to .* and ? to .")
@@ -539,10 +418,8 @@ struct BlockListViewModelTests {
             urlPattern: "*.example.com/?page",
             httpMethod: .any,
             matchType: .wildcard,
-            blockAction: .blockAndHide,
-            includeSubpaths: false,
-            graphQLQueryName: nil,
-            blockAppBundleID: nil
+            blockAction: .returnForbidden,
+            includeSubpaths: false
         )
 
         let pattern = vm.blockRules.first?.matchCondition.urlPattern ?? ""
