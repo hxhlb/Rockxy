@@ -484,6 +484,19 @@ final class HTTPSProxyRelayHandler: ChannelInboundHandler, @unchecked Sendable {
         guard context.channel.isActive else {
             return
         }
+
+        if status == 0 {
+            context.close(promise: nil)
+            let transaction = HTTPTransaction(
+                request: requestData,
+                response: nil,
+                state: .blocked
+            )
+            transaction.sourcePort = clientSourcePort
+            callback(transaction)
+            return
+        }
+
         let httpStatus = HTTPResponseStatus(statusCode: status)
         var responseHead = HTTPResponseHead(version: .http1_1, status: httpStatus)
         responseHead.headers.add(name: "Connection", value: "close")

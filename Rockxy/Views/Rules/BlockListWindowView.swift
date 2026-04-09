@@ -408,6 +408,7 @@ private struct AddBlockRuleSheet: View {
                     }
                     .pickerStyle(.menu)
                     .labelsHidden()
+                    .accessibilityLabel(String(localized: "Action"))
                     .frame(width: 220)
                 }
             }
@@ -497,6 +498,7 @@ private struct AddBlockRuleSheet: View {
             }
             .pickerStyle(.menu)
             .labelsHidden()
+            .accessibilityLabel(String(localized: "HTTP Method"))
             .frame(width: 90)
 
             Picker("", selection: $matchType) {
@@ -506,6 +508,7 @@ private struct AddBlockRuleSheet: View {
             }
             .pickerStyle(.menu)
             .labelsHidden()
+            .accessibilityLabel(String(localized: "Match Type"))
             .frame(width: 175)
 
             if matchType == .wildcard {

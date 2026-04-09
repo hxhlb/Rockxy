@@ -8,12 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
-- Redesign Block List rule editor sheet with Proxyman-style layout: dropdown menus for HTTP method (ANY/GET/POST/PUT/DELETE/PATCH/HEAD/OPTIONS/TRACE), match type (Use Wildcard/Use Regex/GraphQL QueryName), and block action (Block & Hide Request/Block & Display Requests/Hide but not Block)
-- Add conditional fields: "Include all subpaths" checkbox for Wildcard/Regex, GraphQL Query Name text field for GraphQL QueryName match type
-- Add "Block App" selector with installed apps picker popover
-- Add editable rule name field
-- Enlarge Block List window from 600×480 to 800×560
-- Enlarge Add Block Rule sheet from 420×300 to 560×420
+- Redesign Block List rule editor with Proxyman-style dropdown menus for HTTP method, match type (Wildcard/Regex), and block action (Return 403 Forbidden/Drop Connection)
+- Add editable rule name field and conditional "Include all subpaths" checkbox
+- Add quick-create prefill from request context menu and sidebar domain menu with provenance banner
+- Enlarge Block List window (860×620) and editor sheet (600×auto-height)
 
 ## [0.3.0] - 2026-04-08
 

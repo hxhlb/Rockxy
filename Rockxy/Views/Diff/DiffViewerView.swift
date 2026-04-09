@@ -65,7 +65,8 @@ struct DiffViewerView: View {
 
     private var partialState: some View {
         VStack(spacing: 6) {
-            Image(systemName: viewModel.workspaceState == .missingRight ? "arrow.right" : "arrow.left.arrow.right")
+            Image(systemName: viewModel.workspaceState == .missingLeft ? "arrow.left" : viewModel
+                .workspaceState == .missingRight ? "arrow.right" : "arrow.left.arrow.right")
                 .font(.system(size: 24))
                 .foregroundStyle(.tertiary)
             if viewModel.workspaceState == .missingRight {

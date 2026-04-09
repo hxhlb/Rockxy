@@ -26,7 +26,7 @@ enum BreakpointRuleBuilder {
         return ProxyRule(
             name: "Breakpoint — \(domain)",
             matchCondition: RuleMatchCondition(
-                urlPattern: ".*\(escapedDomain)/.*",
+                urlPattern: ".*\(escapedDomain)(?:[/?#].*)?$",
                 method: nil
             ),
             action: .breakpoint(phase: .both)

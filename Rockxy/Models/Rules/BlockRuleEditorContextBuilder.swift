@@ -18,7 +18,7 @@ enum BlockRuleEditorContextBuilder {
             defaultPattern: pattern,
             defaultMatchType: .wildcard,
             defaultAction: .returnForbidden,
-            httpMethod: HTTPMethodFilter(rawValue: transaction.request.method) ?? .any,
+            httpMethod: HTTPMethodFilter(rawValue: transaction.request.method.uppercased()) ?? .any,
             includeSubpaths: true
         )
     }

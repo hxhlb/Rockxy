@@ -51,12 +51,27 @@ struct BreakpointQuickCreateTests {
 
         #expect(rule.name == "Breakpoint — cdn.example.com")
         #expect(rule.matchCondition.method == nil)
-        #expect(rule.matchCondition.urlPattern == #".*cdn\.example\.com/.*"#)
+        #expect(rule.matchCondition.urlPattern == #".*cdn\.example\.com(?:[/?#].*)?$"#)
 
         if case let .breakpoint(phase) = rule.action {
             #expect(phase == .both)
         } else {
             Issue.record("Expected breakpoint action")
         }
+    }
+
+    @Test("Domain breakpoint pattern matches bare host and paths but not prefix collisions")
+    func domainBuilderMatchesBareHost() throws {
+        let rule = BreakpointRuleBuilder.fromDomain("cdn.example.com")
+        let pattern = try #require(rule.matchCondition.urlPattern)
+        let regex = try NSRegularExpression(pattern: pattern)
+
+        let bareHost = "https://cdn.example.com"
+        let withPath = "https://cdn.example.com/assets/logo.png"
+        let evilHost = "https://cdn.example.com.evil.com/"
+
+        #expect(regex.firstMatch(in: bareHost, range: NSRange(bareHost.startIndex..., in: bareHost)) != nil)
+        #expect(regex.firstMatch(in: withPath, range: NSRange(withPath.startIndex..., in: withPath)) != nil)
+        #expect(regex.firstMatch(in: evilHost, range: NSRange(evilHost.startIndex..., in: evilHost)) == nil)
     }
 }

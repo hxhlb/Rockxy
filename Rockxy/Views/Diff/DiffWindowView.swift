@@ -21,7 +21,7 @@ struct DiffWindowView: View {
             Divider()
             DiffControlBar(viewModel: viewModel)
         }
-        .frame(minWidth: 900, idealWidth: 1_240, minHeight: 600, idealHeight: 820)
+        .frame(minWidth: 900, idealWidth: 1240, minHeight: 600, idealHeight: 820)
         .toolbar {
             ToolbarItemGroup {
                 Button {
@@ -53,6 +53,7 @@ struct DiffWindowView: View {
         HStack(spacing: 6) {
             Image(systemName: "rectangle.split.2x1")
                 .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
             Text(
                 String(
                     localized: "Basic Compare helps you quickly inspect Request, Response, or Timing differences between two local transactions."
