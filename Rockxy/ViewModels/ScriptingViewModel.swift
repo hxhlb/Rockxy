@@ -316,6 +316,8 @@ final class ScriptingViewModel {
 
     func applyTemplate(_ name: String) {
         guard let source = Self.scriptTemplates[name] else {
+            setRunStatus(.failure, message: "Template not found: \(name)")
+            appendConsole("Template '\(name)' not found", level: .warning)
             return
         }
         scriptContent = source
