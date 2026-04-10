@@ -46,21 +46,21 @@
 
 ### Đã Thêm
 
-- Thiết kế lại trình chỉnh sửa quy tắc với menu thả xuống và cửa sổ mở rộng
+- Redesign rule editor with Proxyman-style dropdowns and enlarged window
 
 ### Đã Sửa
 
-- Ngăn trạng thái thất bại tải selectPlugin bị ghi đè bởi trạng thái thành công
-- Hiển thị phản hồi giao diện khi applyTemplate nhận tên không xác định
-- Cải thiện fallback mẫu scripting, phạm vi toggle subpaths và bản địa hóa provenance
-- Sửa các phát hiện đánh giá mã cho PR danh sách chặn
-- Khôi phục handoff quick-create, loại bỏ các điều khiển không hoạt động, đảm bảo UI trung thực
+- Prevent selectPlugin load failure from being overwritten by success status
+- Surface UI feedback when applyTemplate receives unknown name
+- Tighten scripting template fallback, scope subpaths toggle, localize provenance
+- Address code review findings for block-list PR
+- Restore quick-create handoff, remove nonfunctional controls, enforce honest UI
 
 ### Đã Thay Đổi
 
-- Hợp nhất nhánh theo dõi từ xa 'origin/main'
-- Thêm bản dịch README đa ngôn ngữ
-- Thêm các README đã bản địa hóa
+- Merge remote-tracking branch 'origin/main'
+- Add multilingual README translations
+- Add localized readmes
 
 Xem [CHANGELOG.md](CHANGELOG.md) để biết toàn bộ lịch sử phát hành.
 <!-- END GENERATED: latest-release -->

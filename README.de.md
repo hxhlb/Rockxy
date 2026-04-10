@@ -46,21 +46,21 @@
 
 ### Hinzugefügt
 
-- Regel-Editor mit Dropdown-Menüs und vergrößertem Fenster neu gestaltet
+- Redesign rule editor with Proxyman-style dropdowns and enlarged window
 
 ### Behoben
 
-- Ladestatus-Überschreibung bei selectPlugin-Fehler verhindert
-- UI-Feedback bei unbekanntem Template-Namen in applyTemplate angezeigt
-- Scripting-Template-Fallback, Subpaths-Toggle-Umfang und Provenance-Lokalisierung verbessert
-- Code-Review-Befunde für Block-List-PR behoben
-- Quick-Create-Handoff wiederhergestellt, nicht funktionierende Steuerelemente entfernt, ehrliche UI erzwungen
+- Prevent selectPlugin load failure from being overwritten by success status
+- Surface UI feedback when applyTemplate receives unknown name
+- Tighten scripting template fallback, scope subpaths toggle, localize provenance
+- Address code review findings for block-list PR
+- Restore quick-create handoff, remove nonfunctional controls, enforce honest UI
 
 ### Geändert
 
-- Remote-Tracking-Branch 'origin/main' zusammengeführt
-- Mehrsprachige README-Übersetzungen hinzugefügt
-- Lokalisierte READMEs hinzugefügt
+- Merge remote-tracking branch 'origin/main'
+- Add multilingual README translations
+- Add localized readmes
 
 Die vollständige Versionshistorie finden Sie in [CHANGELOG.md](CHANGELOG.md).
 <!-- END GENERATED: latest-release -->

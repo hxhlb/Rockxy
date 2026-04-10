@@ -6,6 +6,35 @@ rss: true
 
 # Changelog
 
+<Update label="Unreleased" description="Next">
+  ### Added
+
+  - Response body size cap (`maxResponseBodySize` in `ProxyLimits`): capture buffer truncates at 100 MB while continuing to relay the full response to the client
+  - Apple code-signature validation for all external binaries (`networksetup`, `route`, `security`) executed by the helper daemon via `BinaryValidator`
+  - Helper daemon idle-exit: auto-exits after 5 minutes of no XPC activity when no active proxy override exists; launchd re-launches on demand
+  - Certificate expiry detection with color-coded dates and warning callouts in CertificateStatusPanel
+  - "Install & Trust Certificate" recovery action in workspace banner when trust is lost during capture
+  - "View Advanced Diagnostics" link in WelcomeView when helper install fails
+  - Helper approval guidance text in WelcomeView when macOS requires Login Items approval
+  - Tokenize timeline waterfall colors into `Theme.Timing` and highlight colors into `Theme.Highlight`
+  - Extract shared `ProxyHandlerShared.makeTransactionCallback` from HTTP/HTTPS proxy handlers
+
+  ### Changed
+
+  - Remove SwiftUI dependency from `Core/Plugins/` — `PluginProtocol` no longer requires `AnyView`, `JSONInspectorView` moved to `Views/Inspector/`
+  - Analytics docs: error-analysis and performance-insights pages now marked as "Planned" — no runtime implementation exists yet
+
+  ### Fixed
+
+  - Inconsistent timing colors in `TimingInspectorView` (DNS was blue instead of cyan, Transfer was cyan instead of blue)
+
+  ### Removed
+
+  - Dead `WindowOpener` utility (zero callers, violated no-SwiftUI-in-Core rule)
+  - SwiftUI import from all `Core/` files — zero `import SwiftUI` statements remain in Core
+  - Stale analytics claims from docs, READMEs, and changelogs where features were described as shipped
+</Update>
+
 <Update label="April 2026" description="v0.4.0">
   ### Added
 
@@ -320,7 +349,7 @@ rss: true
   - Targeted warning banner when helper tool needs re-approval in System Settings after version update
   - Sidebar right-click context menu on domain and app rows — Pin, Enable/Disable SSL Proxying, Sort by Alphabet, Tools (Map Local/Remote, Block, Breakpoint), Export (Copy Domain, Export Transactions as HAR), Delete
   - SSL proxying status indicator (lock shield badge) on sidebar domain rows
-  - Bypass Proxy List — dedicated window (Tools → Bypass Proxy List… / Cmd+Opt+B) to manage domains excluded from proxying at the system-level
+  - Bypass Proxy List — dedicated window (Tools → Bypass Proxy List… / Cmd+Opt+B) to manage domains excluded from proxying at the macOS system level
   - System proxy bypass integration via `networksetup -setproxybypassdomains` on all enabled network services
   - Helper tool `setBypassDomains` XPC method for privileged bypass domain management
   - Crash recovery backup/restore for original system bypass domains
@@ -520,7 +549,7 @@ rss: true
   - FilterPillButton reusable component with Theme.FilterPill styling
   - SearchFilterBar component with field selector dropdown, text search, and enable/disable toggle
   - Full macOS menu bar with File, Edit, View, Flow, Tools, and Certificate menus with keyboard shortcuts
-  - Help menu with Getting Started, Homepage, GitHub, Technical Documents, Report Bug, and Copy Debug Info
+  - Help menu with Getting Started, Homepage, Github, Technical Documents, Report Bug, and Copy Debug Info
   - Diff and Scripting menus (placeholder) between Tools and Certificate menus
   - Check for Updates and Change Logs entries in app menu
   - Professional source code documentation across all 146 Swift files for open-source readiness
