@@ -39,6 +39,32 @@
 
 > **Trạng thái**: Đang phát triển tích cực. Proxy engine lõi, chặn bắt HTTPS, hệ thống rule, hệ sinh thái plugin, và giao diện inspector đã hoạt động. Xem [CHANGELOG.md](CHANGELOG.md) để theo dõi tiến độ.
 
+<!-- BEGIN GENERATED: latest-release -->
+## Bản Phát Hành Mới Nhất
+
+**v0.4.0** — 2026-04-09
+
+### Đã Thêm
+
+- Thiết kế lại trình chỉnh sửa quy tắc với menu thả xuống và cửa sổ mở rộng
+
+### Đã Sửa
+
+- Ngăn trạng thái thất bại tải selectPlugin bị ghi đè bởi trạng thái thành công
+- Hiển thị phản hồi giao diện khi applyTemplate nhận tên không xác định
+- Cải thiện fallback mẫu scripting, phạm vi toggle subpaths và bản địa hóa provenance
+- Sửa các phát hiện đánh giá mã cho PR danh sách chặn
+- Khôi phục handoff quick-create, loại bỏ các điều khiển không hoạt động, đảm bảo UI trung thực
+
+### Đã Thay Đổi
+
+- Hợp nhất nhánh theo dõi từ xa 'origin/main'
+- Thêm bản dịch README đa ngôn ngữ
+- Thêm các README đã bản địa hóa
+
+Xem [CHANGELOG.md](CHANGELOG.md) để biết toàn bộ lịch sử phát hành.
+<!-- END GENERATED: latest-release -->
+
 ## Tính năng
 
 ### Bắt lưu lượng mạng
@@ -177,7 +203,7 @@ Khi khởi chạy lần đầu, cửa sổ Welcome hướng dẫn bạn:
 Rockxy được chia thành ba miền tin cậy và thực thi:
 
 1. **Lớp UI + điều phối** — cửa sổ SwiftUI/AppKit, inspector, menu, và `MainContentCoordinator`
-2. **Lớp proxy/runtime** — NIO channel handler, phát hành chứng chỉ, biến đổi request, storage, analytics, và plugin
+2. **Lớp proxy/runtime** — NIO channel handler, phát hành chứng chỉ, biến đổi request, storage, và plugin
 3. **Lớp helper đặc quyền** — một launchd daemon riêng biệt chỉ dùng cho các thao tác proxy và chứng chỉ cấp hệ thống cần quyền nâng cao
 
 Mục tiêu thiết kế là giữ xử lý packet ngoài main thread, giữ các thao tác đặc quyền ngoài tiến trình ứng dụng, và giữ trạng thái hiển thị cho người dùng đồng bộ thông qua ranh giới actor hoặc `@MainActor` rõ ràng.
@@ -201,7 +227,6 @@ flowchart TB
         Rules["RuleEngine"]
         Plugins["ScriptPluginManager"]
         Storage["SessionStore + InMemory Buffers"]
-        Analytics["Analytics Engine"]
     end
 
     subgraph Privileged["Privileged Domain"]
@@ -217,7 +242,6 @@ flowchart TB
     Coordinator --> Traffic
     Coordinator --> LogMgr
     Coordinator --> Storage
-    Coordinator --> Analytics
     Proxy --> Rules
     Proxy --> Plugins
     Proxy --> Cert
@@ -238,7 +262,7 @@ flowchart TB
 | **Biến đổi / chính sách** | `RuleEngine`, `BreakpointRequestBuilder`, `AllowListManager`, `NoCacheHeaderMutator`, `MapLocalDirectoryResolver` | Áp dụng rule request/response và chính sách gỡ lỗi hiện tại trước khi chuyển tiếp hoặc lưu trữ |
 | **Chứng chỉ / tin cậy** | `CertificateManager`, `RootCAGenerator`, `HostCertGenerator`, `CertificateStore`, `KeychainHelper` | Tạo và lưu trữ root CA, cache chứng chỉ host, xác thực trạng thái tin cậy, cài đặt tin cậy qua luồng helper/app |
 | **Storage / phiên** | `TrafficSessionManager`, `LogCaptureEngine`, `SessionStore`, in-memory buffer | Buffer dữ liệu trực tiếp, lưu trạng thái đã chọn vào SQLite, và gộp cập nhật gửi đến UI |
-| **Quan sát / phân tích** | analytics, phát hiện GraphQL, phát hiện content-type, liên kết log | Làm giàu lưu lượng đã bắt sau hoặc song song với xử lý vận chuyển |
+| **Quan sát / phân tích** | phát hiện GraphQL, phát hiện content-type, liên kết log | Làm giàu lưu lượng đã bắt sau hoặc song song với xử lý vận chuyển |
 | **Tích hợp hệ thống đặc quyền** | `HelperConnection`, `RockxyHelperTool`, XPC protocol dùng chung | Áp dụng cài đặt system proxy và các thao tác chứng chỉ đặc quyền với kiểm tra tin cậy rõ ràng |
 
 ### Vòng đời request proxy
@@ -423,7 +447,6 @@ Rockxy/
 ├── Models/
 │   ├── Network/           # HTTPTransaction, Request/Response, TimingInfo, WebSocket
 │   ├── Log/               # LogEntry, LogLevel, LogSource
-│   ├── Analytics/         # ErrorGroup, PerformanceMetric, SessionTrend
 │   ├── Certificate/       # RootCA, RootCAStatusSnapshot
 │   ├── Rules/             # ProxyRule, RuleAction
 │   ├── Settings/          # AppSettings, ProxySettings

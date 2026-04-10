@@ -27,12 +27,16 @@ struct CertificateStatusPanel: View {
         VStack(alignment: .leading, spacing: Theme.Layout.sectionSpacing) {
             summaryRow
             diagnosticsGrid
+            expiryCallout
             errorCallout
             actionRow
         }
     }
 
     // MARK: Private
+
+    private static let expiryWarningDays = 30
+    private static let expiryWarningSeconds: TimeInterval = .init(expiryWarningDays) * 24 * 3_600
 
     private var state: PanelState {
         guard let snapshot else {
@@ -67,6 +71,37 @@ struct CertificateStatusPanel: View {
             return .secondary
         }
         return snapshot.isSystemTrustValidated ? .green : .red
+    }
+
+    private var expiryColor: Color {
+        guard let expiryDate = snapshot?.notValidAfter else {
+            return .primary
+        }
+        if expiryDate < Date() {
+            return .red
+        }
+        if expiryDate.timeIntervalSinceNow < Self.expiryWarningSeconds {
+            return .orange
+        }
+        return .primary
+    }
+
+    private var expiryWarningMessage: String? {
+        guard let expiryDate = snapshot?.notValidAfter else {
+            return nil
+        }
+        if expiryDate < Date() {
+            return String(
+                localized: "Certificate has expired. Generate a new certificate and trust it to restore HTTPS interception."
+            )
+        }
+        let daysRemaining = Int(expiryDate.timeIntervalSinceNow / (24 * 3_600))
+        if daysRemaining < Self.expiryWarningDays {
+            return String(
+                localized: "Certificate expires in \(daysRemaining) days. Generate a new certificate and re-trust to maintain HTTPS interception."
+            )
+        }
+        return nil
     }
 
     private var truncatedFingerprint: String {
@@ -145,7 +180,7 @@ struct CertificateStatusPanel: View {
                     label: String(localized: "Valid Until:"),
                     value: snapshot?.notValidAfter?
                         .formatted(date: .abbreviated, time: .omitted) ?? "\u{2014}",
-                    color: .primary
+                    color: expiryColor
                 )
 
                 diagnosticRow(
@@ -160,6 +195,26 @@ struct CertificateStatusPanel: View {
     }
 
     // MARK: - Zone C: Error Callout + Actions
+
+    @ViewBuilder private var expiryCallout: some View {
+        if let message = expiryWarningMessage {
+            let isExpired = snapshot?.notValidAfter.map { $0 < Date() } ?? false
+            let tintColor: Color = isExpired ? .red : .orange
+            HStack(alignment: .top, spacing: 4) {
+                Image(systemName: "clock.badge.exclamationmark")
+                    .foregroundStyle(tintColor)
+                    .font(.system(size: 10))
+                Text(message)
+                    .font(.system(size: 10))
+                    .foregroundStyle(tintColor)
+            }
+            .padding(6)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(tintColor.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Layout.badgeCornerRadius))
+            .accessibilityElement(children: .combine)
+        }
+    }
 
     @ViewBuilder private var errorCallout: some View {
         if let snapshot,

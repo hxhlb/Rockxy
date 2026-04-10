@@ -136,6 +136,18 @@ struct ContentView: View {
             openSettings()
         case .openAdvancedProxySettings:
             openWindow(id: "advancedProxySettings")
+        case .reinstallAndTrust:
+            Task { @MainActor in
+                do {
+                    try await CertificateManager.shared.installAndTrust()
+                } catch {
+                    coordinator.activeToast = ToastMessage(
+                        style: .error,
+                        text: String(localized: "Failed to install certificate — \(error.localizedDescription)")
+                    )
+                }
+                await ReadinessCoordinator.shared.deepRefresh()
+            }
         case nil:
             break
         }

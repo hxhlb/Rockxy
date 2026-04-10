@@ -97,30 +97,38 @@ enum CrashRecovery {
 
         var serviceBackups: [ServiceProxyBackup] = []
         for service in services {
-            let httpOutput = (try? readProxySettings(type: "webproxy", service: service)) ?? ""
-            let httpsOutput = (try? readProxySettings(type: "securewebproxy", service: service)) ?? ""
-            let socksOutput = (try? readProxySettings(type: "socksfirewallproxy", service: service)) ?? ""
-            let bypassDomains = (try? readBypassDomains(service: service)) ?? []
+            do {
+                let httpOutput = try readProxySettings(type: "webproxy", service: service)
+                let httpsOutput = try readProxySettings(type: "securewebproxy", service: service)
+                let socksOutput = try readProxySettings(type: "socksfirewallproxy", service: service)
+                let bypassDomains = try readBypassDomains(service: service)
 
-            let httpInfo = ProxyConfigurator.parseProxyOutput(httpOutput)
-            let httpsInfo = ProxyConfigurator.parseProxyOutput(httpsOutput)
-            let socksInfo = ProxyConfigurator.parseProxyOutput(socksOutput)
+                let httpInfo = ProxyConfigurator.parseProxyOutput(httpOutput)
+                let httpsInfo = ProxyConfigurator.parseProxyOutput(httpsOutput)
+                let socksInfo = ProxyConfigurator.parseProxyOutput(socksOutput)
 
-            let serviceBackup = ServiceProxyBackup(
-                service: service,
-                httpEnabled: httpInfo.enabled,
-                httpHost: httpInfo.host,
-                httpPort: httpInfo.port,
-                httpsEnabled: httpsInfo.enabled,
-                httpsHost: httpsInfo.host,
-                httpsPort: httpsInfo.port,
-                socksEnabled: socksInfo.enabled,
-                socksHost: socksInfo.host,
-                socksPort: socksInfo.port,
-                bypassDomains: bypassDomains
-            )
-            serviceBackups.append(serviceBackup)
-            logger.debug("Captured proxy state for '\(service)'")
+                let serviceBackup = ServiceProxyBackup(
+                    service: service,
+                    httpEnabled: httpInfo.enabled,
+                    httpHost: httpInfo.host,
+                    httpPort: httpInfo.port,
+                    httpsEnabled: httpsInfo.enabled,
+                    httpsHost: httpsInfo.host,
+                    httpsPort: httpsInfo.port,
+                    socksEnabled: socksInfo.enabled,
+                    socksHost: socksInfo.host,
+                    socksPort: socksInfo.port,
+                    bypassDomains: bypassDomains
+                )
+                serviceBackups.append(serviceBackup)
+                logger.debug("Captured proxy state for '\(service)'")
+            } catch {
+                logger
+                    .error(
+                        "Failed to read proxy settings for '\(service)': \(error.localizedDescription) — aborting backup"
+                    )
+                return
+            }
         }
 
         let backup = ProxyBackup(
@@ -258,8 +266,16 @@ enum CrashRecovery {
             throw ProxyConfiguratorError.executionFailed(command: "-get\(type)", reason: "Invalid proxy type: \(type)")
         }
 
+        let networkSetupPath = "/usr/sbin/networksetup"
+        guard BinaryValidator.validateAppleSignedBinary(at: networkSetupPath) else {
+            throw ProxyConfiguratorError.executionFailed(
+                command: "-get\(type)",
+                reason: "networksetup binary failed Apple code signature validation"
+            )
+        }
+
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/sbin/networksetup")
+        process.executableURL = URL(fileURLWithPath: networkSetupPath)
         process.arguments = ["-get\(type)", service]
 
         let pipe = Pipe()

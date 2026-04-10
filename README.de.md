@@ -39,6 +39,32 @@
 
 > **Status**: Aktive Entwicklung. Proxy-Engine, HTTPS-Abfangen, Regelsystem, Plugin-Ökosystem und Inspector-Oberfläche sind funktionsfähig. Fortschritte finden Sie im [CHANGELOG.md](CHANGELOG.md).
 
+<!-- BEGIN GENERATED: latest-release -->
+## Neueste Version
+
+**v0.4.0** — 2026-04-09
+
+### Hinzugefügt
+
+- Regel-Editor mit Dropdown-Menüs und vergrößertem Fenster neu gestaltet
+
+### Behoben
+
+- Ladestatus-Überschreibung bei selectPlugin-Fehler verhindert
+- UI-Feedback bei unbekanntem Template-Namen in applyTemplate angezeigt
+- Scripting-Template-Fallback, Subpaths-Toggle-Umfang und Provenance-Lokalisierung verbessert
+- Code-Review-Befunde für Block-List-PR behoben
+- Quick-Create-Handoff wiederhergestellt, nicht funktionierende Steuerelemente entfernt, ehrliche UI erzwungen
+
+### Geändert
+
+- Remote-Tracking-Branch 'origin/main' zusammengeführt
+- Mehrsprachige README-Übersetzungen hinzugefügt
+- Lokalisierte READMEs hinzugefügt
+
+Die vollständige Versionshistorie finden Sie in [CHANGELOG.md](CHANGELOG.md).
+<!-- END GENERATED: latest-release -->
+
 ## Funktionen
 
 ### Netzwerkverkehr erfassen
@@ -177,7 +203,7 @@ Beim ersten Start führt Sie das Willkommensfenster durch folgende Schritte:
 Rockxy ist in drei Vertrauens- und Ausführungsdomänen aufgeteilt:
 
 1. **UI + Orchestrierungsschicht** — SwiftUI/AppKit-Fenster, Inspectors, Menüs und der `MainContentCoordinator`
-2. **Proxy-/Laufzeitschicht** — SwiftNIO-Channel-Handler, Zertifikatsausstellung, Anfragemodifikation, Speicherung, Analyse und Plugins
+2. **Proxy-/Laufzeitschicht** — SwiftNIO-Channel-Handler, Zertifikatsausstellung, Anfragemodifikation, Speicherung und Plugins
 3. **Privilegierte Hilfsdienstschicht** — ein separater launchd-Daemon, der ausschließlich für systemweite Proxy- und Zertifikatsoperationen verwendet wird, die erhöhte Berechtigungen erfordern
 
 Das Designziel ist es, die Paketverarbeitung vom Hauptthread fernzuhalten, privilegierte Operationen außerhalb des App-Prozesses auszuführen und den benutzersichtbaren Zustand durch explizite actor- oder `@MainActor`-Grenzen synchron zu halten.
@@ -201,7 +227,6 @@ flowchart TB
         Rules["RuleEngine"]
         Plugins["ScriptPluginManager"]
         Storage["SessionStore + InMemory Buffers"]
-        Analytics["Analytics Engine"]
     end
 
     subgraph Privileged["Privileged Domain"]
@@ -217,7 +242,6 @@ flowchart TB
     Coordinator --> Traffic
     Coordinator --> LogMgr
     Coordinator --> Storage
-    Coordinator --> Analytics
     Proxy --> Rules
     Proxy --> Plugins
     Proxy --> Cert
@@ -238,7 +262,7 @@ flowchart TB
 | **Modifikation / Richtlinien** | `RuleEngine`, `BreakpointRequestBuilder`, `AllowListManager`, `NoCacheHeaderMutator`, `MapLocalDirectoryResolver` | Wendet Anfrage-/Antwort-Regeln und aktuelle Debugging-Richtlinien vor Weiterleitung oder Speicherung an |
 | **Zertifikat / Vertrauen** | `CertificateManager`, `RootCAGenerator`, `HostCertGenerator`, `CertificateStore`, `KeychainHelper` | Generiert und speichert das Root-CA, cached Host-Zertifikate, validiert Vertrauensstatus, installiert Vertrauen via Hilfsdienst/App-Abläufe |
 | **Speicherung / Sitzung** | `TrafficSessionManager`, `LogCaptureEngine`, `SessionStore`, In-Memory-Buffer | Puffert Live-Daten, persistiert ausgewählten Zustand in SQLite und bündelt Updates an die UI |
-| **Beobachtung / Analyse** | Analytics, GraphQL-Erkennung, Content-Type-Erkennung, Protokollkorrelation | Reichert erfassten Verkehr nach oder während der Transportverarbeitung an |
+| **Beobachtung / Analyse** | GraphQL-Erkennung, Content-Type-Erkennung, Protokollkorrelation | Reichert erfassten Verkehr nach oder während der Transportverarbeitung an |
 | **Privilegierte Systemintegration** | `HelperConnection`, `RockxyHelperTool`, gemeinsames XPC-Protokoll | Wendet System-Proxy-Einstellungen und privilegierte Zertifikatsoperationen mit expliziten Vertrauensprüfungen an |
 
 ### Proxy-Anfrage-Lebenszyklus
@@ -423,7 +447,6 @@ Rockxy/
 ├── Models/
 │   ├── Network/           # HTTPTransaction, Request/Response, TimingInfo, WebSocket
 │   ├── Log/               # LogEntry, LogLevel, LogSource
-│   ├── Analytics/         # ErrorGroup, PerformanceMetric, SessionTrend
 │   ├── Certificate/       # RootCA, RootCAStatusSnapshot
 │   ├── Rules/             # ProxyRule, RuleAction
 │   ├── Settings/          # AppSettings, ProxySettings
