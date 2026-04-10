@@ -42,25 +42,20 @@
 <!-- BEGIN GENERATED: latest-release -->
 ## 최신 릴리스
 
-**v0.4.0** — 2026-04-09
+**v0.5.0** — 2026-04-10
 
 ### 추가
 
-- Redesign rule editor with Proxyman-style dropdowns and enlarged window
+- Security hardening, docs honesty, trust recovery, helper lifecycle, architecture cleanup
 
 ### 수정
 
-- Prevent selectPlugin load failure from being overwritten by success status
-- Surface UI feedback when applyTemplate receives unknown name
-- Tighten scripting template fallback, scope subpaths toggle, localize provenance
-- Address code review findings for block-list PR
-- Restore quick-create handoff, remove nonfunctional controls, enforce honest UI
+- Wire JSONInspectorView into response body tab, deterministic tab selection
+- Code review follow-up — thread safety, fail-closed backup, honest docs, UI polish
 
 ### 변경
 
-- Merge remote-tracking branch 'origin/main'
-- Add multilingual README translations
-- Add localized readmes
+- Sync changelog release surfaces
 
 전체 릴리스 기록은 [CHANGELOG.md](CHANGELOG.md)에서 확인하세요.
 <!-- END GENERATED: latest-release -->

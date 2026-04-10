@@ -42,25 +42,20 @@
 <!-- BEGIN GENERATED: latest-release -->
 ## 最新发布
 
-**v0.4.0** — 2026-04-09
+**v0.5.0** — 2026-04-10
 
 ### 新增
 
-- Redesign rule editor with Proxyman-style dropdowns and enlarged window
+- Security hardening, docs honesty, trust recovery, helper lifecycle, architecture cleanup
 
 ### 修复
 
-- Prevent selectPlugin load failure from being overwritten by success status
-- Surface UI feedback when applyTemplate receives unknown name
-- Tighten scripting template fallback, scope subpaths toggle, localize provenance
-- Address code review findings for block-list PR
-- Restore quick-create handoff, remove nonfunctional controls, enforce honest UI
+- Wire JSONInspectorView into response body tab, deterministic tab selection
+- Code review follow-up — thread safety, fail-closed backup, honest docs, UI polish
 
 ### 变更
 
-- Merge remote-tracking branch 'origin/main'
-- Add multilingual README translations
-- Add localized readmes
+- Sync changelog release surfaces
 
 完整发布历史见 [CHANGELOG.md](CHANGELOG.md)。
 <!-- END GENERATED: latest-release -->

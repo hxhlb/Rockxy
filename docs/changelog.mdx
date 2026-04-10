@@ -6,33 +6,19 @@ rss: true
 
 # Changelog
 
-<Update label="Unreleased" description="Next">
+<Update label="April 2026" description="v0.5.0">
   ### Added
 
-  - Response body size cap (`maxResponseBodySize` in `ProxyLimits`): capture buffer truncates at 100 MB while continuing to relay the full response to the client
-  - Apple code-signature validation for all external binaries (`networksetup`, `route`, `security`) executed by the helper daemon via `BinaryValidator`
-  - Helper daemon idle-exit: auto-exits after 5 minutes of no XPC activity when no active proxy override exists; launchd re-launches on demand
-  - Certificate expiry detection with color-coded dates and warning callouts in CertificateStatusPanel
-  - "Install & Trust Certificate" recovery action in workspace banner when trust is lost during capture
-  - "View Advanced Diagnostics" link in WelcomeView when helper install fails
-  - Helper approval guidance text in WelcomeView when macOS requires Login Items approval
-  - Tokenize timeline waterfall colors into `Theme.Timing` and highlight colors into `Theme.Highlight`
-  - Extract shared `ProxyHandlerShared.makeTransactionCallback` from HTTP/HTTPS proxy handlers
-
-  ### Changed
-
-  - Remove SwiftUI dependency from `Core/Plugins/` — `PluginProtocol` no longer requires `AnyView`, `JSONInspectorView` moved to `Views/Inspector/`
-  - Analytics docs: error-analysis and performance-insights pages now marked as "Planned" — no runtime implementation exists yet
+  - Security hardening, docs honesty, trust recovery, helper lifecycle, architecture cleanup
 
   ### Fixed
 
-  - Inconsistent timing colors in `TimingInspectorView` (DNS was blue instead of cyan, Transfer was cyan instead of blue)
+  - Wire JSONInspectorView into response body tab, deterministic tab selection
+  - Code review follow-up — thread safety, fail-closed backup, honest docs, UI polish
 
-  ### Removed
+  ### Changed
 
-  - Dead `WindowOpener` utility (zero callers, violated no-SwiftUI-in-Core rule)
-  - SwiftUI import from all `Core/` files — zero `import SwiftUI` statements remain in Core
-  - Stale analytics claims from docs, READMEs, and changelogs where features were described as shipped
+  - Sync changelog release surfaces
 </Update>
 
 <Update label="April 2026" description="v0.4.0">
