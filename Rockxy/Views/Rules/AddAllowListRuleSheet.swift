@@ -83,18 +83,24 @@ struct AddAllowListRuleSheet: View {
                 }
                 .keyboardShortcut(.cancelAction)
 
+                let trimmedURL = urlPattern.trimmingCharacters(in: .whitespacesAndNewlines)
+
                 Button(isEditing ? String(localized: "Save") : String(localized: "Add")) {
+                    // `includeSubpaths` is a wildcard-only display toggle.
+                    // Zero it out for regex rules so we never persist stale
+                    // state from a user who flipped the match type.
+                    let effectiveIncludeSubpaths = matchType == .wildcard ? includeSubpaths : false
                     onSave(
                         ruleName,
-                        urlPattern,
+                        trimmedURL,
                         httpMethod,
                         matchType,
-                        includeSubpaths
+                        effectiveIncludeSubpaths
                     )
                     dismiss()
                 }
                 .keyboardShortcut(.defaultAction)
-                .disabled(urlPattern.isEmpty)
+                .disabled(trimmedURL.isEmpty)
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 8)

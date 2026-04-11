@@ -42,15 +42,16 @@ struct BreakpointSidebarView: View {
 
     // MARK: Private
 
-    /// Localized, plural-aware header for the paused items section.
-    /// Uses `AttributedString` with `localized:` + `defaultValue:` so the inline
-    /// `^[…](inflect:)` markdown resolves to the correct singular/plural form
-    /// at runtime, and the integer count remains a first-class argument that
+    /// Returns a SwiftUI `Text` header for the paused items section.
+    /// The string is an inline inflect-able localized literal using the
+    /// `^[…](inflect: true)` markdown form, so the noun phrase `paused item`
+    /// automatically resolves to the correct singular/plural form at runtime
+    /// based on `count`. The integer count is a first-class argument that
     /// localizers can reorder per locale.
     private var pausedSectionHeader: Text {
         let count = manager.pausedItems.count
         return Text(
-            "^[\(count) paused](inflect: true)",
+            "^[\(count) paused item](inflect: true)",
             comment: "Section header showing how many paused items are in the breakpoint queue"
         )
     }
