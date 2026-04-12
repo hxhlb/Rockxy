@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Redesign SSL Proxying List with Include/Exclude tabs, global enable toggle, and bypass proxy settings
+- Add App and Add Domain picker sheets for SSL proxying rule creation
+- Import SSL settings from Charles Proxy, Proxyman, and HTTPToolkit formats
+- Bypass Proxy Settings inline editor with comma-separated domain support
+
+### Changed
+
+- SSL proxying rules now support Include/Exclude list types with versioned storage (v2 with v1 migration)
+- SSL interception logic now evaluates: enabled → bypass → exclude → include rule chain
+
 ## [0.6.0] - 2026-04-11
 
 ### Added
