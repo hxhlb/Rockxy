@@ -15,12 +15,20 @@ final class TrafficDomainSnapshot {
 
     static let shared = TrafficDomainSnapshot()
 
-    private(set) var appNames: [String] = []
+    /// Apps observed in captured traffic, each carrying its list of contacted domains.
+    private(set) var appEntries: [AppInfo] = []
+
+    /// All unique domains observed across all traffic, sorted alphabetically.
     private(set) var domains: [String] = []
 
+    /// Look up observed domains for a given app name.
+    func domains(forApp name: String) -> [String] {
+        appEntries.first { $0.name == name }?.domains ?? []
+    }
+
     func update(appNodes: [AppInfo], domainTree: [DomainNode]) {
-        appNames = appNodes.map(\.name).sorted {
-            $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
+        appEntries = appNodes.sorted {
+            $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
         }
         domains = domainTree.map(\.domain).sorted {
             $0.localizedCaseInsensitiveCompare($1) == .orderedAscending

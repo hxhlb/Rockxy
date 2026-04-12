@@ -12,6 +12,7 @@
 		367616A431CBEF0267406816 /* SSLProxyingManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EBEB3946795881C025CFF6F /* SSLProxyingManagerTests.swift */; };
 		54693F1BBE4DAE550D67ABB1 /* SSLImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94D100EF398E433CBF214BB5 /* SSLImporterTests.swift */; };
 		69DD8D8F306B4AEE24A4234C /* SSLProxyingListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C99BCD60A0C621D6F0C3A84 /* SSLProxyingListViewModelTests.swift */; };
+		CD92688FAB556953E032DDF4 /* TrafficDomainSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3468A7E29A7BB264F6895FA /* TrafficDomainSnapshotTests.swift */; };
 		DCA9C5B32F627204005B1552 /* SQLite in Frameworks */ = {isa = PBXBuildFile; productRef = DCA9A63D2F624B36005B1552 /* SQLite */; };
 		DCA9C5B42F627204005B1552 /* X509 in Frameworks */ = {isa = PBXBuildFile; productRef = DCA9A63E2F624B50005B1552 /* X509 */; };
 		DCA9C5B52F627204005B1552 /* Crypto in Frameworks */ = {isa = PBXBuildFile; productRef = DCA9A63F2F624B50005B1552 /* Crypto */; };
@@ -83,6 +84,7 @@
 		4FAF90356407D961D63110B1 /* TrafficDomainSnapshot.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TrafficDomainSnapshot.swift; path = Rockxy/Core/Services/TrafficDomainSnapshot.swift; sourceTree = "<group>"; };
 		94D100EF398E433CBF214BB5 /* SSLImporterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SSLImporterTests.swift; path = RockxyTests/Core/ProxyEngine/SSLImporterTests.swift; sourceTree = "<group>"; };
 		B4AB602A25240F8F700239D0 /* SSLProxyingRuleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SSLProxyingRuleTests.swift; path = RockxyTests/Models/Settings/SSLProxyingRuleTests.swift; sourceTree = "<group>"; };
+		C3468A7E29A7BB264F6895FA /* TrafficDomainSnapshotTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TrafficDomainSnapshotTests.swift; path = RockxyTests/Core/Services/TrafficDomainSnapshotTests.swift; sourceTree = "<group>"; };
 		DCA99FBB2F61ADC9005B1552 /* Rockxy Community.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Rockxy Community.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DCA99FCA2F61ADCC005B1552 /* RockxyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RockxyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DCA99FD42F61ADCC005B1552 /* RockxyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RockxyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -251,12 +253,28 @@
 			name = Settings;
 			sourceTree = "<group>";
 		};
+		90338F7AFD024C2F4A4567EF /* RockxyTests */ = {
+			isa = PBXGroup;
+			children = (
+				E6778084977246CBEBA7A2A4 /* Core */,
+			);
+			name = RockxyTests;
+			sourceTree = "<group>";
+		};
 		992CD104D5D75430669D37D2 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
 				2C99BCD60A0C621D6F0C3A84 /* SSLProxyingListViewModelTests.swift */,
 			);
 			name = Settings;
+			sourceTree = "<group>";
+		};
+		9BBE80F6EA1547EFDE1FDD52 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				C3468A7E29A7BB264F6895FA /* TrafficDomainSnapshotTests.swift */,
+			);
+			name = Services;
 			sourceTree = "<group>";
 		};
 		A0B2971B9028A7629EE6A221 /* Core */ = {
@@ -324,6 +342,7 @@
 				129A3C61A8A5DBD53D1EA91B /* RockxyTests */,
 				ECBA3EE42792B0D2030227EA /* RockxyTests */,
 				F26CCF05C76D8861A13E37CF /* Rockxy */,
+				90338F7AFD024C2F4A4567EF /* RockxyTests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -336,6 +355,14 @@
 				DCA99FD42F61ADCC005B1552 /* RockxyUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		E6778084977246CBEBA7A2A4 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				9BBE80F6EA1547EFDE1FDD52 /* Services */,
+			);
+			name = Core;
 			sourceTree = "<group>";
 		};
 		ECBA3EE42792B0D2030227EA /* RockxyTests */ = {
@@ -570,6 +597,7 @@
 				54693F1BBE4DAE550D67ABB1 /* SSLImporterTests.swift in Sources */,
 				69DD8D8F306B4AEE24A4234C /* SSLProxyingListViewModelTests.swift in Sources */,
 				E25EC1AF9EA69827D8EA666D /* SidebarSSLProxyingTests.swift in Sources */,
+				CD92688FAB556953E032DDF4 /* TrafficDomainSnapshotTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

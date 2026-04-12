@@ -4,11 +4,16 @@ import UniformTypeIdentifiers
 
 // MARK: - AddSSLAppDomainSheet
 
-/// Panel for browsing running applications and observed domains, then adding
-/// selected items as SSL proxying rules. Apps come from NSWorkspace; domains
-/// come from the live traffic snapshot populated by MainContentCoordinator.
-/// Selecting a domain and tapping Add adds it directly; selecting an app
-/// opens the Add Domain sheet for the user to enter the host pattern.
+/// Panel for browsing observed apps and domains from captured traffic,
+/// then adding selected items as SSL proxying rules.
+///
+/// - Apps section shows each app with its observed domains as expandable children.
+///   Selecting an app and tapping Add adds all of that app's observed domains.
+/// - Domains section shows all observed domains flat.
+///   Selecting a domain and tapping Add adds that single domain.
+///
+/// Data comes from `TrafficDomainSnapshot`, populated by `MainContentCoordinator`
+/// on each traffic batch. No fake/guessed domains are generated.
 struct AddSSLAppDomainSheet: View {
     // MARK: Lifecycle
 
@@ -31,13 +36,6 @@ struct AddSSLAppDomainSheet: View {
             buttonBar
         }
         .frame(width: 500, height: 520)
-        .onAppear { refreshRunningApps() }
-        .sheet(isPresented: $showAddDomainSheet) {
-            AddSSLDomainSheet { domain in
-                onAdd([domain])
-                dismiss()
-            }
-        }
     }
 
     // MARK: Private
@@ -47,50 +45,46 @@ struct AddSSLAppDomainSheet: View {
         case domain(String)
     }
 
-    private struct RunningAppItem: Identifiable, Hashable {
-        let id: String
-        let name: String
-        let bundleIdentifier: String?
-        let icon: NSImage?
-
-        static func == (lhs: RunningAppItem, rhs: RunningAppItem) -> Bool {
-            lhs.id == rhs.id
-        }
-
-        func hash(into hasher: inout Hasher) {
-            hasher.combine(id)
-        }
-    }
-
     @Environment(\.dismiss) private var dismiss
 
     @State private var searchText = ""
-    @State private var runningApps: [RunningAppItem] = []
     @State private var selectedItem: PickerItem?
-    @State private var showAddDomainSheet = false
     @FocusState private var isSearchFocused: Bool
 
-    private var observedDomains: [String] {
-        TrafficDomainSnapshot.shared.domains
+    private var snapshot: TrafficDomainSnapshot {
+        TrafficDomainSnapshot.shared
     }
 
-    private var filteredApps: [RunningAppItem] {
+    private var filteredApps: [AppInfo] {
+        let apps = snapshot.appEntries
         guard !searchText.isEmpty else {
-            return runningApps
+            return apps
         }
-        let query = searchText
-        return runningApps.filter { app in
-            app.name.localizedCaseInsensitiveContains(query)
-                || (app.bundleIdentifier?.localizedCaseInsensitiveContains(query) ?? false)
+        return apps.filter { app in
+            app.name.localizedCaseInsensitiveContains(searchText)
+                || app.domains.contains { $0.localizedCaseInsensitiveContains(searchText) }
         }
     }
 
     private var filteredDomains: [String] {
+        let domains = snapshot.domains
         guard !searchText.isEmpty else {
-            return observedDomains
+            return domains
         }
-        return observedDomains.filter { $0.localizedCaseInsensitiveContains(searchText) }
+        return domains.filter { $0.localizedCaseInsensitiveContains(searchText) }
     }
+
+    private var addButtonDisabled: Bool {
+        guard let selected = selectedItem else {
+            return true
+        }
+        if case let .app(name) = selected {
+            return snapshot.domains(forApp: name).isEmpty
+        }
+        return false
+    }
+
+    // MARK: - Sections
 
     private var headerSection: some View {
         HStack {
@@ -129,23 +123,30 @@ struct AddSSLAppDomainSheet: View {
     private var appsSection: some View {
         Section {
             ForEach(filteredApps) { app in
-                HStack(spacing: 8) {
-                    if let icon = app.icon {
-                        Image(nsImage: icon)
-                            .resizable()
-                            .frame(width: 16, height: 16)
-                    } else {
+                DisclosureGroup {
+                    ForEach(app.domains, id: \.self) { domain in
+                        HStack(spacing: 8) {
+                            Image(systemName: "circle.slash")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                            Text(domain)
+                                .font(.system(size: 12))
+                                .lineLimit(1)
+                        }
+                        .tag(PickerItem.domain(domain))
+                    }
+                } label: {
+                    HStack(spacing: 8) {
                         Image(systemName: "app.fill")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .frame(width: 16, height: 16)
+                        Text(app.name)
+                            .font(.system(size: 12))
+                            .lineLimit(1)
                     }
-
-                    Text(app.name)
-                        .font(.system(size: 12))
-                        .lineLimit(1)
+                    .tag(PickerItem.app(app.name))
                 }
-                .tag(PickerItem.app(app.id))
             }
         } header: {
             HStack {
@@ -172,7 +173,6 @@ struct AddSSLAppDomainSheet: View {
                     Image(systemName: "circle.slash")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
-
                     Text(domain)
                         .font(.system(size: 12))
                         .lineLimit(1)
@@ -217,27 +217,10 @@ struct AddSSLAppDomainSheet: View {
 
             Spacer()
 
-            Menu {
-                Button(String(localized: "App…")) {
-                    pickAppFromDisk()
-                }
-                Button(String(localized: "Domain…")) {
-                    showAddDomainSheet = true
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Text(String(localized: "Select"))
-                    Image(systemName: "chevron.down")
-                        .font(.caption2)
-                }
-            }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
-
             Button(String(localized: "Add")) {
                 addSelectedItem()
             }
-            .disabled(selectedItem == nil)
+            .disabled(addButtonDisabled)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -248,54 +231,16 @@ struct AddSSLAppDomainSheet: View {
             return
         }
         switch selected {
-        case .app:
-            showAddDomainSheet = true
+        case let .app(name):
+            let appDomains = snapshot.domains(forApp: name)
+            guard !appDomains.isEmpty else {
+                return
+            }
+            onAdd(appDomains)
+            dismiss()
         case let .domain(domain):
             onAdd([domain])
             dismiss()
         }
-    }
-
-    private func refreshRunningApps() {
-        let workspace = NSWorkspace.shared
-        var seen = Set<String>()
-        var apps: [RunningAppItem] = []
-
-        for app in workspace.runningApplications {
-            guard app.activationPolicy == .regular || app.activationPolicy == .accessory else {
-                continue
-            }
-            let name = app.localizedName ?? app.bundleIdentifier ?? "Unknown"
-            let key = name.lowercased()
-            guard !seen.contains(key) else {
-                continue
-            }
-            seen.insert(key)
-
-            apps.append(RunningAppItem(
-                id: app.bundleIdentifier ?? name,
-                name: name,
-                bundleIdentifier: app.bundleIdentifier,
-                icon: app.icon
-            ))
-        }
-
-        apps.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        runningApps = apps
-    }
-
-    private func pickAppFromDisk() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = false
-        panel.allowedContentTypes = [.application]
-        panel.directoryURL = URL(fileURLWithPath: "/Applications")
-        panel.message = String(localized: "Select an application")
-
-        guard panel.runModal() == .OK, panel.url != nil else {
-            return
-        }
-        showAddDomainSheet = true
     }
 }
