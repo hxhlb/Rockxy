@@ -28,6 +28,7 @@ extension MainContentCoordinator {
             }
             appendFilteredTransactions(batch, to: workspace)
         }
+        TrafficDomainSnapshot.shared.update(appNodes: appNodes, domainTree: domainTree)
     }
 
     // MARK: - Per-Workspace Sidebar

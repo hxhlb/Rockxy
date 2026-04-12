@@ -4,10 +4,11 @@ import UniformTypeIdentifiers
 
 // MARK: - AddSSLAppDomainSheet
 
-/// Panel for browsing running applications and adding SSL proxying domains.
-/// Shows currently running apps as a reference; when the user selects an app
-/// and taps Add (or double-clicks), the Add Domain sheet opens so they can
-/// enter the actual host pattern to intercept.
+/// Panel for browsing running applications and observed domains, then adding
+/// selected items as SSL proxying rules. Apps come from NSWorkspace; domains
+/// come from the live traffic snapshot populated by MainContentCoordinator.
+/// Selecting a domain and tapping Add adds it directly; selecting an app
+/// opens the Add Domain sheet for the user to enter the host pattern.
 struct AddSSLAppDomainSheet: View {
     // MARK: Lifecycle
 
@@ -41,6 +42,11 @@ struct AddSSLAppDomainSheet: View {
 
     // MARK: Private
 
+    private enum PickerItem: Hashable {
+        case app(String)
+        case domain(String)
+    }
+
     private struct RunningAppItem: Identifiable, Hashable {
         let id: String
         let name: String
@@ -60,9 +66,13 @@ struct AddSSLAppDomainSheet: View {
 
     @State private var searchText = ""
     @State private var runningApps: [RunningAppItem] = []
-    @State private var selectedAppID: String?
+    @State private var selectedItem: PickerItem?
     @State private var showAddDomainSheet = false
     @FocusState private var isSearchFocused: Bool
+
+    private var observedDomains: [String] {
+        TrafficDomainSnapshot.shared.domains
+    }
 
     private var filteredApps: [RunningAppItem] {
         guard !searchText.isEmpty else {
@@ -73,6 +83,13 @@ struct AddSSLAppDomainSheet: View {
             app.name.localizedCaseInsensitiveContains(query)
                 || (app.bundleIdentifier?.localizedCaseInsensitiveContains(query) ?? false)
         }
+    }
+
+    private var filteredDomains: [String] {
+        guard !searchText.isEmpty else {
+            return observedDomains
+        }
+        return observedDomains.filter { $0.localizedCaseInsensitiveContains(searchText) }
     }
 
     private var headerSection: some View {
@@ -102,45 +119,82 @@ struct AddSSLAppDomainSheet: View {
     }
 
     private var listSection: some View {
-        List(selection: $selectedAppID) {
-            Section {
-                ForEach(filteredApps) { app in
-                    HStack(spacing: 8) {
-                        if let icon = app.icon {
-                            Image(nsImage: icon)
-                                .resizable()
-                                .frame(width: 16, height: 16)
-                        } else {
-                            Image(systemName: "app.fill")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .frame(width: 16, height: 16)
-                        }
-
-                        Text(app.name)
-                            .font(.system(size: 12))
-                            .lineLimit(1)
-                    }
-                    .tag(app.id)
-                }
-            } header: {
-                HStack {
-                    Image(systemName: "folder.fill")
-                        .font(.caption)
-                    Text(String(localized: "Apps"))
-                        .font(.caption.weight(.semibold))
-                    Spacer()
-                    Text("\(filteredApps.count)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 1)
-                        .background(.quaternary)
-                        .clipShape(Capsule())
-                }
-            }
+        List(selection: $selectedItem) {
+            appsSection
+            domainsSection
         }
         .listStyle(.sidebar)
+    }
+
+    private var appsSection: some View {
+        Section {
+            ForEach(filteredApps) { app in
+                HStack(spacing: 8) {
+                    if let icon = app.icon {
+                        Image(nsImage: icon)
+                            .resizable()
+                            .frame(width: 16, height: 16)
+                    } else {
+                        Image(systemName: "app.fill")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 16, height: 16)
+                    }
+
+                    Text(app.name)
+                        .font(.system(size: 12))
+                        .lineLimit(1)
+                }
+                .tag(PickerItem.app(app.id))
+            }
+        } header: {
+            HStack {
+                Image(systemName: "folder.fill")
+                    .font(.caption)
+                Text(String(localized: "Apps"))
+                    .font(.caption.weight(.semibold))
+                Spacer()
+                Text("\(filteredApps.count)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 1)
+                    .background(.quaternary)
+                    .clipShape(Capsule())
+            }
+        }
+    }
+
+    private var domainsSection: some View {
+        Section {
+            ForEach(filteredDomains, id: \.self) { domain in
+                HStack(spacing: 8) {
+                    Image(systemName: "circle.slash")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+
+                    Text(domain)
+                        .font(.system(size: 12))
+                        .lineLimit(1)
+                }
+                .tag(PickerItem.domain(domain))
+            }
+        } header: {
+            HStack {
+                Image(systemName: "globe")
+                    .font(.caption)
+                Text(String(localized: "Domains"))
+                    .font(.caption.weight(.semibold))
+                Spacer()
+                Text("\(filteredDomains.count)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 1)
+                    .background(.quaternary)
+                    .clipShape(Capsule())
+            }
+        }
     }
 
     private var footerHint: some View {
@@ -181,11 +235,25 @@ struct AddSSLAppDomainSheet: View {
             .fixedSize()
 
             Button(String(localized: "Add")) {
-                showAddDomainSheet = true
+                addSelectedItem()
             }
+            .disabled(selectedItem == nil)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+    }
+
+    private func addSelectedItem() {
+        guard let selected = selectedItem else {
+            return
+        }
+        switch selected {
+        case .app:
+            showAddDomainSheet = true
+        case let .domain(domain):
+            onAdd([domain])
+            dismiss()
+        }
     }
 
     private func refreshRunningApps() {

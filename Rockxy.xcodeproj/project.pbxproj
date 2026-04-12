@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		153B47CC5D4EFF2518913882 /* TrafficDomainSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FAF90356407D961D63110B1 /* TrafficDomainSnapshot.swift */; };
 		1652E0F894D1AAEF58FF5197 /* SSLProxyingRuleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4AB602A25240F8F700239D0 /* SSLProxyingRuleTests.swift */; };
 		367616A431CBEF0267406816 /* SSLProxyingManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EBEB3946795881C025CFF6F /* SSLProxyingManagerTests.swift */; };
 		54693F1BBE4DAE550D67ABB1 /* SSLImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94D100EF398E433CBF214BB5 /* SSLImporterTests.swift */; };
@@ -79,6 +80,7 @@
 		1EBEB3946795881C025CFF6F /* SSLProxyingManagerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SSLProxyingManagerTests.swift; path = RockxyTests/Core/ProxyEngine/SSLProxyingManagerTests.swift; sourceTree = "<group>"; };
 		2BF2554950304269415B1F9D /* SidebarSSLProxyingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SidebarSSLProxyingTests.swift; path = RockxyTests/Views/Main/SidebarSSLProxyingTests.swift; sourceTree = "<group>"; };
 		2C99BCD60A0C621D6F0C3A84 /* SSLProxyingListViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SSLProxyingListViewModelTests.swift; path = RockxyTests/Views/Settings/SSLProxyingListViewModelTests.swift; sourceTree = "<group>"; };
+		4FAF90356407D961D63110B1 /* TrafficDomainSnapshot.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TrafficDomainSnapshot.swift; path = Rockxy/Core/Services/TrafficDomainSnapshot.swift; sourceTree = "<group>"; };
 		94D100EF398E433CBF214BB5 /* SSLImporterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SSLImporterTests.swift; path = RockxyTests/Core/ProxyEngine/SSLImporterTests.swift; sourceTree = "<group>"; };
 		B4AB602A25240F8F700239D0 /* SSLProxyingRuleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SSLProxyingRuleTests.swift; path = RockxyTests/Models/Settings/SSLProxyingRuleTests.swift; sourceTree = "<group>"; };
 		DCA99FBB2F61ADC9005B1552 /* Rockxy Community.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Rockxy Community.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -209,6 +211,14 @@
 			name = Views;
 			sourceTree = "<group>";
 		};
+		51118B2304C98CF650B660E8 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				4FAF90356407D961D63110B1 /* TrafficDomainSnapshot.swift */,
+			);
+			name = Services;
+			sourceTree = "<group>";
+		};
 		5B7D9626F6D6ADD5A0557D3C /* RockxyTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -223,6 +233,14 @@
 				992CD104D5D75430669D37D2 /* Settings */,
 			);
 			name = Views;
+			sourceTree = "<group>";
+		};
+		7D2B8ECD56B8A407BABF9492 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				51118B2304C98CF650B660E8 /* Services */,
+			);
+			name = Core;
 			sourceTree = "<group>";
 		};
 		881F1DA6947EB0A2430143BB /* Settings */ = {
@@ -305,6 +323,7 @@
 				5B7D9626F6D6ADD5A0557D3C /* RockxyTests */,
 				129A3C61A8A5DBD53D1EA91B /* RockxyTests */,
 				ECBA3EE42792B0D2030227EA /* RockxyTests */,
+				F26CCF05C76D8861A13E37CF /* Rockxy */,
 			);
 			sourceTree = "<group>";
 		};
@@ -325,6 +344,14 @@
 				2FCC80A8F99ED24C5FBBA7A0 /* Views */,
 			);
 			name = RockxyTests;
+			sourceTree = "<group>";
+		};
+		F26CCF05C76D8861A13E37CF /* Rockxy */ = {
+			isa = PBXGroup;
+			children = (
+				7D2B8ECD56B8A407BABF9492 /* Core */,
+			);
+			name = Rockxy;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -530,6 +557,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				153B47CC5D4EFF2518913882 /* TrafficDomainSnapshot.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
