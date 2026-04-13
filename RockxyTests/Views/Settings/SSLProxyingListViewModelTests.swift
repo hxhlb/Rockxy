@@ -250,7 +250,8 @@ struct SSLProxyingListViewModelTests {
         let countBefore = vm.manager.rules.count
         vm.addRules(["a.com", "b.com", "c.com"])
         #expect(vm.manager.rules.count == countBefore + 3)
-        #expect(vm.manager.rules.map(\.domain) == ["a.com", "b.com", "c.com"])
+        let addedDomains = Array(vm.manager.rules[countBefore ..< countBefore + 3]).map(\.domain)
+        #expect(addedDomains == ["a.com", "b.com", "c.com"])
     }
 
     // MARK: - Batch Add
