@@ -206,6 +206,40 @@ struct RuleQuotaTests {
         await RuleEngine.shared.removeRule(id: rule.id)
     }
 
+    @Test("Switching exclusive network conditions succeeds at limit = 1")
+    func exclusiveNetworkConditionSwitchAtLimitOne() async {
+        let gate = RulePolicyGate(policy: PolicyWithLimit(1))
+
+        let ruleA = ProxyRule(
+            name: "NetCondA",
+            isEnabled: true,
+            matchCondition: RuleMatchCondition(urlPattern: ".*a.*"),
+            action: .networkCondition(preset: .custom, delayMs: 100)
+        )
+        let ruleB = ProxyRule(
+            name: "NetCondB",
+            isEnabled: false,
+            matchCondition: RuleMatchCondition(urlPattern: ".*b.*"),
+            action: .networkCondition(preset: .custom, delayMs: 200)
+        )
+        await RuleEngine.shared.addRule(ruleA)
+        await RuleEngine.shared.addRule(ruleB)
+
+        // With limit=1 and ruleA already active, switching to ruleB must succeed
+        // because the exclusive enable disables ruleA first → post-switch count is 1
+        let accepted = await gate.enableExclusiveNetworkCondition(id: ruleB.id)
+        #expect(accepted)
+
+        let allRules = await RuleEngine.shared.allRules
+        let activeA = allRules.first { $0.id == ruleA.id }
+        let activeB = allRules.first { $0.id == ruleB.id }
+        #expect(activeA?.isEnabled == false)
+        #expect(activeB?.isEnabled == true)
+
+        await RuleEngine.shared.removeRule(id: ruleA.id)
+        await RuleEngine.shared.removeRule(id: ruleB.id)
+    }
+
     // MARK: - Rule Loading Race Regression
 
     @Test("rulesLoaded is false until loadFromDisk completes")

@@ -32,19 +32,22 @@ actor ScriptPluginManager {
 
     func loadAllPlugins() async {
         plugins = await discovery.discoverPlugins()
-        for i in plugins.indices where plugins[i].isEnabled {
-            let id = plugins[i].id
+
+        // Snapshot enabled plugin IDs and their info before any await.
+        // Never reuse array indices across suspension points.
+        let enabledSnapshots = plugins.filter(\.isEnabled).map { (id: $0.id, info: $0) }
+
+        for snapshot in enabledSnapshots {
             do {
-                try await runtime.loadPlugin(plugins[i])
-                // Re-resolve after await — another caller may have mutated plugins
-                if let j = plugins.firstIndex(where: { $0.id == id }) {
+                try await runtime.loadPlugin(snapshot.info)
+                if let j = plugins.firstIndex(where: { $0.id == snapshot.id }) {
                     plugins[j].status = .active
                 }
             } catch {
-                if let j = plugins.firstIndex(where: { $0.id == id }) {
+                if let j = plugins.firstIndex(where: { $0.id == snapshot.id }) {
                     plugins[j].status = .error(error.localizedDescription)
                 }
-                Self.logger.error("Failed to load plugin \(id): \(error.localizedDescription)")
+                Self.logger.error("Failed to load plugin \(snapshot.id): \(error.localizedDescription)")
             }
         }
         Self.logger.info("Loaded \(self.plugins.count) plugins")
