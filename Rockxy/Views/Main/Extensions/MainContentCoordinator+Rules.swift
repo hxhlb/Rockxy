@@ -5,21 +5,21 @@ import Foundation
 // MARK: - MainContentCoordinator + Rules
 
 /// Coordinator extension for proxy rule management (block, map, breakpoint, throttle).
-/// Delegates to `RuleSyncService` which coordinates between the shared `RuleEngine` actor,
-/// disk persistence via `RuleStore`, and UI notification via `NotificationCenter`.
+/// Delegates to `RulePolicyGate` which enforces per-category quotas before
+/// forwarding to `RuleSyncService`.
 extension MainContentCoordinator {
     // MARK: - Rule Management
 
     func addRule(_ rule: ProxyRule) {
-        Task { await RuleSyncService.addRule(rule) }
+        Task { await RulePolicyGate.shared.addRule(rule) }
     }
 
     func removeRule(id: UUID) {
-        Task { await RuleSyncService.removeRule(id: id) }
+        Task { await RulePolicyGate.shared.removeRule(id: id) }
     }
 
     func toggleRule(id: UUID) {
-        Task { await RuleSyncService.toggleRule(id: id) }
+        Task { await RulePolicyGate.shared.toggleRule(id: id) }
     }
 
     func createBreakpointRule(for transaction: HTTPTransaction) {

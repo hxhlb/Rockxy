@@ -50,12 +50,12 @@ final class ModifyHeaderWindowViewModel {
             return
         }
         allRules[index].isEnabled.toggle()
-        Task { await RuleSyncService.toggleRule(id: id) }
+        Task { await RulePolicyGate.shared.toggleRule(id: id) }
     }
 
     func addRule(_ rule: ProxyRule) {
         allRules.append(rule)
-        Task { await RuleSyncService.addRule(rule) }
+        Task { await RulePolicyGate.shared.addRule(rule) }
     }
 
     func updateRule(_ rule: ProxyRule) {
@@ -63,12 +63,12 @@ final class ModifyHeaderWindowViewModel {
             return
         }
         allRules[index] = rule
-        Task { await RuleSyncService.updateRule(rule) }
+        Task { await RulePolicyGate.shared.updateRule(rule) }
     }
 
     func removeRule(id: UUID) {
         allRules.removeAll { $0.id == id }
-        Task { await RuleSyncService.removeRule(id: id) }
+        Task { await RulePolicyGate.shared.removeRule(id: id) }
     }
 
     func operations(for rule: ProxyRule) -> [HeaderOperation] {
