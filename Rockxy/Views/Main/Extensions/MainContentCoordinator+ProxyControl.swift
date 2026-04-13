@@ -230,7 +230,8 @@ extension MainContentCoordinator {
                 self.handleClientAppEnrichment(enrichedIDs)
             }
         }
-        await sessionManager.setMaxBufferSize(settings.maxBufferSize)
+        let effectiveBufferSize = min(settings.maxBufferSize, policy.maxLiveHistoryEntries)
+        await sessionManager.setMaxBufferSize(effectiveBufferSize)
         await sessionManager.setProxyPort(resolvedPort)
         await sessionManager.startBatchTimer()
 
@@ -276,6 +277,11 @@ extension MainContentCoordinator {
         updateAllWorkspaces(with: filteredBatch)
 
         headerColumnStore.updateDiscoveredHeaders(fromBatch: filteredBatch)
+
+        if transactions.count > policy.maxLiveHistoryEntries {
+            let overflow = transactions.count - policy.maxLiveHistoryEntries
+            evictOldestTransactions(count: overflow)
+        }
     }
 
     func handleClientAppEnrichment(_ enrichedIDs: [UUID]) {
