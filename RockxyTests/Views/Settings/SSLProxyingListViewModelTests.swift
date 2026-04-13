@@ -243,8 +243,8 @@ struct SSLProxyingListViewModelTests {
         #expect(vm.selectedRuleID == nil)
     }
 
-    @Test("addRules batch path does not call addRule per domain")
-    func addRulesBatchIsSinglePersistence() {
+    @Test("addRules adds multiple domains and preserves order")
+    func addRulesAddsMultipleDomains() {
         let (vm, tempURL) = makeViewModel()
         defer { try? FileManager.default.removeItem(at: tempURL) }
         let countBefore = vm.manager.rules.count
@@ -255,8 +255,8 @@ struct SSLProxyingListViewModelTests {
 
     // MARK: - Batch Add
 
-    @Test("addRules batch-adds multiple domains in one save")
-    func addRulesBatch() {
+    @Test("addRules adds multiple domains and selects last")
+    func addRulesSelectsLast() {
         let (vm, tempURL) = makeViewModel()
         defer { try? FileManager.default.removeItem(at: tempURL) }
         vm.addRules(["a.com", "b.com", "c.com"])

@@ -105,10 +105,10 @@ struct SSLProxyingManagerTests {
 
     // MARK: - shouldIntercept
 
-    @Test("shouldIntercept returns true when list is empty (intercept all)")
+    @Test("shouldIntercept returns false when include list is empty (opt-in)")
     func interceptEmptyList() {
         let manager = makeManager()
-        #expect(manager.shouldIntercept("anything.com"))
+        #expect(!manager.shouldIntercept("anything.com"))
     }
 
     @Test("shouldIntercept returns true for matching include rule")
@@ -164,6 +164,7 @@ struct SSLProxyingManagerTests {
     @Test("shouldIntercept returns false for bypass domain")
     func interceptBypassDomain() {
         let manager = makeManager()
+        manager.addRule(SSLProxyingRule(domain: "*", listType: .include))
         manager.setBypassDomains("dns.google,ocsp.digicert.com")
         #expect(!manager.shouldIntercept("dns.google"))
         #expect(!manager.shouldIntercept("ocsp.digicert.com"))

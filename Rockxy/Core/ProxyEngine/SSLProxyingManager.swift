@@ -158,7 +158,7 @@ final class SSLProxyingManager {
         }
 
         if includeSnapshot.isEmpty {
-            return true
+            return false
         }
 
         return includeSnapshot.contains { $0.matches(host) }
@@ -265,9 +265,13 @@ final class SSLProxyingManager {
         {
             isEnabled = storage.isEnabled
             bypassDomains = storage.bypassDomains
+            rebuildBypassCache()
             replaceAllRules(storage.rules)
         } else {
             let decoded = try JSONDecoder().decode([SSLProxyingRule].self, from: data)
+            isEnabled = true
+            bypassDomains = Self.defaultBypassDomains
+            rebuildBypassCache()
             replaceAllRules(decoded)
         }
     }
