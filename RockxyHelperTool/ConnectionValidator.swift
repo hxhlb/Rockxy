@@ -67,28 +67,18 @@ enum ConnectionValidator {
 
     private static let allowedCallerIdentifiers = RockxyIdentity.current.allowedCallerIdentifiers
 
-    /// Attempts to obtain a `SecCode` using the connection's audit token.
-    ///
-    /// `NSXPCConnection` stores the audit token internally but the property was not
-    /// publicly exposed until macOS 15 / Xcode 16 SDK. We access it via KVC as a
-    /// `Data`-valued property, which has been stable since macOS 10.7. If KVC access
-    /// fails (e.g., Apple removes or renames the property), we return nil and the
-    /// caller falls back to PID-based lookup.
+    /// Extracts the audit token from an XPC connection via KVC and delegates
+    /// to `CallerValidation.secCodeFromAuditToken(_:)` for SecCode lookup.
     private static func codeFromAuditToken(connection: NSXPCConnection) -> SecCode? {
-        // KVC access to the audit token. The underlying Obj-C property wraps
-        // audit_token_t in an NSData when accessed via valueForKey:.
         guard let tokenValue = connection.value(forKey: "auditToken") else {
             logger.debug("SECURITY: auditToken KVC returned nil")
             return nil
         }
 
-        // The KVC result may come back as Data (NSData) containing the raw audit_token_t bytes.
         let tokenData: Data
         if let data = tokenValue as? Data {
             tokenData = data
         } else {
-            // If the runtime returns audit_token_t as a struct wrapped in NSValue,
-            // extract its bytes. This branch handles future SDK changes gracefully.
             var token = audit_token_t()
             let expectedSize = MemoryLayout<audit_token_t>.size
             guard let nsValue = tokenValue as? NSValue else {
@@ -99,21 +89,6 @@ enum ConnectionValidator {
             tokenData = Data(bytes: &token, count: expectedSize)
         }
 
-        guard tokenData.count == MemoryLayout<audit_token_t>.size else {
-            logger.debug("SECURITY: auditToken data size mismatch: \(tokenData.count)")
-            return nil
-        }
-
-        let attributes = [kSecGuestAttributeAudit: tokenData] as CFDictionary
-
-        var code: SecCode?
-        let status = SecCodeCopyGuestWithAttributes(nil, attributes, [], &code)
-
-        guard status == errSecSuccess, let code else {
-            logger.debug("SecCodeCopyGuestWithAttributes (audit token) failed: \(status)")
-            return nil
-        }
-
-        return code
+        return CallerValidation.secCodeFromAuditToken(tokenData)
     }
 }

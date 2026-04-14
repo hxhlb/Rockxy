@@ -66,7 +66,8 @@ struct HistoryRetentionTests {
         defer { NotificationCenter.default.removeObserver(observer) }
 
         // Report 25 accepted transactions — exceeds maxBufferSize (20)
-        await manager.reportAcceptedCount(25)
+        let gen = await manager.currentGeneration
+        await manager.reportAcceptedCount(25, generation: gen)
 
         try? await Task.sleep(for: .milliseconds(100))
 
@@ -88,7 +89,8 @@ struct HistoryRetentionTests {
         defer { NotificationCenter.default.removeObserver(observer) }
 
         // Report 10 accepted — exceeds maxBufferSize (5)
-        await manager.reportAcceptedCount(10)
+        let gen = await manager.currentGeneration
+        await manager.reportAcceptedCount(10, generation: gen)
 
         try? await Task.sleep(for: .milliseconds(100))
 
@@ -149,6 +151,39 @@ struct HistoryRetentionTests {
         // Verify the actor's pending buffer is empty
         let pending = await coordinator.sessionManager.flushPendingUpdates()
         #expect(pending.isEmpty)
+    }
+
+    @Test("Stale accepted-count from pre-clear batch is rejected")
+    @MainActor
+    func staleAcceptedCountRejectedAfterClear() async {
+        let manager = TrafficSessionManager()
+        await manager.setMaxBufferSize(100)
+
+        // Capture the pre-clear generation
+        let preClearGen = await manager.currentGeneration
+
+        // Simulate clearSession resetting the actor
+        await manager.resetBufferState()
+
+        // Now the generation has incremented. A stale report with the old generation
+        // should be silently rejected and not affect the post-clear accounting.
+        await manager.reportAcceptedCount(50, generation: preClearGen)
+
+        // A valid report with the current generation should be accepted
+        let currentGen = await manager.currentGeneration
+        await manager.reportAcceptedCount(10, generation: currentGen)
+
+        var evictionFired = false
+        let observer = NotificationCenter.default.addObserver(
+            forName: .bufferEvictionRequested, object: nil, queue: .main
+        ) { _ in evictionFired = true }
+        defer { NotificationCenter.default.removeObserver(observer) }
+
+        try? await Task.sleep(for: .milliseconds(100))
+
+        // totalBuffered should be 10 (only the current-generation report), not 60
+        // maxBufferSize is 100, so no eviction should have fired
+        #expect(!evictionFired)
     }
 
     @Test("Pinned/saved transactions are independent of live buffer")

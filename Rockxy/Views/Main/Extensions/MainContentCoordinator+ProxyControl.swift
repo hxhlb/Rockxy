@@ -267,8 +267,10 @@ extension MainContentCoordinator {
 
         // Report only accepted transactions back to the actor for buffer accounting.
         // This ensures paused/filtered batches do not consume the live-history budget.
+        // The generation tag prevents stale reports from a pre-clear batch affecting
+        // post-clear accounting.
         let acceptedCount = filteredBatch.count
-        Task { await sessionManager.reportAcceptedCount(acceptedCount) }
+        Task { await sessionManager.reportAcceptedCount(acceptedCount, generation: generation) }
 
         recordTrafficMetrics(for: filteredBatch)
 

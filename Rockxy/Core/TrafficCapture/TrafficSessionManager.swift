@@ -77,7 +77,10 @@ actor TrafficSessionManager {
         generation &+= 1
     }
 
-    func reportAcceptedCount(_ count: Int) {
+    func reportAcceptedCount(_ count: Int, generation: UInt) {
+        guard generation == self.generation else {
+            return
+        }
         totalBuffered += count
         if totalBuffered > maxBufferSize {
             evictOldest()

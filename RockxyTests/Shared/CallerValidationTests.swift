@@ -171,6 +171,42 @@ struct CallerValidationTests {
         #expect(!rejected)
     }
 
+    // MARK: - Audit Token SecCode Path
+
+    @Test("secCodeFromAuditToken rejects undersized data")
+    func auditTokenRejectsUndersizedData() {
+        let tooSmall = Data([1, 2, 3, 4])
+        let code = CallerValidation.secCodeFromAuditToken(tooSmall)
+        #expect(code == nil)
+    }
+
+    @Test("secCodeFromAuditToken rejects empty data")
+    func auditTokenRejectsEmptyData() {
+        let code = CallerValidation.secCodeFromAuditToken(Data())
+        #expect(code == nil)
+    }
+
+    @Test("secCodeForPID-based code satisfies the allowlist (audit-token equivalent path)")
+    func pidBasedCodeSatisfiesAllowlist() {
+        let pid = ProcessInfo.processInfo.processIdentifier
+        guard let code = CallerValidation.secCodeForPID(pid) else {
+            Issue.record("Cannot get SecCode for current PID")
+            return
+        }
+        let satisfied = CallerValidation.callerSatisfiesAnyIdentifier(
+            callerCode: code,
+            allowedIdentifiers: RockxyIdentity.current.allowedCallerIdentifiers
+        )
+        #expect(satisfied)
+    }
+
+    @Test("secCodeFromAuditToken rejects oversized data")
+    func auditTokenRejectsOversizedData() {
+        let tooLarge = Data(repeating: 0, count: MemoryLayout<audit_token_t>.size + 1)
+        let code = CallerValidation.secCodeFromAuditToken(tooLarge)
+        #expect(code == nil)
+    }
+
     @Test("Full validateCaller rejects invalid PID")
     func fullValidationRejectsInvalidPID() {
         let allowed = RockxyIdentity.current.allowedCallerIdentifiers

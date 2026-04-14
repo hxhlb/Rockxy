@@ -88,6 +88,21 @@ enum CallerValidation {
         return code
     }
 
+    /// Obtains a `SecCode` from raw audit token data (32-byte `audit_token_t`).
+    /// Returns nil if the data size is wrong or the Security framework rejects it.
+    static func secCodeFromAuditToken(_ tokenData: Data) -> SecCode? {
+        guard tokenData.count == MemoryLayout<audit_token_t>.size else {
+            return nil
+        }
+        let attributes = [kSecGuestAttributeAudit: tokenData] as CFDictionary
+        var code: SecCode?
+        let status = SecCodeCopyGuestWithAttributes(nil, attributes, [], &code)
+        guard status == errSecSuccess else {
+            return nil
+        }
+        return code
+    }
+
     static func certificatesForSelf() -> [SecCertificate]? {
         var code: SecCode?
         guard SecCodeCopySelf([], &code) == errSecSuccess, let selfCode = code else {
