@@ -161,11 +161,10 @@ extension MainContentCoordinator {
 
     func clearSession() {
         // Increment sessionGeneration synchronously BEFORE clearing state.
-        // The actor's generation will catch up when resetBufferState runs.
-        // processBatch rejects any batch whose generation < sessionGeneration
-        // (stale pre-clear traffic) and accepts batches whose generation >=
-        // sessionGeneration (fresh post-clear traffic once the actor resets).
+        // Pass the target generation to the actor so it jumps directly to the
+        // coordinator's value — no window where actor gen < sessionGen.
         sessionGeneration &+= 1
+        let targetGeneration = sessionGeneration
 
         transactions.removeAll()
         selectedTransactionIDs.removeAll()
@@ -179,8 +178,9 @@ extension MainContentCoordinator {
         clearAllWorkspaces()
         resetTrafficMetrics()
 
-        // Also reset the actor-side pending buffer.
-        Task { await sessionManager.resetBufferState() }
+        // Reset the actor-side pending buffer and set its generation to match
+        // the coordinator's so fresh traffic is immediately accepted.
+        Task { await sessionManager.resetBufferState(toGeneration: targetGeneration) }
 
         // Advance nextSequenceNumber past highest assigned to any remaining persisted favorite
         if persistedFavorites.isEmpty {

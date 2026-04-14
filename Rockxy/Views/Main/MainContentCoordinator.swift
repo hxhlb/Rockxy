@@ -252,7 +252,7 @@ final class MainContentCoordinator {
             return
         }
         rulesObserver = NotificationCenter.default.addObserver(
-            forName: .rulesDidChange, object: nil, queue: .main
+            forName: .rulesDidChange, object: nil, queue: nil
         ) { [weak self] notification in
             if let allRules = notification.object as? [ProxyRule] {
                 Task { @MainActor in

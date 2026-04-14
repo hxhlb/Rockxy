@@ -77,6 +77,12 @@ actor TrafficSessionManager {
         generation &+= 1
     }
 
+    func resetBufferState(toGeneration target: UInt) {
+        pendingUpdates.removeAll()
+        totalBuffered = 0
+        generation = target
+    }
+
     func reportAcceptedCount(_ count: Int, generation: UInt) {
         guard generation == self.generation else {
             return
