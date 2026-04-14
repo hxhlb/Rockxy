@@ -96,6 +96,11 @@ struct RuleCoordinatorWiringTests {
         #expect(notificationFired)
         #expect(coordinator.activeToast == nil)
 
+        // Verify the rule is actually disabled in the engine
+        let engineRules = await RuleEngine.shared.allRules
+        let toggled = engineRules.first { $0.id == rule.id }
+        #expect(toggled?.isEnabled == false)
+
         await RuleSyncService.replaceAllRules([])
     }
 
@@ -121,6 +126,11 @@ struct RuleCoordinatorWiringTests {
 
         #expect(coordinator.activeToast != nil)
         #expect(coordinator.activeToast?.style == .error)
+
+        // Verify the blocked rule stayed disabled in the engine
+        let engineRules = await RuleEngine.shared.allRules
+        let blocked = engineRules.first { $0.id == disabled.id }
+        #expect(blocked?.isEnabled == false)
 
         await RuleSyncService.replaceAllRules([])
     }
