@@ -55,6 +55,15 @@ struct RockxyIdentityTests {
         #expect(!identity.allowedCallerIdentifiers.contains("com.evil.app"))
     }
 
+    @Test("Single-ID allowlist contains only that identifier")
+    func singleIdAllowlist() {
+        let identity = RockxyIdentity(infoDictionary: [
+            "RockxyAllowedCallerIdentifiers": "com.solo.app",
+        ])
+        #expect(identity.allowedCallerIdentifiers == ["com.solo.app"])
+        #expect(!identity.allowedCallerIdentifiers.contains("com.amunx.rockxy"))
+    }
+
     @Test("Missing allowlist key falls back to app bundle identifier")
     func allowlistFallbackToAppBundleId() {
         let identity = RockxyIdentity(infoDictionary: [:])
