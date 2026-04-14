@@ -114,45 +114,48 @@ struct PluginSettingsViewModelTests {
 
     @Test("togglePlugin disable with real plugin refreshes correctly")
     func toggleDisableRefreshes() async throws {
-        let pluginsDir = TestFixtures.makeIsolatedPluginDir()
-        defer { TestFixtures.cleanupIsolatedPluginDir(pluginsDir) }
+        let env = TestFixtures.makeIsolatedPluginEnv()
+        defer { env.cleanup() }
 
         let id = "toggle-disable-\(UUID().uuidString.prefix(8))"
-        _ = try TestFixtures.createTempPlugin(id: id, enabled: true, in: pluginsDir)
+        _ = try TestFixtures.createTempPlugin(id: id, enabled: true, in: env.pluginsDir, defaults: env.defaults)
 
-        let manager = TestFixtures.makeIsolatedPluginManager(pluginsDir: pluginsDir)
-        await manager.loadAllPlugins()
+        await env.manager.loadAllPlugins()
 
-        let viewModel = PluginSettingsViewModel(pluginManager: manager)
-        viewModel.plugins = await manager.plugins
+        let viewModel = PluginSettingsViewModel(pluginManager: env.manager)
+        viewModel.plugins = await env.manager.plugins
         #expect(viewModel.plugins.first { $0.id == id }?.isEnabled == true)
 
         await viewModel.togglePlugin(id: id)
 
         #expect(viewModel.plugins.first { $0.id == id }?.isEnabled == false)
-        let managerPlugins = await manager.plugins
+        let managerPlugins = await env.manager.plugins
         #expect(managerPlugins.first { $0.id == id }?.isEnabled == false)
     }
 
     @Test("togglePlugin enable for unloadable plugin surfaces error")
     func toggleEnableUnloadablePluginSurfacesError() async throws {
-        let pluginsDir = TestFixtures.makeIsolatedPluginDir()
-        defer { TestFixtures.cleanupIsolatedPluginDir(pluginsDir) }
+        let env = TestFixtures.makeIsolatedPluginEnv()
+        defer { env.cleanup() }
 
         let id = "broken-\(UUID().uuidString.prefix(8))"
-        let pluginDir = try TestFixtures.createTempPlugin(id: id, enabled: false, in: pluginsDir)
+        let pluginDir = try TestFixtures.createTempPlugin(
+            id: id,
+            enabled: false,
+            in: env.pluginsDir,
+            defaults: env.defaults
+        )
 
-        let manager = TestFixtures.makeIsolatedPluginManager(pluginsDir: pluginsDir)
-        await manager.loadAllPlugins()
+        await env.manager.loadAllPlugins()
 
-        let plugins = await manager.plugins
+        let plugins = await env.manager.plugins
         #expect(plugins.contains { $0.id == id })
         #expect(plugins.first { $0.id == id }?.isEnabled == false)
 
         // Delete the script file after discovery so runtime.loadPlugin will fail
         try FileManager.default.removeItem(at: pluginDir.appendingPathComponent("index.js"))
 
-        let viewModel = PluginSettingsViewModel(pluginManager: manager)
+        let viewModel = PluginSettingsViewModel(pluginManager: env.manager)
         viewModel.plugins = plugins
 
         await viewModel.togglePlugin(id: id)
@@ -161,26 +164,34 @@ struct PluginSettingsViewModelTests {
         #expect(viewModel.lastEnableError != nil)
 
         // Manager state is authoritative — plugin should be rolled back to disabled
-        let managerPlugins = await manager.plugins
+        let managerPlugins = await env.manager.plugins
         #expect(managerPlugins.first { $0.id == id }?.isEnabled == false)
 
         // VM plugins must also reflect the rolled-back manager state (not stale UI)
         #expect(viewModel.plugins.first { $0.id == id }?.isEnabled == false)
+
+        // The refreshed status must show the error, not stale .disabled or .active
+        if case .error = viewModel.plugins.first(where: { $0.id == id })?.status {
+            // Expected — status reflects the load failure
+        } else {
+            Issue.record(
+                "Expected .error status, got \(String(describing: viewModel.plugins.first { $0.id == id }?.status))"
+            )
+        }
     }
 
     @Test("togglePlugin enable with real plugin updates state")
     func toggleEnableRefreshes() async throws {
-        let pluginsDir = TestFixtures.makeIsolatedPluginDir()
-        defer { TestFixtures.cleanupIsolatedPluginDir(pluginsDir) }
+        let env = TestFixtures.makeIsolatedPluginEnv()
+        defer { env.cleanup() }
 
         let id = "toggle-enable-\(UUID().uuidString.prefix(8))"
-        _ = try TestFixtures.createTempPlugin(id: id, enabled: false, in: pluginsDir)
+        _ = try TestFixtures.createTempPlugin(id: id, enabled: false, in: env.pluginsDir, defaults: env.defaults)
 
-        let manager = TestFixtures.makeIsolatedPluginManager(pluginsDir: pluginsDir)
-        await manager.loadAllPlugins()
+        await env.manager.loadAllPlugins()
 
-        let viewModel = PluginSettingsViewModel(pluginManager: manager)
-        viewModel.plugins = await manager.plugins
+        let viewModel = PluginSettingsViewModel(pluginManager: env.manager)
+        viewModel.plugins = await env.manager.plugins
         #expect(viewModel.plugins.first { $0.id == id }?.isEnabled == false)
 
         await viewModel.togglePlugin(id: id)

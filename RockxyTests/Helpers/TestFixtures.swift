@@ -5,6 +5,17 @@ import Foundation
 /// Provides pre-configured `HTTPTransaction`, `HTTPRequestData`, `HTTPResponseData`,
 /// `LogEntry`, `ProxyRule`, and specialized variants (GraphQL, WebSocket, bulk).
 enum TestFixtures {
+    /// Isolated plugin environment: directory, defaults, and manager all in one.
+    struct IsolatedPluginEnv {
+        let pluginsDir: URL
+        let defaults: UserDefaults
+        let manager: ScriptPluginManager
+
+        func cleanup() {
+            try? FileManager.default.removeItem(at: pluginsDir)
+        }
+    }
+
     static func makeTransaction(
         method: String = "GET",
         url: String = "https://api.example.com/test",
@@ -378,7 +389,14 @@ enum TestFixtures {
     /// Creates a temp plugin inside the given directory (isolated from real app-support).
     /// Use `makeIsolatedPluginDir()` to get an isolated directory, and
     /// `makeIsolatedPluginManager(pluginsDir:)` to get a manager that scans only that directory.
-    static func createTempPlugin(id: String, enabled: Bool, in pluginsDir: URL) throws -> URL {
+    static func createTempPlugin(
+        id: String,
+        enabled: Bool,
+        in pluginsDir: URL,
+        defaults: UserDefaults = .standard
+    )
+        throws -> URL
+    {
         try FileManager.default.createDirectory(at: pluginsDir, withIntermediateDirectories: true)
 
         let bundlePath = pluginsDir.appendingPathComponent(id, isDirectory: true)
@@ -409,10 +427,11 @@ enum TestFixtures {
             encoding: .utf8
         )
 
+        let key = RockxyIdentity.current.pluginEnabledKey(pluginID: id)
         if enabled {
-            UserDefaults.standard.set(true, forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
+            defaults.set(true, forKey: key)
         } else {
-            UserDefaults.standard.removeObject(forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
+            defaults.removeObject(forKey: key)
         }
 
         return bundlePath
@@ -428,9 +447,9 @@ enum TestFixtures {
         )
     }
 
-    static func cleanupTempPlugin(id: String, bundlePath: URL) {
+    static func cleanupTempPlugin(id: String, bundlePath: URL, defaults: UserDefaults = .standard) {
         try? FileManager.default.removeItem(at: bundlePath)
-        UserDefaults.standard.removeObject(forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
+        defaults.removeObject(forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
     }
 
     /// Returns a fresh temp directory for isolated plugin tests.
@@ -439,9 +458,18 @@ enum TestFixtures {
             .appendingPathComponent("RockxyPluginTests-\(UUID().uuidString)", isDirectory: true)
     }
 
-    /// Creates a `ScriptPluginManager` that only scans the given directory.
-    static func makeIsolatedPluginManager(pluginsDir: URL) -> ScriptPluginManager {
-        ScriptPluginManager(discovery: PluginDiscovery(pluginsDirectory: pluginsDir))
+    /// Returns an ephemeral `UserDefaults` suite isolated from `.standard`.
+    static func makeIsolatedDefaults() -> UserDefaults {
+        UserDefaults(suiteName: "RockxyPluginTests-\(UUID().uuidString)")!
+    }
+
+    /// Creates a fully isolated plugin test environment.
+    static func makeIsolatedPluginEnv() -> IsolatedPluginEnv {
+        let dir = makeIsolatedPluginDir()
+        let defs = makeIsolatedDefaults()
+        let discovery = PluginDiscovery(pluginsDirectory: dir, defaults: defs)
+        let manager = ScriptPluginManager(discovery: discovery, defaults: defs)
+        return IsolatedPluginEnv(pluginsDir: dir, defaults: defs, manager: manager)
     }
 
     /// Removes an isolated plugin test directory entirely.

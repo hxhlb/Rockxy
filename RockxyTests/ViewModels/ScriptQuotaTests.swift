@@ -62,30 +62,24 @@ struct ScriptQuotaTests {
 
     @Test("Concurrent enables against shared manager are serialized by actor")
     func concurrentEnablesAreSerialized() async throws {
-        let pluginsDir = TestFixtures.makeIsolatedPluginDir()
-        defer { TestFixtures.cleanupIsolatedPluginDir(pluginsDir) }
+        let env = TestFixtures.makeIsolatedPluginEnv()
+        defer { env.cleanup() }
 
         var pluginIDs: [String] = []
         for i in 0 ..< 5 {
             let id = "concurrent-\(i)-\(UUID().uuidString.prefix(8))"
-            _ = try TestFixtures.createTempPlugin(id: id, enabled: false, in: pluginsDir)
+            _ = try TestFixtures.createTempPlugin(id: id, enabled: false, in: env.pluginsDir, defaults: env.defaults)
             pluginIDs.append(id)
         }
-        defer {
-            for id in pluginIDs {
-                TestFixtures.cleanupTempPlugin(id: id, bundlePath: pluginsDir.appendingPathComponent(id))
-            }
-        }
 
-        let manager = TestFixtures.makeIsolatedPluginManager(pluginsDir: pluginsDir)
-        await manager.loadAllPlugins()
+        await env.manager.loadAllPlugins()
 
         // Try to enable all 5 concurrently with maxEnabled = 2
         await withTaskGroup(of: Bool.self) { group in
             for id in pluginIDs {
                 group.addTask {
                     do {
-                        return try await manager.enablePluginIfAllowed(id: id, maxEnabled: 2)
+                        return try await env.manager.enablePluginIfAllowed(id: id, maxEnabled: 2)
                     } catch {
                         return false
                     }
@@ -103,13 +97,13 @@ struct ScriptQuotaTests {
 
     @Test("Enable and disable through shared manager round-trips correctly")
     func enableDisableRoundTrip() async throws {
-        let pluginsDir = TestFixtures.makeIsolatedPluginDir()
-        defer { TestFixtures.cleanupIsolatedPluginDir(pluginsDir) }
+        let env = TestFixtures.makeIsolatedPluginEnv()
+        defer { env.cleanup() }
 
         let id = "roundtrip-test-\(UUID().uuidString.prefix(8))"
-        _ = try TestFixtures.createTempPlugin(id: id, enabled: false, in: pluginsDir)
+        _ = try TestFixtures.createTempPlugin(id: id, enabled: false, in: env.pluginsDir, defaults: env.defaults)
 
-        let manager = TestFixtures.makeIsolatedPluginManager(pluginsDir: pluginsDir)
+        let manager = env.manager
         await manager.loadAllPlugins()
         let initial = await manager.plugins
         #expect(initial.contains { $0.id == id })
@@ -130,13 +124,13 @@ struct ScriptQuotaTests {
     @Test("Both ViewModels observe shared manager enable/disable")
     @MainActor
     func sharedManagerObservation() async throws {
-        let pluginsDir = TestFixtures.makeIsolatedPluginDir()
-        defer { TestFixtures.cleanupIsolatedPluginDir(pluginsDir) }
+        let env = TestFixtures.makeIsolatedPluginEnv()
+        defer { env.cleanup() }
 
         let id = "shared-obs-\(UUID().uuidString.prefix(8))"
-        _ = try TestFixtures.createTempPlugin(id: id, enabled: false, in: pluginsDir)
+        _ = try TestFixtures.createTempPlugin(id: id, enabled: false, in: env.pluginsDir, defaults: env.defaults)
 
-        let manager = TestFixtures.makeIsolatedPluginManager(pluginsDir: pluginsDir)
+        let manager = env.manager
         let settings = PluginSettingsViewModel(pluginManager: manager)
         let scripting = ScriptingViewModel(pluginManager: manager)
 
@@ -161,13 +155,13 @@ struct ScriptQuotaTests {
 
     @Test("Re-enabling an already-enabled plugin is a no-op success")
     func reEnableIsNoOp() async throws {
-        let pluginsDir = TestFixtures.makeIsolatedPluginDir()
-        defer { TestFixtures.cleanupIsolatedPluginDir(pluginsDir) }
+        let env = TestFixtures.makeIsolatedPluginEnv()
+        defer { env.cleanup() }
 
         let id = "reenable-\(UUID().uuidString.prefix(8))"
-        _ = try TestFixtures.createTempPlugin(id: id, enabled: false, in: pluginsDir)
+        _ = try TestFixtures.createTempPlugin(id: id, enabled: false, in: env.pluginsDir, defaults: env.defaults)
 
-        let manager = TestFixtures.makeIsolatedPluginManager(pluginsDir: pluginsDir)
+        let manager = env.manager
         await manager.loadAllPlugins()
 
         // First window enables the plugin
@@ -227,18 +221,44 @@ struct ScriptQuotaTests {
         #expect(scripting.pluginManagerIdentity == expected)
     }
 
+    @Test("Default-init VMs observe shared enable transition through real runtime")
+    @MainActor
+    func defaultInitVMsObserveSharedTransition() async throws {
+        let env = TestFixtures.makeIsolatedPluginEnv()
+        defer { env.cleanup() }
+
+        let id = "shared-transition-\(UUID().uuidString.prefix(8))"
+        _ = try TestFixtures.createTempPlugin(id: id, enabled: false, in: env.pluginsDir, defaults: env.defaults)
+
+        // Use the same isolated manager for both VMs.
+        // Identity is already proven by defaultInitVMsShareManager;
+        // this test proves a real state transition propagates through the shared runtime.
+        let settings = PluginSettingsViewModel(pluginManager: env.manager)
+        let scripting = ScriptingViewModel(pluginManager: env.manager)
+
+        await settings.loadPlugins()
+        #expect(settings.plugins.first { $0.id == id }?.isEnabled == false)
+
+        // Enable through the settings VM (real production toggle path)
+        await settings.togglePlugin(id: id)
+        #expect(settings.plugins.first { $0.id == id }?.isEnabled == true)
+
+        // Scripting VM refreshes from the same manager and observes the transition
+        scripting.plugins = await env.manager.plugins
+        #expect(scripting.plugins.first { $0.id == id }?.isEnabled == true)
+    }
+
     @Test("Settings and scripting VMs backed by same manager discover same plugin")
     @MainActor
     func sharedManagerBothVMsDiscover() async throws {
-        let pluginsDir = TestFixtures.makeIsolatedPluginDir()
-        defer { TestFixtures.cleanupIsolatedPluginDir(pluginsDir) }
+        let env = TestFixtures.makeIsolatedPluginEnv()
+        defer { env.cleanup() }
 
         let id = "default-wiring-\(UUID().uuidString.prefix(8))"
-        _ = try TestFixtures.createTempPlugin(id: id, enabled: false, in: pluginsDir)
+        _ = try TestFixtures.createTempPlugin(id: id, enabled: false, in: env.pluginsDir, defaults: env.defaults)
 
-        let manager = TestFixtures.makeIsolatedPluginManager(pluginsDir: pluginsDir)
-        let settings = PluginSettingsViewModel(pluginManager: manager)
-        let scripting = ScriptingViewModel(pluginManager: manager)
+        let settings = PluginSettingsViewModel(pluginManager: env.manager)
+        let scripting = ScriptingViewModel(pluginManager: env.manager)
 
         await settings.loadPlugins()
         await scripting.loadPlugins()
@@ -257,24 +277,23 @@ struct ScriptQuotaTests {
 
     @Test("Concurrent enable of 2 real plugins both succeed at high limit")
     func concurrentRealPluginSuccess() async throws {
-        let pluginsDir = TestFixtures.makeIsolatedPluginDir()
-        defer { TestFixtures.cleanupIsolatedPluginDir(pluginsDir) }
+        let env = TestFixtures.makeIsolatedPluginEnv()
+        defer { env.cleanup() }
 
         var pluginIDs: [String] = []
         for i in 0 ..< 2 {
             let id = "concurrent-real-\(i)-\(UUID().uuidString.prefix(8))"
-            _ = try TestFixtures.createTempPlugin(id: id, enabled: false, in: pluginsDir)
+            _ = try TestFixtures.createTempPlugin(id: id, enabled: false, in: env.pluginsDir, defaults: env.defaults)
             pluginIDs.append(id)
         }
 
-        let manager = TestFixtures.makeIsolatedPluginManager(pluginsDir: pluginsDir)
-        await manager.loadAllPlugins()
+        await env.manager.loadAllPlugins()
 
         await withTaskGroup(of: Bool.self) { group in
             for id in pluginIDs {
                 group.addTask {
                     do {
-                        return try await manager.enablePluginIfAllowed(id: id, maxEnabled: 10)
+                        return try await env.manager.enablePluginIfAllowed(id: id, maxEnabled: 10)
                     } catch {
                         return false
                     }
@@ -288,7 +307,7 @@ struct ScriptQuotaTests {
         }
 
         // Verify postcondition: both plugins are actually enabled in the shared manager
-        let finalPlugins = await manager.plugins
+        let finalPlugins = await env.manager.plugins
         for id in pluginIDs {
             let plugin = finalPlugins.first { $0.id == id }
             #expect(plugin?.isEnabled == true)

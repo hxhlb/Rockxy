@@ -8,8 +8,9 @@ import os
 actor PluginDiscovery {
     // MARK: Lifecycle
 
-    init(pluginsDirectory: URL? = nil) {
+    init(pluginsDirectory: URL? = nil, defaults: UserDefaults = .standard) {
         customPluginsDirectory = pluginsDirectory
+        self.defaults = defaults
     }
 
     // MARK: Internal
@@ -32,6 +33,8 @@ actor PluginDiscovery {
             }
         }
     }
+
+    let defaults: UserDefaults
 
     var pluginsDirectoryURL: URL {
         let pluginsDir = customPluginsDirectory
@@ -81,7 +84,7 @@ actor PluginDiscovery {
                     continue
                 }
 
-                let isEnabled = UserDefaults.standard
+                let isEnabled = defaults
                     .bool(forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: manifest.id))
 
                 let info = PluginInfo(

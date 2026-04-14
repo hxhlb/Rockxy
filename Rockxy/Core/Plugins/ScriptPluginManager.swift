@@ -24,8 +24,9 @@ enum ScriptPluginError: Error, LocalizedError {
 actor ScriptPluginManager {
     // MARK: Lifecycle
 
-    init(discovery: PluginDiscovery = PluginDiscovery()) {
+    init(discovery: PluginDiscovery = PluginDiscovery(), defaults: UserDefaults = .standard) {
         self.discovery = discovery
+        self.defaults = defaults
     }
 
     // MARK: Internal
@@ -106,7 +107,7 @@ actor ScriptPluginManager {
                 return false
             }
             plugins[j].status = .active
-            UserDefaults.standard.set(true, forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
+            defaults.set(true, forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
             Self.logger.info("Enabled plugin: \(id)")
             return true
         } catch {
@@ -129,7 +130,7 @@ actor ScriptPluginManager {
             plugins[index].isEnabled = false
             plugins[index].status = .disabled
         }
-        UserDefaults.standard.set(false, forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
+        defaults.set(false, forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
         Self.logger.info("Disabled plugin: \(id)")
     }
 
@@ -161,7 +162,7 @@ actor ScriptPluginManager {
         if let j = plugins.firstIndex(where: { $0.id == id }) {
             plugins.remove(at: j)
         }
-        UserDefaults.standard.removeObject(forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
+        defaults.removeObject(forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
         Self.logger.info("Uninstalled plugin: \(id)")
     }
 
@@ -208,5 +209,6 @@ actor ScriptPluginManager {
     private static let logger = Logger(subsystem: RockxyIdentity.current.logSubsystem, category: "ScriptPluginManager")
 
     private let discovery: PluginDiscovery
+    private let defaults: UserDefaults
     private let runtime = ScriptRuntime()
 }
