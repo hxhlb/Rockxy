@@ -238,7 +238,36 @@ struct ScriptQuotaTests {
         #expect(settingsIDs == scriptingIDs)
     }
 
-    @Test("Default-init VMs observe shared enable transition through real runtime")
+    @Test("Default-init VMs propagate enable transition through PluginManager.shared.scriptManager")
+    @MainActor
+    func defaultInitVMsEnableTransitionThroughSharedSingleton() async throws {
+        // This plugin lives in the real app-support directory so that
+        // PluginManager.shared.scriptManager (the production singleton) discovers it.
+        // Cleanup is unconditional via defer — no developer state is left behind.
+        let id = "default-transition-\(UUID().uuidString.prefix(8))"
+        let pluginDir = try TestFixtures.createTempPlugin(id: id, enabled: false)
+        defer { TestFixtures.cleanupTempPlugin(id: id, bundlePath: pluginDir) }
+
+        let settings = PluginSettingsViewModel()
+        let scripting = ScriptingViewModel()
+
+        await settings.loadPlugins()
+        #expect(settings.plugins.contains { $0.id == id })
+        #expect(settings.plugins.first { $0.id == id }?.isEnabled == false)
+
+        // Enable through the settings VM — real production toggle path via shared singleton
+        await settings.togglePlugin(id: id)
+        #expect(settings.plugins.first { $0.id == id }?.isEnabled == true)
+
+        // Scripting VM refreshes from the same shared singleton and sees the transition
+        await scripting.loadPlugins()
+        #expect(scripting.plugins.first { $0.id == id }?.isEnabled == true)
+
+        // Disable to restore clean state before cleanup removes the directory
+        await settings.togglePlugin(id: id)
+    }
+
+    @Test("Default-init VMs observe shared enable transition through injected runtime")
     @MainActor
     func defaultInitVMsObserveSharedTransition() async throws {
         let env = TestFixtures.makeIsolatedPluginEnv()
