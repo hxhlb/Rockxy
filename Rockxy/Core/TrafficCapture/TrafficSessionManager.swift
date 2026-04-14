@@ -10,6 +10,7 @@ actor TrafficSessionManager {
 
     var onBatchReady: (@Sendable ([HTTPTransaction], _ generation: UInt) -> Void)?
     var onClientAppEnriched: (@Sendable ([UUID]) -> Void)?
+    var onBeginNewSession: (@Sendable (_ generation: UInt) async -> Void)?
 
     var currentGeneration: UInt {
         generation
@@ -23,6 +24,10 @@ actor TrafficSessionManager {
 
     func setOnClientAppEnriched(_ callback: @escaping @Sendable ([UUID]) -> Void) {
         onClientAppEnriched = callback
+    }
+
+    func setOnBeginNewSession(_ callback: (@Sendable (_ generation: UInt) async -> Void)?) {
+        onBeginNewSession = callback
     }
 
     func setMaxBufferSize(_ size: Int) {
@@ -77,10 +82,14 @@ actor TrafficSessionManager {
         generation &+= 1
     }
 
-    func resetBufferState(toGeneration target: UInt) {
+    func beginNewSession() async -> UInt {
         pendingUpdates.removeAll()
         totalBuffered = 0
-        generation = target
+        generation &+= 1
+        if let onBeginNewSession {
+            await onBeginNewSession(generation)
+        }
+        return generation
     }
 
     func reportAcceptedCount(_ count: Int, generation: UInt) {

@@ -128,15 +128,18 @@ enum RuleSyncService {
     // MARK: Private
 
     private static let logger = Logger(subsystem: RockxyIdentity.current.logSubsystem, category: "RuleSyncService")
+    private static let persistenceQueue = RulePersistenceQueue()
 
     private static func syncAll() async {
         let allRules = await RuleEngine.shared.allRules
-        // Perform disk I/O off the actor's executor to avoid blocking
-        // other RuleEngine calls while the file system is under load.
-        Task.detached(priority: .utility) {
-            try? RuleStore().saveRules(allRules)
-        }
+        await persistenceQueue.save(allRules)
         NotificationCenter.default.post(name: .rulesDidChange, object: allRules)
         logger.debug("Rules synced: \(allRules.count) rules")
+    }
+}
+
+private actor RulePersistenceQueue {
+    func save(_ rules: [ProxyRule]) {
+        try? RuleStore().saveRules(rules)
     }
 }

@@ -12,6 +12,11 @@ import os
 /// each file focused and within SwiftLint size limits.
 @MainActor @Observable
 final class MainContentCoordinator {
+    struct DeferredBatch {
+        let transactions: [HTTPTransaction]
+        let generation: UInt
+    }
+
     // MARK: Lifecycle
 
     init(policy: any AppPolicy = DefaultAppPolicy()) {
@@ -57,6 +62,9 @@ final class MainContentCoordinator {
     var activeProxyPort = AppSettingsManager.shared.settings.proxyPort
     var isRecording = true
     var sessionGeneration: UInt = 0
+    var isClearingSession = false
+    var clearingTargetGeneration: UInt?
+    var deferredSessionBatches: [DeferredBatch] = []
     var proxyError: String?
     var isSystemProxyConfigured = false
 

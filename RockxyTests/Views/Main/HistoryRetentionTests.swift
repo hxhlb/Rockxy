@@ -143,10 +143,7 @@ struct HistoryRetentionTests {
         }
 
         // Clear session — must also flush actor-side pending state
-        coordinator.clearSession()
-
-        // Give the actor reset Task time to complete
-        try? await Task.sleep(for: .milliseconds(100))
+        await coordinator.clearSession()
 
         // Verify the actor's pending buffer is empty
         let pending = await coordinator.sessionManager.flushPendingUpdates()
@@ -217,7 +214,7 @@ struct HistoryRetentionTests {
         #expect(!evictionFired) // 5 < 100, no eviction
     }
 
-    @Test("Coordinator clearSession rejects pre-clear and accepts post-clear traffic")
+    @Test("Coordinator clearSession aligns generations after awaited reset")
     @MainActor
     func coordinatorClearSessionGeneration() async {
         let coordinator = MainContentCoordinator(policy: SmallHistoryPolicy())
@@ -234,18 +231,78 @@ struct HistoryRetentionTests {
         let preClearGen = coordinator.sessionGeneration
 
         // Clear session
-        coordinator.clearSession()
+        await coordinator.clearSession()
 
         // sessionGeneration incremented synchronously
         #expect(coordinator.sessionGeneration == preClearGen &+ 1)
         #expect(coordinator.transactions.isEmpty)
 
-        // Wait for actor reset to complete
-        try? await Task.sleep(for: .milliseconds(50))
-
         // Actor generation should now match coordinator
         let actorGen = await coordinator.sessionManager.currentGeneration
         #expect(actorGen == coordinator.sessionGeneration)
+    }
+
+    @Test("Coordinator clearSession drops pre-clear pending batch and keeps only capped fresh post-clear batch")
+    @MainActor
+    func coordinatorClearSessionFlushPath() async {
+        let coordinator = MainContentCoordinator(policy: SmallHistoryPolicy())
+        coordinator.isRecording = true
+        let retainedCount = SmallHistoryPolicy().maxLiveHistoryEntries
+
+        await coordinator.sessionManager.setOnBatchReady { [weak coordinator] batch, generation in
+            guard let coordinator else {
+                return
+            }
+            Task { @MainActor in
+                coordinator.processBatch(batch, generation: generation)
+            }
+        }
+
+        for index in 0 ..< 49 {
+            await coordinator.sessionManager.addTransaction(
+                TestFixtures.makeTransaction(url: "https://pre-clear.com/\(index)")
+            )
+        }
+
+        await coordinator.clearSession()
+
+        for index in 0 ..< 50 {
+            await coordinator.sessionManager.addTransaction(
+                TestFixtures.makeTransaction(url: "https://post-clear.com/\(index)")
+            )
+        }
+
+        for _ in 0 ..< 500 {
+            if coordinator.transactions.count == retainedCount {
+                break
+            }
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+
+        #expect(coordinator.transactions.count == retainedCount)
+        #expect(coordinator.transactions.allSatisfy { $0.request.url.absoluteString.contains("post-clear.com") })
+    }
+
+    @Test("Coordinator clearSession queues rollover batches and drops stale batches delivered during clear")
+    @MainActor
+    func coordinatorClearSessionRolloverWindow() async {
+        let coordinator = MainContentCoordinator(policy: SmallHistoryPolicy())
+        coordinator.isRecording = true
+
+        let stale = TestFixtures.makeTransaction(url: "https://stale-during-clear.com")
+        let fresh = TestFixtures.makeTransaction(url: "https://fresh-during-clear.com")
+
+        await coordinator.sessionManager.setOnBeginNewSession { generation in
+            await MainActor.run {
+                coordinator.processBatch([stale], generation: generation &- 1)
+                coordinator.processBatch([fresh], generation: generation)
+            }
+        }
+
+        await coordinator.clearSession()
+
+        #expect(coordinator.transactions.count == 1)
+        #expect(coordinator.transactions.first?.request.url.absoluteString.contains("fresh-during-clear.com") ?? false)
     }
 
     @Test("Pinned/saved transactions are independent of live buffer")

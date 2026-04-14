@@ -97,8 +97,8 @@ struct BlockListViewModelTests {
         let vm = BlockListViewModel()
 
         vm.addBlockRule(
-            ruleName: "Block ChatGPT",
-            urlPattern: "*chatgpt.com/*",
+            ruleName: "Block Example API",
+            urlPattern: "*example-api.local/*",
             httpMethod: .any,
             matchType: .wildcard,
             blockAction: .returnForbidden,
@@ -107,7 +107,7 @@ struct BlockListViewModelTests {
 
         #expect(vm.blockRules.count == 1)
         let rule = vm.blockRules.first
-        #expect(rule?.name == "Block ChatGPT")
+        #expect(rule?.name == "Block Example API")
         #expect(rule?.matchCondition.method == nil)
         #expect(rule?.matchCondition.urlPattern?.contains(".*") == true)
     }

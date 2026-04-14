@@ -159,12 +159,19 @@ extension MainContentCoordinator {
         }
     }
 
-    func clearSession() {
-        // Increment sessionGeneration synchronously BEFORE clearing state.
-        // Pass the target generation to the actor so it jumps directly to the
-        // coordinator's value — no window where actor gen < sessionGen.
-        sessionGeneration &+= 1
-        let targetGeneration = sessionGeneration
+    func clearSession() async {
+        // Mark the rollover intent synchronously so batches delivered while the
+        // main actor is suspended can be classified deterministically.
+        let targetGeneration = sessionGeneration &+ 1
+        isClearingSession = true
+        clearingTargetGeneration = targetGeneration
+        deferredSessionBatches.removeAll()
+
+        // Advance the actor-side generation first so any traffic arriving while
+        // the main actor is suspended joins the new session instead of being
+        // stamped with an old generation.
+        let resolvedGeneration = await sessionManager.beginNewSession()
+        sessionGeneration = resolvedGeneration
 
         transactions.removeAll()
         selectedTransactionIDs.removeAll()
@@ -178,16 +185,21 @@ extension MainContentCoordinator {
         clearAllWorkspaces()
         resetTrafficMetrics()
 
-        // Reset the actor-side pending buffer and set its generation to match
-        // the coordinator's so fresh traffic is immediately accepted.
-        Task { await sessionManager.resetBufferState(toGeneration: targetGeneration) }
-
         // Advance nextSequenceNumber past highest assigned to any remaining persisted favorite
         if persistedFavorites.isEmpty {
             nextSequenceNumber = 0
         } else {
             let maxSeq = persistedFavorites.map(\.sequenceNumber).max() ?? 0
             nextSequenceNumber = maxSeq + 1
+        }
+
+        let deferredBatches = deferredSessionBatches
+        deferredSessionBatches.removeAll()
+        clearingTargetGeneration = nil
+        isClearingSession = false
+
+        for deferredBatch in deferredBatches {
+            processBatch(deferredBatch.transactions, generation: deferredBatch.generation)
         }
 
         NotificationCenter.default.post(name: .sessionCleared, object: nil)
@@ -247,7 +259,17 @@ extension MainContentCoordinator {
 
     // MARK: - Transaction Processing
 
-    private func processBatch(_ batch: [HTTPTransaction], generation: UInt) {
+    func processBatch(_ batch: [HTTPTransaction], generation: UInt) {
+        if isClearingSession {
+            guard generation == clearingTargetGeneration else {
+                Self.logger.debug("Batch of \(batch.count) dropped — stale clear-session generation")
+                return
+            }
+
+            deferredSessionBatches.append(.init(transactions: batch, generation: generation))
+            return
+        }
+
         guard generation == sessionGeneration else {
             Self.logger.debug("Batch of \(batch.count) dropped — stale session generation")
             return

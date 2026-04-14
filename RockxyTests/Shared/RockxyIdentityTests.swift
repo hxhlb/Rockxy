@@ -67,7 +67,7 @@ struct RockxyIdentityTests {
     @Test("Missing allowlist key falls back to app bundle identifier")
     func allowlistFallbackToAppBundleId() {
         let identity = RockxyIdentity(infoDictionary: [:])
-        #expect(identity.allowedCallerIdentifiers == ["com.amunx.rockxy.community"])
+        #expect(identity.allowedCallerIdentifiers == ["com.amunx.rockxy"])
     }
 
     // MARK: - Namespace Defaults
@@ -76,7 +76,7 @@ struct RockxyIdentityTests {
     func defaultValues() {
         let identity = RockxyIdentity(infoDictionary: [:])
         #expect(identity.familyNamespace == "com.amunx.rockxy")
-        #expect(identity.appBundleIdentifier == "com.amunx.rockxy.community")
+        #expect(identity.appBundleIdentifier == "com.amunx.rockxy")
         #expect(identity.helperBundleIdentifier == "com.amunx.rockxy.helper")
         #expect(identity.helperMachServiceName == "com.amunx.rockxy.helper")
         #expect(identity.sharedCertificateLabelPrefix == "com.amunx.rockxy.rootCA")
