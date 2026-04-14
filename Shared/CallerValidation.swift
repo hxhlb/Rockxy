@@ -103,6 +103,24 @@ enum CallerValidation {
         return code
     }
 
+    /// Returns the raw audit token bytes for the current process via `task_info`.
+    /// Used by tests to obtain a real token that `secCodeFromAuditToken` can resolve.
+    static func currentProcessAuditToken() -> Data? {
+        var token = audit_token_t()
+        var size = mach_msg_type_number_t(
+            MemoryLayout<audit_token_t>.size / MemoryLayout<natural_t>.size
+        )
+        let kr = withUnsafeMutablePointer(to: &token) { tokenPtr in
+            tokenPtr.withMemoryRebound(to: integer_t.self, capacity: Int(size)) { intPtr in
+                task_info(mach_task_self_, task_flavor_t(TASK_AUDIT_TOKEN), intPtr, &size)
+            }
+        }
+        guard kr == KERN_SUCCESS else {
+            return nil
+        }
+        return withUnsafeBytes(of: token) { Data($0) }
+    }
+
     static func certificatesForSelf() -> [SecCertificate]? {
         var code: SecCode?
         guard SecCodeCopySelf([], &code) == errSecSuccess, let selfCode = code else {

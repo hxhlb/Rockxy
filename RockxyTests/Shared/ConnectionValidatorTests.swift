@@ -54,6 +54,69 @@ struct ConnectionValidatorTests {
         #expect(ConnectionValidator.isValidCaller(connection))
     }
 
+    // MARK: - isValidCaller(_:) Accept Path with Real Audit Token Revalidation
+
+    @Test("isValidCaller exercises audit-token revalidation branch with real Data token")
+    func acceptsWithRealDataAuditToken() {
+        let pid = ProcessInfo.processInfo.processIdentifier
+        guard let realToken = CallerValidation.currentProcessAuditToken() else {
+            Issue.record("Cannot obtain current process audit token")
+            return
+        }
+
+        // This token produces a real SecCode, so the audit revalidation branch runs:
+        //   if let auditCode = secCodeFromAuditToken(tokenData) → non-nil
+        //     callerSatisfiesAnyIdentifier(auditCode, ...) → true
+        let connection = TestXPCConnection(fakePID: pid, auditTokenValue: realToken)
+        defer { connection.invalidate() }
+
+        #expect(ConnectionValidator.isValidCaller(connection))
+    }
+
+    @Test("isValidCaller exercises audit-token revalidation branch with real NSValue token")
+    func acceptsWithRealNSValueAuditToken() {
+        let pid = ProcessInfo.processInfo.processIdentifier
+        guard let realToken = CallerValidation.currentProcessAuditToken() else {
+            Issue.record("Cannot obtain current process audit token")
+            return
+        }
+
+        // Wrap the real token bytes in NSValue to exercise the NSValue → Data → SecCode path.
+        let nsValue = realToken.withUnsafeBytes { buffer -> NSValue in
+            guard let base = buffer.baseAddress else {
+                preconditionFailure("Empty audit token data")
+            }
+            return NSValue(bytes: base, objCType: "{audit_token_t=[8I]}")
+        }
+        let connection = TestXPCConnection(fakePID: pid, auditTokenValue: nsValue)
+        defer { connection.invalidate() }
+
+        #expect(ConnectionValidator.isValidCaller(connection))
+    }
+
+    @Test("validateCaller exercises audit-token revalidation with real token data")
+    func validateCallerWithRealAuditToken() {
+        let pid = ProcessInfo.processInfo.processIdentifier
+        guard let realToken = CallerValidation.currentProcessAuditToken() else {
+            Issue.record("Cannot obtain current process audit token")
+            return
+        }
+
+        // secCodeFromAuditToken(realToken) → real SecCode → callerSatisfiesAnyIdentifier → true
+        #expect(ConnectionValidator.validateCaller(pid: pid, auditTokenData: realToken))
+    }
+
+    @Test("secCodeFromAuditToken returns non-nil for real current-process audit token")
+    func secCodeFromRealAuditTokenSucceeds() {
+        guard let realToken = CallerValidation.currentProcessAuditToken() else {
+            Issue.record("Cannot obtain current process audit token")
+            return
+        }
+
+        let code = CallerValidation.secCodeFromAuditToken(realToken)
+        #expect(code != nil)
+    }
+
     // MARK: - isValidCaller(_:) Reject Path
 
     @Test("isValidCaller rejects connection with PID 0")
