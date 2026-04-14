@@ -115,8 +115,8 @@ struct PluginSettingsViewModelTests {
     @Test("togglePlugin disable with real plugin refreshes correctly")
     func toggleDisableRefreshes() async throws {
         let id = "toggle-disable-\(UUID().uuidString.prefix(8))"
-        let pluginDir = try createTempPlugin(id: id, enabled: true)
-        defer { cleanupTempPlugin(id: id, bundlePath: pluginDir) }
+        let pluginDir = try TestFixtures.createTempPlugin(id: id, enabled: true)
+        defer { TestFixtures.cleanupTempPlugin(id: id, bundlePath: pluginDir) }
 
         let manager = ScriptPluginManager()
         await manager.loadAllPlugins()
@@ -136,7 +136,7 @@ struct PluginSettingsViewModelTests {
     func toggleEnableUnloadablePluginSurfacesError() async throws {
         let id = "broken-\(UUID().uuidString.prefix(8))"
         let pluginDir = try createBrokenPlugin(id: id)
-        defer { cleanupTempPlugin(id: id, bundlePath: pluginDir) }
+        defer { TestFixtures.cleanupTempPlugin(id: id, bundlePath: pluginDir) }
 
         let manager = ScriptPluginManager()
         await manager.loadAllPlugins()
@@ -164,8 +164,8 @@ struct PluginSettingsViewModelTests {
     @Test("togglePlugin enable with real plugin updates state")
     func toggleEnableRefreshes() async throws {
         let id = "toggle-enable-\(UUID().uuidString.prefix(8))"
-        let pluginDir = try createTempPlugin(id: id, enabled: false)
-        defer { cleanupTempPlugin(id: id, bundlePath: pluginDir) }
+        let pluginDir = try TestFixtures.createTempPlugin(id: id, enabled: false)
+        defer { TestFixtures.cleanupTempPlugin(id: id, bundlePath: pluginDir) }
 
         let manager = ScriptPluginManager()
         await manager.loadAllPlugins()
@@ -193,60 +193,8 @@ struct PluginSettingsViewModelTests {
 
     // MARK: Private
 
-    /// Creates a valid plugin that passes discovery, then deletes the script
-    /// file so that `runtime.loadPlugin` will fail when attempting to enable.
-    /// The plugin is created disabled so `loadAllPlugins()` skips the load phase.
     private func createBrokenPlugin(id: String) throws -> URL {
-        try createTempPlugin(id: id, enabled: false)
-        // Remove the script file AFTER creation — discovery has already validated it
-        // during the caller's `loadAllPlugins()` the file must exist for validation,
-        // so we return the path and the caller deletes it after discovery.
-    }
-
-    private func createTempPlugin(id: String, enabled: Bool) throws -> URL {
-        let pluginsDir = RockxyIdentity.current.appSupportPath("Plugins")
-        try FileManager.default.createDirectory(at: pluginsDir, withIntermediateDirectories: true)
-
-        let bundlePath = pluginsDir.appendingPathComponent(id, isDirectory: true)
-        try FileManager.default.createDirectory(at: bundlePath, withIntermediateDirectories: true)
-
-        let manifest = """
-        {
-            "id": "\(id)",
-            "name": "Test Plugin \(id)",
-            "version": "1.0.0",
-            "author": { "name": "Test" },
-            "description": "Test plugin",
-            "types": ["script"],
-            "entryPoints": { "script": "index.js" },
-            "capabilities": []
-        }
-        """
-        try manifest.write(
-            to: bundlePath.appendingPathComponent("plugin.json"),
-            atomically: true,
-            encoding: .utf8
-        )
-
-        let script = "module.exports = {};"
-        try script.write(
-            to: bundlePath.appendingPathComponent("index.js"),
-            atomically: true,
-            encoding: .utf8
-        )
-
-        if enabled {
-            UserDefaults.standard.set(true, forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
-        } else {
-            UserDefaults.standard.removeObject(forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
-        }
-
-        return bundlePath
-    }
-
-    private func cleanupTempPlugin(id: String, bundlePath: URL) {
-        try? FileManager.default.removeItem(at: bundlePath)
-        UserDefaults.standard.removeObject(forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
+        try TestFixtures.createTempPlugin(id: id, enabled: false)
     }
 
     private func makePlugin(

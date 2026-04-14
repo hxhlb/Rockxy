@@ -7,8 +7,6 @@ import Testing
 /// Serialized: mutates shared plugin directory and UserDefaults plugin-enabled keys.
 @Suite(.serialized)
 struct ScriptQuotaTests {
-    // MARK: Internal
-
     @Test("ScriptPolicyGate reads limit from AppPolicy")
     @MainActor
     func gateLimitFromPolicy() {
@@ -69,13 +67,13 @@ struct ScriptQuotaTests {
         var pluginDirs: [URL] = []
         for i in 0 ..< 5 {
             let id = "concurrent-\(i)-\(UUID().uuidString.prefix(8))"
-            let dir = try Self.createTempPlugin(id: id, enabled: false)
+            let dir = try TestFixtures.createTempPlugin(id: id, enabled: false)
             pluginIDs.append(id)
             pluginDirs.append(dir)
         }
         defer {
             for (id, dir) in zip(pluginIDs, pluginDirs) {
-                Self.cleanupPlugin(id: id, bundlePath: dir)
+                TestFixtures.cleanupTempPlugin(id: id, bundlePath: dir)
             }
         }
 
@@ -106,8 +104,8 @@ struct ScriptQuotaTests {
     @Test("Enable and disable through shared manager round-trips correctly")
     func enableDisableRoundTrip() async throws {
         let id = "roundtrip-test-\(UUID().uuidString.prefix(8))"
-        let pluginDir = try Self.createTempPlugin(id: id, enabled: false)
-        defer { Self.cleanupPlugin(id: id, bundlePath: pluginDir) }
+        let pluginDir = try TestFixtures.createTempPlugin(id: id, enabled: false)
+        defer { TestFixtures.cleanupTempPlugin(id: id, bundlePath: pluginDir) }
 
         let manager = ScriptPluginManager()
         await manager.loadAllPlugins()
@@ -131,8 +129,8 @@ struct ScriptQuotaTests {
     @MainActor
     func sharedManagerObservation() async throws {
         let id = "shared-obs-\(UUID().uuidString.prefix(8))"
-        let pluginDir = try Self.createTempPlugin(id: id, enabled: false)
-        defer { Self.cleanupPlugin(id: id, bundlePath: pluginDir) }
+        let pluginDir = try TestFixtures.createTempPlugin(id: id, enabled: false)
+        defer { TestFixtures.cleanupTempPlugin(id: id, bundlePath: pluginDir) }
 
         let manager = ScriptPluginManager()
         let settings = PluginSettingsViewModel(pluginManager: manager)
@@ -160,8 +158,8 @@ struct ScriptQuotaTests {
     @Test("Re-enabling an already-enabled plugin is a no-op success")
     func reEnableIsNoOp() async throws {
         let id = "reenable-\(UUID().uuidString.prefix(8))"
-        let pluginDir = try Self.createTempPlugin(id: id, enabled: false)
-        defer { Self.cleanupPlugin(id: id, bundlePath: pluginDir) }
+        let pluginDir = try TestFixtures.createTempPlugin(id: id, enabled: false)
+        defer { TestFixtures.cleanupTempPlugin(id: id, bundlePath: pluginDir) }
 
         let manager = ScriptPluginManager()
         await manager.loadAllPlugins()
@@ -208,50 +206,6 @@ struct ScriptQuotaTests {
         ScriptPolicyGate.shared = ScriptPolicyGate(policy: TinyScriptPolicy())
         _ = MainContentCoordinator(policy: DefaultAppPolicy())
         #expect(ScriptPolicyGate.shared.policy.maxEnabledScripts == 2)
-    }
-
-    // MARK: Private
-
-    // MARK: - Helpers
-
-    /// Creates a minimal valid plugin on disk in the app's plugin directory.
-    /// Returns the plugin bundle path. Caller is responsible for cleanup.
-    private static func createTempPlugin(id: String, enabled: Bool) throws -> URL {
-        let pluginsDir = RockxyIdentity.current.appSupportPath("Plugins")
-        try FileManager.default.createDirectory(at: pluginsDir, withIntermediateDirectories: true)
-
-        let bundlePath = pluginsDir.appendingPathComponent(id, isDirectory: true)
-        try FileManager.default.createDirectory(at: bundlePath, withIntermediateDirectories: true)
-
-        let manifest = """
-        {
-            "id": "\(id)",
-            "name": "Test Plugin \(id)",
-            "version": "1.0.0",
-            "author": { "name": "Test" },
-            "description": "Test plugin",
-            "types": ["script"],
-            "entryPoints": { "script": "index.js" },
-            "capabilities": []
-        }
-        """
-        try manifest.write(to: bundlePath.appendingPathComponent("plugin.json"), atomically: true, encoding: .utf8)
-
-        let script = "module.exports = {};"
-        try script.write(to: bundlePath.appendingPathComponent("index.js"), atomically: true, encoding: .utf8)
-
-        if enabled {
-            UserDefaults.standard.set(true, forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
-        } else {
-            UserDefaults.standard.removeObject(forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
-        }
-
-        return bundlePath
-    }
-
-    private static func cleanupPlugin(id: String, bundlePath: URL) {
-        try? FileManager.default.removeItem(at: bundlePath)
-        UserDefaults.standard.removeObject(forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
     }
 }
 

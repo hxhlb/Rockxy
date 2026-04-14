@@ -372,4 +372,52 @@ enum TestFixtures {
             return transaction
         }
     }
+
+    // MARK: - Plugin Helpers
+
+    static func createTempPlugin(id: String, enabled: Bool) throws -> URL {
+        let pluginsDir = RockxyIdentity.current.appSupportPath("Plugins")
+        try FileManager.default.createDirectory(at: pluginsDir, withIntermediateDirectories: true)
+
+        let bundlePath = pluginsDir.appendingPathComponent(id, isDirectory: true)
+        try FileManager.default.createDirectory(at: bundlePath, withIntermediateDirectories: true)
+
+        let manifest = """
+        {
+            "id": "\(id)",
+            "name": "Test Plugin \(id)",
+            "version": "1.0.0",
+            "author": { "name": "Test" },
+            "description": "Test plugin",
+            "types": ["script"],
+            "entryPoints": { "script": "index.js" },
+            "capabilities": []
+        }
+        """
+        try manifest.write(
+            to: bundlePath.appendingPathComponent("plugin.json"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let script = "module.exports = {};"
+        try script.write(
+            to: bundlePath.appendingPathComponent("index.js"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        if enabled {
+            UserDefaults.standard.set(true, forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
+        } else {
+            UserDefaults.standard.removeObject(forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
+        }
+
+        return bundlePath
+    }
+
+    static func cleanupTempPlugin(id: String, bundlePath: URL) {
+        try? FileManager.default.removeItem(at: bundlePath)
+        UserDefaults.standard.removeObject(forKey: RockxyIdentity.current.pluginEnabledKey(pluginID: id))
+    }
 }
