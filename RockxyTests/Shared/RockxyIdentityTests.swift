@@ -83,6 +83,35 @@ struct RockxyIdentityTests {
         #expect(identity.appBundleIdentifier == "com.test.custom.app")
     }
 
+    // MARK: - Live Config (TEST_HOST = real app process)
+
+    @Test("Live displayName resolves to Rockxy")
+    func liveDisplayName() {
+        #expect(RockxyIdentity.current.displayName == "Rockxy")
+    }
+
+    @Test("Live familyNamespace resolves to com.amunx.rockxy")
+    func liveFamilyNamespace() {
+        #expect(RockxyIdentity.current.familyNamespace == "com.amunx.rockxy")
+    }
+
+    @Test("Live helperBundleIdentifier resolves to com.amunx.rockxy.helper")
+    func liveHelperBundleIdentifier() {
+        #expect(RockxyIdentity.current.helperBundleIdentifier == "com.amunx.rockxy.helper")
+    }
+
+    @Test("Live allowedCallerIdentifiers contains both expected IDs")
+    func liveAllowedCallerIdentifiers() {
+        let ids = RockxyIdentity.current.allowedCallerIdentifiers
+        #expect(ids.contains("com.amunx.rockxy.community"))
+        #expect(ids.contains("com.amunx.rockxy"))
+    }
+
+    @Test("Live appBundleIdentifier is non-empty")
+    func liveAppBundleIdentifier() {
+        #expect(!RockxyIdentity.current.appBundleIdentifier.isEmpty)
+    }
+
     // MARK: - Derived Properties
 
     @Test("defaultsKey prefixes correctly")

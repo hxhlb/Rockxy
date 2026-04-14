@@ -17,6 +17,7 @@ struct RockxyIdentity {
             in: info,
             fallback: "com.amunx.rockxy"
         )
+        // Fallback matches the signed bundle identifier for binary compatibility.
         appBundleIdentifier = Self.string(
             named: "CFBundleIdentifier",
             in: info,
@@ -37,6 +38,7 @@ struct RockxyIdentity {
             in: info,
             fallback: "com.amunx.rockxy.helper.plist"
         )
+        // Fallback matches the defaults domain for binary compatibility.
         defaultsPrefix = Self.string(
             named: "RockxyDefaultsPrefix",
             in: info,
@@ -52,6 +54,7 @@ struct RockxyIdentity {
             in: info,
             fallback: appBundleIdentifier
         )
+        // Fallback matches the app support directory for binary compatibility.
         appSupportDirectoryName = Self.string(
             named: "RockxyAppSupportDirectoryName",
             in: info,
@@ -94,6 +97,7 @@ struct RockxyIdentity {
             in: info,
             fallback: "com.amunx.rockxy"
         )
+        // Fallback matches the signed bundle identifier for binary compatibility.
         appBundleIdentifier = Self.string(
             named: "CFBundleIdentifier",
             in: info,
@@ -114,6 +118,7 @@ struct RockxyIdentity {
             in: info,
             fallback: "com.amunx.rockxy.helper.plist"
         )
+        // Fallback matches the defaults domain for binary compatibility.
         defaultsPrefix = Self.string(
             named: "RockxyDefaultsPrefix",
             in: info,
@@ -129,6 +134,7 @@ struct RockxyIdentity {
             in: info,
             fallback: appBundleIdentifier
         )
+        // Fallback matches the app support directory for binary compatibility.
         appSupportDirectoryName = Self.string(
             named: "RockxyAppSupportDirectoryName",
             in: info,
