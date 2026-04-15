@@ -194,8 +194,13 @@ struct ScriptingListWindowView: View {
     private var addRemoveButtons: some View {
         HStack(spacing: 0) {
             Button {
-                Task { await viewModel.createNewScript() }
-                openWindow(id: "scriptEditor")
+                Task {
+                    if await viewModel.createNewScript() != nil {
+                        await MainActor.run {
+                            openWindow(id: "scriptEditor")
+                        }
+                    }
+                }
             } label: {
                 Image(systemName: "plus")
                     .frame(width: 22, height: 22)
@@ -217,8 +222,13 @@ struct ScriptingListWindowView: View {
 
     @ViewBuilder private var moreMenuItems: some View {
         Button("New…") {
-            Task { await viewModel.createNewScript() }
-            openWindow(id: "scriptEditor")
+            Task {
+                if await viewModel.createNewScript() != nil {
+                    await MainActor.run {
+                        openWindow(id: "scriptEditor")
+                    }
+                }
+            }
         }
         .keyboardShortcut("n", modifiers: .command)
         Button("New Folder") { viewModel.createNewFolder() }

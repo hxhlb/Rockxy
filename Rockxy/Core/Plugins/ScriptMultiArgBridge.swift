@@ -95,7 +95,7 @@ enum ScriptMultiArgBridge {
 
         let method = (source.objectForKeyedSubscript("method")?.toString() ?? original.method)
         let path = source.objectForKeyedSubscript("path")?.toString() ?? original.url.path
-        let queriesDict = (source.objectForKeyedSubscript("queries")?.toDictionary() as? [String: String]) ?? [:]
+        let queriesDict = parseQueryDictionary(source.objectForKeyedSubscript("queries"))
         let headersDict = (source.objectForKeyedSubscript("headers")?.toDictionary() as? [String: String]) ?? [:]
         let bodyVal = source.objectForKeyedSubscript("body")
         let bodyIsBase64Val = source.objectForKeyedSubscript("__bodyIsBase64")
@@ -125,7 +125,9 @@ enum ScriptMultiArgBridge {
         var components = URLComponents(url: original.url, resolvingAgainstBaseURL: false)
         components?.path = path.isEmpty ? "/" : (path.hasPrefix("/") ? path : "/" + path)
         if !queriesDict.isEmpty {
-            components?.queryItems = queriesDict.map { URLQueryItem(name: $0.key, value: $0.value) }
+            components?.queryItems = queriesDict.flatMap { key, values in
+                values.map { URLQueryItem(name: key, value: $0) }
+            }
         } else if let q = source.objectForKeyedSubscript("queries"), q.isObject, q.toDictionary()?.isEmpty == true {
             components?.queryItems = nil
         }
@@ -331,8 +333,8 @@ enum ScriptMultiArgBridge {
         return original.body
     }
 
-    private static func parseQueries(_ query: String) -> [String: String] {
-        var dict: [String: String] = [:]
+    private static func parseQueries(_ query: String) -> [String: [String]] {
+        var dict: [String: [String]] = [:]
         guard !query.isEmpty else {
             return dict
         }
@@ -342,9 +344,35 @@ enum ScriptMultiArgBridge {
                 continue
             }
             let value = parts.count > 1 ? (parts[1].removingPercentEncoding ?? "") : ""
-            dict[key] = value
+            dict[key, default: []].append(value)
         }
         return dict
+    }
+
+    private static func parseQueryDictionary(_ value: JSValue?) -> [String: [String]] {
+        guard let raw = value?.toDictionary() as? [String: Any] else {
+            return [:]
+        }
+        var queries: [String: [String]] = [:]
+        for (key, rawValue) in raw {
+            switch rawValue {
+            case let string as String:
+                queries[key] = [string]
+            case let strings as [String]:
+                queries[key] = strings
+            case let values as [Any]:
+                let flattened = values.compactMap { item -> String? in
+                    if let string = item as? String {
+                        return string
+                    }
+                    return nil
+                }
+                queries[key] = flattened
+            default:
+                continue
+            }
+        }
+        return queries
     }
 
     private static func warnIfHostMutated(source: JSValue, original: HTTPRequestData, pluginID: String) {

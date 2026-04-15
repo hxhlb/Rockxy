@@ -105,19 +105,12 @@ final class ScriptingListViewModel {
         guard isFilterVisible, !filterText.isEmpty else {
             return displayRows
         }
-        let needle = filterText.lowercased()
-        return displayRows.filter { row in
-            switch row.kind {
-            case let .folder(folder):
-                folder.name.lowercased().contains(needle)
-            case let .script(script):
-                switch filterColumn {
-                case .name: script.name.lowercased().contains(needle)
-                case .method: (script.method ?? "").lowercased().contains(needle)
-                case .urlPattern: (script.urlPattern ?? "").lowercased().contains(needle)
-                }
-            }
-        }
+        return buildFilteredRows(
+            pluginSnapshots: plugins,
+            folderIndex: folderStore.index,
+            filterText: filterText,
+            filterColumn: filterColumn
+        )
     }
 
     /// Alias kept for test compatibility with the previous `ScriptingViewModel`
@@ -165,14 +158,17 @@ final class ScriptingListViewModel {
 
     // MARK: - Script CRUD
 
-    func createNewScript() async {
+    @discardableResult
+    func createNewScript() async -> String? {
         let id = UUID().uuidString.lowercased()
         let name = "Untitled Script \(plugins.count + 1)"
+        let pluginsDir = RockxyIdentity.current
+            .appSupportPath("Plugins")
+            .appendingPathComponent(id, isDirectory: true)
+        var createdDirectory = false
         do {
-            let pluginsDir = RockxyIdentity.current
-                .appSupportPath("Plugins")
-                .appendingPathComponent(id, isDirectory: true)
             try FileManager.default.createDirectory(at: pluginsDir, withIntermediateDirectories: true)
+            createdDirectory = true
 
             let manifest = PluginManifest(
                 id: id,
@@ -201,8 +197,17 @@ final class ScriptingListViewModel {
             await refresh()
             selectedRowID = .script(id)
             ScriptEditorSession.shared.setPending(.edit(pluginID: id))
+            return id
         } catch {
+            if createdDirectory, FileManager.default.fileExists(atPath: pluginsDir.path) {
+                do {
+                    try FileManager.default.removeItem(at: pluginsDir)
+                } catch {
+                    Self.logger.error("Create script cleanup failed: \(error.localizedDescription)")
+                }
+            }
             Self.logger.error("Create script failed: \(error.localizedDescription)")
+            return nil
         }
     }
 
@@ -272,8 +277,10 @@ final class ScriptingListViewModel {
         let destDir = RockxyIdentity.current
             .appSupportPath("Plugins")
             .appendingPathComponent(newID, isDirectory: true)
+        var createdDestination = false
         do {
             try FileManager.default.copyItem(at: sourceDir, to: destDir)
+            createdDestination = true
             // Rewrite plugin.json with new id + name
             let manifestURL = destDir.appendingPathComponent("plugin.json")
             let data = try Data(contentsOf: manifestURL)
@@ -302,6 +309,13 @@ final class ScriptingListViewModel {
             await refresh()
             selectedRowID = .script(newID)
         } catch {
+            if createdDestination, FileManager.default.fileExists(atPath: destDir.path) {
+                do {
+                    try FileManager.default.removeItem(at: destDir)
+                } catch {
+                    Self.logger.error("Duplicate cleanup failed: \(error.localizedDescription)")
+                }
+            }
             Self.logger.error("Duplicate failed: \(error.localizedDescription)")
         }
     }
@@ -317,6 +331,26 @@ final class ScriptingListViewModel {
                 try await ScriptPolicyGate.shared.enablePlugin(id: id, using: pluginManager)
             } catch {
                 Self.logger.error("Enable failed: \(error.localizedDescription)")
+            }
+        }
+        await refresh()
+    }
+
+    func setScriptsEnabled(ids: [String], enabled: Bool) async {
+        let requestedIDs = Set(ids)
+        let targets = plugins.filter { requestedIDs.contains($0.id) && $0.isEnabled != enabled }
+        guard !targets.isEmpty else {
+            return
+        }
+        for plugin in targets {
+            if enabled {
+                do {
+                    try await ScriptPolicyGate.shared.enablePlugin(id: plugin.id, using: pluginManager)
+                } catch {
+                    Self.logger.error("Enable failed: \(error.localizedDescription)")
+                }
+            } else {
+                await pluginManager.disablePlugin(id: plugin.id)
             }
         }
         await refresh()
@@ -380,11 +414,12 @@ final class ScriptingListViewModel {
         -> [ScriptListDisplayRow]
     {
         let pluginByID = Dictionary(uniqueKeysWithValues: pluginSnapshots.map { ($0.id, $0) })
+        let folderByID = Dictionary(uniqueKeysWithValues: folderIndex.folders.map { ($0.id, $0) })
         var rows: [ScriptListDisplayRow] = []
         for entry in folderIndex.rootOrder {
             switch entry {
             case let .folder(folderID):
-                guard let folder = folderIndex.folders.first(where: { $0.id == folderID }) else {
+                guard let folder = folderByID[folderID] else {
                     continue
                 }
                 rows.append(ScriptListDisplayRow(id: .folder(folder.id), indent: 0, kind: .folder(folder)))
@@ -402,5 +437,65 @@ final class ScriptingListViewModel {
             }
         }
         return rows
+    }
+
+    private func buildFilteredRows(
+        pluginSnapshots: [PluginInfoSnapshot],
+        folderIndex: ScriptFolderIndex,
+        filterText: String,
+        filterColumn: ScriptListFilterColumn
+    )
+        -> [ScriptListDisplayRow]
+    {
+        let pluginByID = Dictionary(uniqueKeysWithValues: pluginSnapshots.map { ($0.id, $0) })
+        let folderByID = Dictionary(uniqueKeysWithValues: folderIndex.folders.map { ($0.id, $0) })
+        let needle = filterText.lowercased()
+        var rows: [ScriptListDisplayRow] = []
+
+        for entry in folderIndex.rootOrder {
+            switch entry {
+            case let .folder(folderID):
+                guard let folder = folderByID[folderID] else {
+                    continue
+                }
+                let matchingScripts = folder.scriptIDs.compactMap { pluginByID[$0] }.filter {
+                    scriptMatches($0, needle: needle, column: filterColumn)
+                }
+                let folderMatches = filterColumn == .name && folder.name.lowercased().contains(needle)
+                guard folderMatches || !matchingScripts.isEmpty else {
+                    continue
+                }
+                rows.append(ScriptListDisplayRow(id: .folder(folder.id), indent: 0, kind: .folder(folder)))
+                for script in matchingScripts {
+                    rows.append(ScriptListDisplayRow(id: .script(script.id), indent: 1, kind: .script(script)))
+                }
+
+            case let .script(scriptID):
+                guard let script = pluginByID[scriptID],
+                      scriptMatches(script, needle: needle, column: filterColumn) else
+                {
+                    continue
+                }
+                rows.append(ScriptListDisplayRow(id: .script(script.id), indent: 0, kind: .script(script)))
+            }
+        }
+        return rows
+    }
+
+    private func scriptMatches(
+        _ script: PluginInfoSnapshot,
+        needle: String,
+        column: ScriptListFilterColumn
+    )
+        -> Bool
+    {
+        switch column {
+        case .name:
+            script.name.lowercased().contains(needle)
+        case .method:
+            (script.method ?? "").lowercased().contains(needle)
+        case .urlPattern:
+            (script.urlPattern ?? "").lowercased().contains(needle)
+        }
     }
 }

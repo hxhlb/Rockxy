@@ -135,6 +135,29 @@ struct ScriptingRegressionTests {
         #expect(String(data: mutated.body ?? Data(), encoding: .utf8) == "nested")
     }
 
+    @Test("Single-arg onResponse(ctx) preserves binary body payloads")
+    func legacyBinaryBodyPreserved() async throws {
+        let runtime = ScriptRuntime()
+        let script = """
+        function onResponse(ctx) {
+          ctx.body = ctx.body;
+          return ctx;
+        }
+        """
+        let plugin = try makeTempPlugin(id: "test.legacy.binary", script: script)
+        try await runtime.loadPlugin(plugin)
+        let req = makeRequest()
+        let payload = Data([0x00, 0xFF, 0x10, 0x41])
+        let resp = makeResponse(body: payload)
+        let mutated = try await runtime.callOnResponse(
+            pluginID: plugin.id,
+            context: ScriptResponseContext(request: req, response: resp),
+            originalRequest: req,
+            originalResponse: resp
+        )
+        #expect(mutated.body == payload)
+    }
+
     // MARK: - Finding #5: legacy ctx.setBody plain-text replacement
 
     @Test("Legacy ctx.setBody(\"plain\") replaces the request body")

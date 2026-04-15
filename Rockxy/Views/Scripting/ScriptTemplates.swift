@@ -9,8 +9,8 @@ enum ScriptTemplates {
     /// Uses the multi-arg JS API which the runtime dispatches automatically
     /// (function `length` is 3 or 4).
     static let defaultSource: String = """
-    /// This func is called if the Request Checkbox is Enabled. You can modify the Request Data here before the request hits to the server
-    /// e.g. Add/Update/Remove: method, host, scheme, port, path, headers, queries, comment, color and body (json, form, plain-text, Uint8Array for Binary Body)
+    /// This func is called if the Request Checkbox is Enabled. You can modify the Request Data here before the request hits the server.
+    /// e.g. Add/Update/Remove: method, path, headers, queries, comment, color and body (json, form, plain-text, Uint8Array for Binary Body)
     ///
     function onRequest(context, url, request) {
       // console.log(request);

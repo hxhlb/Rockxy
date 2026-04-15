@@ -32,6 +32,7 @@ struct ScriptingViewModelTests {
         #expect(vm.method == .any)
         #expect(vm.patternMode == .wildcard)
         #expect(vm.code == ScriptTemplates.defaultSource)
+        #expect(vm.sampleURL == "https://api.example.com/path")
     }
 
     @Test("Wildcard-to-regex helper escapes specials and anchors when no subpath")
@@ -84,6 +85,49 @@ struct ScriptingViewModelTests {
         #expect(decoded == index)
     }
 
+    @Test("Folder index entry decode rejects payloads containing both folder and script")
+    func folderIndexRejectsAmbiguousEntry() throws {
+        let data = Data(
+            #"{"folders":[],"rootOrder":[{"folder":"00000000-0000-0000-0000-000000000001","script":"abc"}]}"#
+                .utf8
+        )
+        #expect(throws: DecodingError.self) {
+            _ = try JSONDecoder().decode(ScriptFolderIndex.self, from: data)
+        }
+    }
+
+    @Test("Filtered rows include collapsed folder ancestors for matching scripts")
+    func filteredRowsIncludeCollapsedFolderAncestors() {
+        let (defaults, suiteName) = TestFixtures.makeNamedIsolatedDefaults()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let folderStore = ScriptFolderStore(defaults: defaults)
+        let folderID = folderStore.createFolder(name: "Auth")
+        folderStore.addScript("script-1", toFolder: folderID)
+        folderStore.setExpanded(folderID: folderID, expanded: false)
+
+        let env = TestFixtures.makeIsolatedPluginEnv()
+        defer { env.cleanup() }
+        let vm = ScriptingListViewModel(pluginManager: env.manager, folderStore: folderStore)
+        vm.plugins = [
+            PluginInfoSnapshot(
+                id: "script-1",
+                name: "Token Refresh",
+                isEnabled: true,
+                method: "GET",
+                urlPattern: "/token",
+                statusText: "Active"
+            )
+        ]
+        vm.isFilterVisible = true
+        vm.filterText = "token"
+        vm.filterColumn = .name
+
+        let rows = vm.filteredDisplayRows
+        #expect(rows.count == 2)
+        #expect(rows.first?.id == .folder(folderID))
+        #expect(rows.last?.id == .script("script-1"))
+    }
+
     @Test("Save & Activate enables a freshly-created script and reports active")
     func saveAndActivateEnablesNewScript() async throws {
         // Isolated plugin environment.
@@ -92,7 +136,10 @@ struct ScriptingViewModelTests {
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         let suite = "ScriptingViewModelTests-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suite) ?? .standard
+        guard let defaults = UserDefaults(suiteName: suite) else {
+            Issue.record("Failed to create isolated UserDefaults suite: \(suite)")
+            return
+        }
         let discovery = PluginDiscovery(pluginsDirectory: dir, defaults: defaults)
         let manager = ScriptPluginManager(discovery: discovery, defaults: defaults)
 

@@ -149,6 +149,7 @@ final class ScriptEditorViewModel {
 
     /// UI-only (deferred in this milestone)
     var testRulePreview: String = ""
+    var sampleURL: String = "https://api.example.com/path"
 
     // MARK: - Wildcard → regex
 
@@ -435,6 +436,7 @@ final class ScriptEditorViewModel {
         code = ScriptTemplates.defaultSource
         savedAndActive = false
         statusMessage = ""
+        sampleURL = "https://api.example.com/path"
         consoleEntries.removeAll()
     }
 

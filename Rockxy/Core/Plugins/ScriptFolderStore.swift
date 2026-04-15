@@ -45,6 +45,18 @@ final class ScriptFolderStore {
             }
         }
 
+        // Heal orphaned folders that still exist in `folders` but somehow fell
+        // out of `rootOrder` so they remain reachable in the list UI.
+        let existingFolderIDs = Set(rootOrder.compactMap { entry -> UUID? in
+            if case let .folder(id) = entry {
+                return id
+            }
+            return nil
+        })
+        for id in folders.map(\.id) where !existingFolderIDs.contains(id) {
+            rootOrder.append(.folder(id))
+        }
+
         // Append undeclared scripts as loose entries
         let referenced = Set(folders.flatMap(\.scriptIDs)) // ids inside any folder
         var rootScriptIDs: Set<String> = []
@@ -136,8 +148,13 @@ final class ScriptFolderStore {
                 removed = true
             }
         }
+        var appendedLooseEntry = false
         if removed, !next.rootOrder.contains(.script(scriptID)) {
             next.rootOrder.append(.script(scriptID))
+            appendedLooseEntry = true
+        }
+        guard removed || appendedLooseEntry else {
+            return
         }
         index = next
         persist()

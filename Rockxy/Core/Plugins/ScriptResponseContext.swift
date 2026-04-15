@@ -24,8 +24,9 @@ struct ScriptResponseContext {
             uniquingKeysWith: { _, last in last }
         )
         if let body = response.body {
-            self.body = String(data: body, encoding: .utf8) ?? body.base64EncodedString()
-            self.bodyIsUTF8 = String(data: body, encoding: .utf8) != nil
+            let utf8String = String(data: body, encoding: .utf8)
+            self.body = utf8String ?? body.base64EncodedString()
+            self.bodyIsUTF8 = utf8String != nil
         } else {
             self.body = nil
             self.bodyIsUTF8 = true
@@ -72,6 +73,8 @@ struct ScriptResponseContext {
         let nestedHeaders = stringDictionaryValue(nestedResponse?.objectForKeyedSubscript("headers"))
         let topLevelBody = stringValue(jsValue.objectForKeyedSubscript("body"))
         let nestedBody = stringValue(nestedResponse?.objectForKeyedSubscript("body"))
+        let topLevelBodyIsBase64 = boolValue(jsValue.objectForKeyedSubscript("__bodyIsBase64"))
+        let nestedBodyIsBase64 = boolValue(nestedResponse?.objectForKeyedSubscript("__bodyIsBase64"))
 
         // Single-arg `onResponse(ctx)` reads + mutates fields directly on the
         // top-level wrapper. Read each independently and fall back to original
@@ -104,10 +107,10 @@ struct ScriptResponseContext {
            topLevelBody != original.body || nestedBody == nil
         {
             body = topLevelBody
-            bodyIsUTF8 = true
+            bodyIsUTF8 = !(topLevelBodyIsBase64 ?? !original.bodyIsUTF8)
         } else if let nestedBody {
             body = nestedBody
-            bodyIsUTF8 = true
+            bodyIsUTF8 = !(nestedBodyIsBase64 ?? !original.bodyIsUTF8)
         } else {
             body = original.body
             bodyIsUTF8 = original.bodyIsUTF8
@@ -137,6 +140,9 @@ struct ScriptResponseContext {
         wrapper?.setObject(statusCode, forKeyedSubscript: "statusCode" as NSString)
         wrapper?.setObject(responseHeaders, forKeyedSubscript: "responseHeaders" as NSString)
         wrapper?.setObject(body as Any, forKeyedSubscript: "body" as NSString)
+        if !bodyIsUTF8 {
+            wrapper?.setObject(true, forKeyedSubscript: "__bodyIsBase64" as NSString)
+        }
 
         let setHeaderFn: @convention(block) (String, String) -> Void = { name, value in
             let topHeaders = wrapper?.objectForKeyedSubscript("responseHeaders")
@@ -202,6 +208,13 @@ struct ScriptResponseContext {
             return nil
         }
         return value.toString()
+    }
+
+    private static func boolValue(_ value: JSValue?) -> Bool? {
+        guard let value, !value.isUndefined, !value.isNull else {
+            return nil
+        }
+        return value.toBool()
     }
 }
 

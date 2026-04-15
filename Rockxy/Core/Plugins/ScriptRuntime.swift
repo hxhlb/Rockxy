@@ -200,7 +200,7 @@ actor ScriptRuntime {
                 // `interpret` is the single point that decides .forward / .block / .mock
                 // from a (possibly Promise-resolved) JS value. It guards against
                 // double-resume via `resumed`.
-                let interpret: @Sendable (JSValue?) -> Void = { value in
+                let interpret: (JSValue?) -> Void = { value in
                     let shouldResume = resumed.withLock { alreadyResumed -> Bool in
                         if alreadyResumed {
                             return false
@@ -354,7 +354,7 @@ actor ScriptRuntime {
                     initialResult = onResponse.call(withArguments: [jsArg])
                 }
 
-                let interpret: @Sendable (JSValue?) -> Void = { value in
+                let interpret: (JSValue?) -> Void = { value in
                     let shouldResume = resumed.withLock { alreadyResumed -> Bool in
                         if alreadyResumed {
                             return false

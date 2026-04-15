@@ -37,8 +37,8 @@ enum ScriptResponseBodyLoader {
         }
 
         let expanded = (trimmed as NSString).expandingTildeInPath
-        let resolved = URL(fileURLWithPath: expanded).standardizedFileURL
-        let homeURL = URL(fileURLWithPath: NSHomeDirectory()).standardizedFileURL
+        let resolved = URL(fileURLWithPath: expanded).standardizedFileURL.resolvingSymlinksInPath()
+        let homeURL = URL(fileURLWithPath: NSHomeDirectory()).standardizedFileURL.resolvingSymlinksInPath()
 
         // Reject paths outside $HOME (defense in depth — bodyFilePath is a remote-controlled string).
         let resolvedPath = resolved.path

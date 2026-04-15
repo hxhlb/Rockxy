@@ -166,6 +166,10 @@ enum ScriptBridge {
                 bridgeLogger.debug("env.system blocked for \(pluginID) — allowSystemEnvVars is off")
                 return nil
             }
+            guard PluginValidator.isValidKey(key) else {
+                bridgeLogger.debug("env.system rejected invalid key '\(key)' for \(pluginID)")
+                return nil
+            }
             return ProcessInfo.processInfo.environment[key]
         }
         env?.setObject(systemFn, forKeyedSubscript: "system" as NSString)

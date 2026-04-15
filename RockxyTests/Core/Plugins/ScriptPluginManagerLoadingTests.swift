@@ -16,7 +16,11 @@ private func makeIsolatedDiscoveryDir() throws -> URL {
 }
 
 private func makeIsolatedDefaults() -> UserDefaults {
-    UserDefaults(suiteName: "RockxyTests-\(UUID().uuidString)") ?? .standard
+    let suiteName = "RockxyTests-\(UUID().uuidString)"
+    guard let defaults = UserDefaults(suiteName: suiteName) else {
+        fatalError("Failed to create isolated UserDefaults suite: \(suiteName)")
+    }
+    return defaults
 }
 
 private func makeManager() throws -> ScriptPluginManager {

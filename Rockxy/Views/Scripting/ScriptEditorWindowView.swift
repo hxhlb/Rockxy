@@ -91,13 +91,17 @@ struct ScriptEditorWindowView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                TextField(String(localized: "Sample URL"), text: $viewModel.sampleURL)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 12, design: .monospaced))
+                    .frame(width: 240)
+
                 Button {
-                    // quick "Test your Rule" against the name field as a sample URL,
-                    // or against the URL itself if name is empty
-                    let sample = viewModel.name.isEmpty ? "https://api.example.com/path" : viewModel.name
-                    viewModel.testRulePreview = viewModel.testRule(against: sample)
-                        ? "Matches: \(sample)"
-                        : "No match for: \(sample)"
+                    let sample = viewModel.sampleURL.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let effectiveSample = sample.isEmpty ? "https://api.example.com/path" : sample
+                    viewModel.testRulePreview = viewModel.testRule(against: effectiveSample)
+                        ? "Matches: \(effectiveSample)"
+                        : "No match for: \(effectiveSample)"
                 } label: {
                     Text("Test your Rule")
                         .font(.caption.weight(.medium))

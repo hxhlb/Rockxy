@@ -47,6 +47,15 @@ struct ScriptFolderIndex: Codable, Equatable {
 
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
+            let hasFolder = container.contains(.folder)
+            let hasScript = container.contains(.script)
+            if hasFolder, hasScript {
+                throw DecodingError.dataCorruptedError(
+                    forKey: .folder,
+                    in: container,
+                    debugDescription: "Payload must contain either folder or script, not both"
+                )
+            }
             if let folderID = try container.decodeIfPresent(UUID.self, forKey: .folder) {
                 self = .folder(folderID)
                 return

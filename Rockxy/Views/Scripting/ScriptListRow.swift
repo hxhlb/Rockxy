@@ -45,9 +45,18 @@ struct ScriptListRow: View {
             Image(systemName: "folder.fill")
                 .foregroundStyle(.secondary)
             if viewModel.renamingFolderID == folder.id {
-                TextField("", text: $viewModel.renamingFolderText, onCommit: {
-                    viewModel.commitFolderRename()
-                })
+                TextField(
+                    "",
+                    text: $viewModel.renamingFolderText,
+                    onEditingChanged: { isEditing in
+                        if !isEditing, viewModel.renamingFolderID == folder.id {
+                            viewModel.cancelFolderRename()
+                        }
+                    },
+                    onCommit: {
+                        viewModel.commitFolderRename()
+                    }
+                )
                 .textFieldStyle(.roundedBorder)
                 .frame(width: 200)
             } else {
@@ -117,16 +126,8 @@ struct ScriptListRow: View {
                 return !matching.isEmpty && matching.allSatisfy(\.isEnabled)
             },
             set: { newValue in
-                let ids = folder.scriptIDs
                 Task {
-                    for id in ids {
-                        guard let plugin = viewModel.plugins.first(where: { $0.id == id }) else {
-                            continue
-                        }
-                        if plugin.isEnabled != newValue {
-                            await viewModel.toggleScript(id: id)
-                        }
-                    }
+                    await viewModel.setScriptsEnabled(ids: folder.scriptIDs, enabled: newValue)
                 }
             }
         )

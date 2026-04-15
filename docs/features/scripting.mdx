@@ -133,7 +133,7 @@ Each script-type plugin's `plugin.json` may include an optional `scriptBehavior`
 | `runOnResponse` | Whether `onResponse(ctx)` runs for matching traffic. | `true` |
 | `runAsMock` | Treat the request-hook return value as a mock response; never go upstream. | `false` |
 
-Scripts execute in deterministic, id-sorted order. The first matching script wins on both the request and response side (no chaining in this milestone).
+Scripts execute in deterministic, id-sorted order. By default, the first matching request-side script wins. If you enable **Allow Running Multiple Scripts for one Request** from the **Advance** menu, Rockxy chains matching request-side scripts in that same deterministic order. This toggle maps to the `allowMultipleScriptsPerRequest` setting used by the scripting runtime.
 
 ## Pipeline order
 

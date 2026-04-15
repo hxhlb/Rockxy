@@ -20,7 +20,8 @@ struct ScriptRuntimeOutcomeTests {
         }
         module.exports = { onRequest: handle };
         """
-        let plugin = try makeTempPlugin(id: "test.commonjs", script: script)
+        let (plugin, tempDir) = try makeTempPlugin(id: "test.commonjs", script: script)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
         try await runtime.loadPlugin(plugin)
 
         let outcome = try await runtime.callOnRequest(
@@ -46,7 +47,8 @@ struct ScriptRuntimeOutcomeTests {
             return ctx;
         }
         """
-        let plugin = try makeTempPlugin(id: "test.directglobal", script: script)
+        let (plugin, tempDir) = try makeTempPlugin(id: "test.directglobal", script: script)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
         try await runtime.loadPlugin(plugin)
 
         let outcome = try await runtime.callOnRequest(
@@ -68,7 +70,8 @@ struct ScriptRuntimeOutcomeTests {
     func nullReturnBlocks() async throws {
         let runtime = ScriptRuntime()
         let script = "function onRequest(ctx) { return null; }"
-        let plugin = try makeTempPlugin(id: "test.null", script: script)
+        let (plugin, tempDir) = try makeTempPlugin(id: "test.null", script: script)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
         try await runtime.loadPlugin(plugin)
 
         let outcome = try await runtime.callOnRequest(
@@ -91,7 +94,8 @@ struct ScriptRuntimeOutcomeTests {
           return { statusCode: 200, headers: { "X-Mock": "yes" }, body: '{"hello":"world"}' };
         }
         """
-        let plugin = try makeTempPlugin(id: "test.mockok", script: script)
+        let (plugin, tempDir) = try makeTempPlugin(id: "test.mockok", script: script)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
         try await runtime.loadPlugin(plugin)
 
         let mockBehavior = ScriptBehavior(
@@ -119,7 +123,8 @@ struct ScriptRuntimeOutcomeTests {
     func mockFailureOnGarbage() async throws {
         let runtime = ScriptRuntime()
         let script = "function onRequest(ctx) { return 'not an object'; }"
-        let plugin = try makeTempPlugin(id: "test.mockbad", script: script)
+        let (plugin, tempDir) = try makeTempPlugin(id: "test.mockbad", script: script)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
         try await runtime.loadPlugin(plugin)
 
         let mockBehavior = ScriptBehavior(
@@ -144,7 +149,8 @@ struct ScriptRuntimeOutcomeTests {
     func mockFailureOnInvalidStatus() async throws {
         let runtime = ScriptRuntime()
         let script = "function onRequest(ctx) { return { statusCode: 9999 }; }"
-        let plugin = try makeTempPlugin(id: "test.mockbadstatus", script: script)
+        let (plugin, tempDir) = try makeTempPlugin(id: "test.mockbadstatus", script: script)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
         try await runtime.loadPlugin(plugin)
 
         let mockBehavior = ScriptBehavior(
@@ -169,7 +175,8 @@ struct ScriptRuntimeOutcomeTests {
     func mockFailureOnNull() async throws {
         let runtime = ScriptRuntime()
         let script = "function onRequest(ctx) { return null; }"
-        let plugin = try makeTempPlugin(id: "test.mocknull", script: script)
+        let (plugin, tempDir) = try makeTempPlugin(id: "test.mocknull", script: script)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
         try await runtime.loadPlugin(plugin)
 
         let mockBehavior = ScriptBehavior(
@@ -203,7 +210,8 @@ struct ScriptRuntimeOutcomeTests {
           return ctx;
         }
         """
-        let plugin = try makeTempPlugin(id: "test.responsemut", script: script)
+        let (plugin, tempDir) = try makeTempPlugin(id: "test.responsemut", script: script)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
         try await runtime.loadPlugin(plugin)
 
         let request = makeRequest()
@@ -224,7 +232,8 @@ struct ScriptRuntimeOutcomeTests {
     func responseHookMissingPassthrough() async throws {
         let runtime = ScriptRuntime()
         let script = "function onRequest(ctx) { return ctx; }"
-        let plugin = try makeTempPlugin(id: "test.noresponse", script: script)
+        let (plugin, tempDir) = try makeTempPlugin(id: "test.noresponse", script: script)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
         try await runtime.loadPlugin(plugin)
 
         let request = makeRequest()
@@ -251,7 +260,8 @@ struct ScriptRuntimeOutcomeTests {
           return ctx;
         }
         """
-        let plugin = try makeTempPlugin(id: "test.hostmut", script: script)
+        let (plugin, tempDir) = try makeTempPlugin(id: "test.hostmut", script: script)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
         try await runtime.loadPlugin(plugin)
 
         let original = makeRequest(url: "https://example.com/api")
@@ -276,7 +286,7 @@ struct ScriptRuntimeOutcomeTests {
 
     // MARK: - Helpers
 
-    private func makeTempPlugin(id: String, script: String) throws -> PluginInfo {
+    private func makeTempPlugin(id: String, script: String) throws -> (PluginInfo, URL) {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("RockxyTests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -293,7 +303,10 @@ struct ScriptRuntimeOutcomeTests {
             entryPoints: ["script": "main.js"],
             capabilities: []
         )
-        return PluginInfo(id: id, manifest: manifest, bundlePath: tempDir, isEnabled: true, status: .active)
+        return (
+            PluginInfo(id: id, manifest: manifest, bundlePath: tempDir, isEnabled: true, status: .active),
+            tempDir
+        )
     }
 
     private func makeRequest(method: String = "GET", url: String = "https://example.com/api") -> HTTPRequestData {

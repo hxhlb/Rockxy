@@ -26,6 +26,7 @@ struct ScriptRequestContext {
             uniquingKeysWith: { _, last in last }
         )
         self.body = request.body?.base64EncodedString()
+        self.originalBodyBase64 = request.body?.base64EncodedString()
     }
 
     private init(
@@ -35,7 +36,8 @@ struct ScriptRequestContext {
         body: String?,
         originalHost: String?,
         originalScheme: String?,
-        originalPort: Int?
+        originalPort: Int?,
+        originalBodyBase64: String?
     ) {
         self.method = method
         self.url = url
@@ -44,6 +46,7 @@ struct ScriptRequestContext {
         self.originalHost = originalHost
         self.originalScheme = originalScheme
         self.originalPort = originalPort
+        self.originalBodyBase64 = originalBodyBase64
     }
 
     // MARK: Internal
@@ -55,6 +58,7 @@ struct ScriptRequestContext {
     let originalHost: String?
     let originalScheme: String?
     let originalPort: Int?
+    let originalBodyBase64: String?
 
     static func from(jsValue: JSValue, original: ScriptRequestContext) -> ScriptRequestContext {
         let request = jsValue.objectForKeyedSubscript("request")
@@ -84,7 +88,8 @@ struct ScriptRequestContext {
             body: body,
             originalHost: original.originalHost,
             originalScheme: original.originalScheme,
-            originalPort: original.originalPort
+            originalPort: original.originalPort,
+            originalBodyBase64: original.originalBodyBase64
         )
     }
 
@@ -136,7 +141,7 @@ struct ScriptRequestContext {
         // `ctx.setBody("hello world")` actually replace the request body instead of
         // silently falling back to the original.
         let newBody: Data? = if let body {
-            if Self.looksLikeOriginalBase64(body, original: request.body),
+            if Self.looksLikeOriginalBase64(body, originalBase64: originalBodyBase64),
                let decoded = Data(base64Encoded: body)
             {
                 decoded
@@ -166,7 +171,9 @@ struct ScriptRequestContext {
     )
 
     nonisolated(unsafe) private static var warnedMutations: Set<String> = []
+    nonisolated(unsafe) private static var warnedMutationOrder: [String] = []
     private static let warnedMutationsLock = NSLock()
+    private static let warnedMutationLimit = 256
 
     private static func sanitizeURLRetainingHost(
         attempted: URL,
@@ -196,11 +203,11 @@ struct ScriptRequestContext {
 
     /// Did the script leave the body as the unchanged base64 of the original?
     /// Used to decide whether to decode as base64 vs treat as UTF-8 plain text.
-    private static func looksLikeOriginalBase64(_ candidate: String, original: Data?) -> Bool {
-        guard let original else {
+    private static func looksLikeOriginalBase64(_ candidate: String, originalBase64: String?) -> Bool {
+        guard let originalBase64 else {
             return false
         }
-        return candidate == original.base64EncodedString()
+        return candidate == originalBase64
     }
 
     private static func warnOnce(pluginID: String, mutationKind: String) {
@@ -211,6 +218,13 @@ struct ScriptRequestContext {
             return
         }
         warnedMutations.insert(key)
+        warnedMutationOrder.append(key)
+        if warnedMutationOrder.count > warnedMutationLimit,
+           let evicted = warnedMutationOrder.first
+        {
+            warnedMutationOrder.removeFirst()
+            warnedMutations.remove(evicted)
+        }
         logger.warning(
             "Plugin \(pluginID) attempted to change request \(mutationKind); discarding. Use MapRemote rule action for cross-host rewrite."
         )

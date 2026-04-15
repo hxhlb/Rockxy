@@ -65,6 +65,33 @@ struct ScriptMultiArgRuntimeTests {
         #expect(modified.url.host == "example.com")
     }
 
+    @Test("Multi-arg onRequest preserves duplicate query parameter values")
+    func multiArgRequestPreservesDuplicateQueries() async throws {
+        let runtime = ScriptRuntime()
+        let script = """
+        function onRequest(context, url, request) {
+          request.queries["tag"] = ["1", "2", "3"];
+          return request;
+        }
+        """
+        let plugin = try makeTempPlugin(id: "test.multiarg.queries", script: script)
+        try await runtime.loadPlugin(plugin)
+
+        let req = makeRequest(url: "https://example.com/v1/x?tag=1&tag=2")
+        let outcome = try await runtime.callOnRequest(
+            pluginID: plugin.id,
+            context: ScriptRequestContext(from: req),
+            behavior: ScriptBehavior.defaults(),
+            originalRequest: req
+        )
+        guard case let .forward(modified) = outcome else {
+            Issue.record("expected .forward")
+            return
+        }
+        let queryItems = URLComponents(url: modified.url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        #expect(queryItems.filter { $0.name == "tag" }.compactMap(\.value) == ["1", "2", "3"])
+    }
+
     @Test("Multi-arg onRequest host mutation is dropped (security boundary)")
     func multiArgRequestHostMutationDropped() async throws {
         let runtime = ScriptRuntime()

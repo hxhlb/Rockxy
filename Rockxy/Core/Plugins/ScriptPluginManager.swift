@@ -73,6 +73,9 @@ actor ScriptPluginManager {
         }
         if let existing = loadOnceTask {
             await existing.value
+            if isLoadedOnce {
+                loadOnceTask = nil
+            }
             return
         }
         let task = Task { [weak self] in
@@ -83,6 +86,7 @@ actor ScriptPluginManager {
         }
         loadOnceTask = task
         await task.value
+        loadOnceTask = nil
     }
 
     /// Re-scan-able discovery path. Always runs a fresh discovery pass so that
