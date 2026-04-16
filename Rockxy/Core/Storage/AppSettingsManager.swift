@@ -32,6 +32,21 @@ final class AppSettingsManager {
         save()
     }
 
+    func updateMCPServerEnabled(_ enabled: Bool) {
+        settings.mcpServerEnabled = enabled
+        save()
+    }
+
+    func updateMCPServerPort(_ port: Int) {
+        settings.mcpServerPort = port
+        save()
+    }
+
+    func updateMCPRedactSensitiveData(_ redact: Bool) {
+        settings.mcpRedactSensitiveData = redact
+        save()
+    }
+
     // MARK: Private
 
     private static let logger = Logger(subsystem: RockxyIdentity.current.logSubsystem, category: "AppSettingsManager")

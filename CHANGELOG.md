@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- MCP Server: embedded Model Context Protocol (MCP 2025-11-25) backend — exposes proxy traffic, rules, and status via JSON-RPC 2.0 over a local HTTP server with token-based authentication.
+- MCP Server: 10 read-only tools — `get_version`, `get_proxy_status`, `get_certificate_status`, `get_recent_flows`, `get_flow_detail`, `search_flows`, `filter_flows`, `export_flow_curl`, `list_rules`, `get_ssl_proxying_list`.
+- MCP Server: `rockxy-mcp` stdio CLI binary bundled in the app for standard MCP stdio transport with automatic session tracking.
+- MCP Server: privacy-first redaction — sensitive headers, URL query parameters, and body fields (JSON, form-encoded, XML, plain-text Bearer tokens) redacted by default. Live toggle without server restart.
+- MCP Server: Settings > MCP tab with enable/disable toggle, running status indicator, copyable connection config, and redaction privacy controls.
+- MCP Server: auto-starts on app launch when previously enabled; survives Settings window close; falls back to SessionStore when main window is closed.
+
+### Fixed
+
+### Changed
 - Scripting: dedicated **Scripting List** window (sidebar idiom matching Allow List / Block List / SSL Proxying List) with three-column table (Name / Method / Matching Rule), folder grouping with rename-in-place, slide-up filter bar, bottom bar with `+` `−` `New Folder` `?` / Filter / Advance / More.
 - Scripting: dedicated **Script Editor** window with Matching Rule header (Name, URL, method picker, Wildcard/Regex picker, "Test your Rule", "Include all subpaths"), Run-on row (Request / Response / Run as Mock + saved-and-active dot), code editor with line-number ruler + the multi-arg default template, right-side console panel with eye-icon log-level filter (Errors / Warnings / User Logs / System), footer (More / Beautify ⌘B / Snippet Code / Save & Activate ⌘S / console eye toggle).
 - Scripting: multi-arg JS API support — `onRequest(context, url, request)` and `onResponse(context, url, request, response)` with `request.headers` / `request.queries` / `request.body` / `response.statusCode` / `response.headers` / `response.body` / `response.bodyFilePath`. Single-arg `onRequest(ctx)` / `onResponse(ctx)` continues to work; the runtime dispatches by JS function `length`.
