@@ -80,8 +80,12 @@ extension MainContentCoordinator {
     }
 
     func enableSSLProxyingFromInspector(forAppNamed appName: String) {
+        guard !appName.isEmpty else {
+            return
+        }
+
         let domains = observedDomainsForApp(named: appName)
-        guard !appName.isEmpty, !domains.isEmpty else {
+        guard !domains.isEmpty else {
             return
         }
 

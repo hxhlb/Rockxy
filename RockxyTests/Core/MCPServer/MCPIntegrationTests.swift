@@ -271,6 +271,7 @@ struct MCPIntegrationTests {
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
         process.executableURL = binaryURL
+        process.environment = bridgeEnvironment()
         process.standardInput = stdinPipe
         process.standardOutput = stdoutPipe
         process.standardError = stderrPipe
@@ -288,7 +289,11 @@ struct MCPIntegrationTests {
             """,
             to: stdinPipe.fileHandleForWriting
         )
-        let initializeResponse = try readLine(from: stdoutPipe.fileHandleForReading)
+        let initializeResponse = try readLine(
+            from: stdoutPipe.fileHandleForReading,
+            stderr: stderrPipe.fileHandleForReading,
+            process: process
+        )
         #expect(initializeResponse.contains("\"protocolVersion\":\"2025-11-25\""))
 
         try writeLine(
@@ -304,7 +309,11 @@ struct MCPIntegrationTests {
             to: stdinPipe.fileHandleForWriting
         )
 
-        let toolsResponse = try readLine(from: stdoutPipe.fileHandleForReading)
+        let toolsResponse = try readLine(
+            from: stdoutPipe.fileHandleForReading,
+            stderr: stderrPipe.fileHandleForReading,
+            process: process
+        )
         #expect(toolsResponse.contains("get_version"))
         #expect(toolsResponse.contains("filter_flows"))
         #expect(!toolsResponse.contains("empty response from Rockxy MCP server"))
@@ -340,6 +349,7 @@ struct MCPIntegrationTests {
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
         process.executableURL = binaryURL
+        process.environment = bridgeEnvironment()
         process.standardInput = stdinPipe
         process.standardOutput = stdoutPipe
         process.standardError = stderrPipe
@@ -359,8 +369,16 @@ struct MCPIntegrationTests {
         stdinPipe.fileHandleForWriting.write(Data(chunk.utf8))
         stdinPipe.fileHandleForWriting.write(Data("\n".utf8))
 
-        let initializeResponse = try readLine(from: stdoutPipe.fileHandleForReading)
-        let toolsResponse = try readLine(from: stdoutPipe.fileHandleForReading)
+        let initializeResponse = try readLine(
+            from: stdoutPipe.fileHandleForReading,
+            stderr: stderrPipe.fileHandleForReading,
+            process: process
+        )
+        let toolsResponse = try readLine(
+            from: stdoutPipe.fileHandleForReading,
+            stderr: stderrPipe.fileHandleForReading,
+            process: process
+        )
 
         #expect(initializeResponse.contains("\"protocolVersion\":\"2025-11-25\""))
         #expect(toolsResponse.contains("get_recent_flows"))
@@ -394,6 +412,7 @@ struct MCPIntegrationTests {
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
         process.executableURL = binaryURL
+        process.environment = bridgeEnvironment()
         process.standardInput = stdinPipe
         process.standardOutput = stdoutPipe
         process.standardError = stderrPipe
@@ -415,8 +434,16 @@ struct MCPIntegrationTests {
             Data("Tests\",\"version\":\"1.0\"}}}\n{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\"}\n".utf8)
         )
 
-        let initializeResponse = try readLine(from: stdoutPipe.fileHandleForReading)
-        let toolsResponse = try readLine(from: stdoutPipe.fileHandleForReading)
+        let initializeResponse = try readLine(
+            from: stdoutPipe.fileHandleForReading,
+            stderr: stderrPipe.fileHandleForReading,
+            process: process
+        )
+        let toolsResponse = try readLine(
+            from: stdoutPipe.fileHandleForReading,
+            stderr: stderrPipe.fileHandleForReading,
+            process: process
+        )
 
         #expect(initializeResponse.contains("\"protocolVersion\":\"2025-11-25\""))
         #expect(toolsResponse.contains("Missing Mcp-Session-Id") == false)
@@ -612,12 +639,31 @@ struct MCPIntegrationTests {
         return binaryURL
     }
 
+    private func bridgeEnvironment() -> [String: String] {
+        var environment = ProcessInfo.processInfo.environment
+        let appSupportDirectory = RockxyIdentity.current.appSupportDirectory()
+        let testRootName = appSupportDirectory.deletingLastPathComponent().lastPathComponent
+        let prefix = "rockxy-tests-"
+        if testRootName.hasPrefix(prefix) {
+            environment["ROCKXY_TEST_RUN_TOKEN"] = String(testRootName.dropFirst(prefix.count))
+        }
+        environment["ROCKXY_TEST_APP_SUPPORT_DIRECTORY"] = appSupportDirectory.path
+        return environment
+    }
+
     private func writeLine(_ line: String, to handle: FileHandle) throws {
         handle.write(Data(line.utf8))
         handle.write(Data("\n".utf8))
     }
 
-    private func readLine(from handle: FileHandle, timeout: TimeInterval = 5) throws -> String {
+    private func readLine(
+        from handle: FileHandle,
+        stderr: FileHandle? = nil,
+        process: Process? = nil,
+        timeout: TimeInterval = 5
+    )
+        throws -> String
+    {
         let deadline = Date().addingTimeInterval(timeout)
         var buffer = Data()
 
@@ -636,6 +682,19 @@ struct MCPIntegrationTests {
             }
 
             Thread.sleep(forTimeInterval: 0.01)
+        }
+
+        if let process, !process.isRunning,
+           let stderr,
+           let stderrData = try? stderr.readToEnd(),
+           let stderrText = String(data: stderrData, encoding: .utf8),
+           !stderrText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        {
+            throw NSError(
+                domain: NSCocoaErrorDomain,
+                code: CocoaError.fileReadUnknown.rawValue,
+                userInfo: [NSLocalizedDescriptionKey: stderrText]
+            )
         }
 
         throw CocoaError(.fileReadUnknown)

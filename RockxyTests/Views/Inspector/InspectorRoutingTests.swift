@@ -211,6 +211,27 @@ struct InspectorRoutingTests {
         #expect(prompt?.secondaryAction == nil)
     }
 
+    @Test("CONNECT tunnel shows alternate message when SSL proxying is globally off")
+    func connectTunnelShowsSSLDisabledMessage() {
+        let transaction = TestFixtures.makeTransaction(
+            method: "CONNECT",
+            url: "https://api.example.com:443",
+            statusCode: 200
+        )
+        transaction.clientApp = "Brave Browser Helper"
+
+        let prompt = HTTPSInspectionPromptModel.make(
+            transaction: transaction,
+            sslProxyingEnabled: false,
+            canInterceptHTTPS: true,
+            domainRuleEnabled: false,
+            appName: transaction.clientApp,
+            appDomains: ["api.example.com"]
+        )
+
+        #expect(prompt?.message == "SSL Proxying is off. Enable it to see the encrypted content.")
+    }
+
     @Test("Plain HTTP response does not show HTTPS prompt")
     func plainHTTPDoesNotShowHTTPSPrompt() {
         let transaction = TestFixtures.makeTransaction()

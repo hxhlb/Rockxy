@@ -206,8 +206,8 @@ struct SSLProxyingListView: View {
                     ForEach(viewModel.currentTabRules) { rule in
                         SSLProxyingRuleRow(rule: rule) {
                             viewModel.selectRule(id: rule.id)
-                        } onToggle: {
-                            viewModel.toggleRule(id: rule.id)
+                        } onToggle: { newValue in
+                            viewModel.setRuleEnabled(id: rule.id, enabled: newValue)
                         }
                         .tag(rule.id)
                     }
@@ -528,15 +528,15 @@ struct SSLProxyingListView: View {
 private struct SSLProxyingRuleRow: View {
     let rule: SSLProxyingRule
     let onSelect: () -> Void
-    let onToggle: () -> Void
+    let onToggle: (Bool) -> Void
 
     var body: some View {
         HStack(spacing: 10) {
             Toggle("", isOn: Binding(
                 get: { rule.isEnabled },
-                set: { _ in
+                set: { newValue in
                     onSelect()
-                    onToggle()
+                    onToggle(newValue)
                 }
             ))
             .toggleStyle(.checkbox)

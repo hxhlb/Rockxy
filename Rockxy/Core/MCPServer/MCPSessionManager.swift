@@ -36,7 +36,7 @@ final class MCPSessionManager: @unchecked Sendable {
 
         let id = UUID().uuidString
         sessions[id] = Date()
-        mcpSessionLogger.info("Created MCP session \(id, privacy: .public)")
+        mcpSessionLogger.info("Created MCP session \(id, privacy: .private(mask: .hash))")
         return id
     }
 
@@ -50,7 +50,7 @@ final class MCPSessionManager: @unchecked Sendable {
         let elapsed = Date().timeIntervalSince(created)
         if elapsed > MCPLimits.sessionTimeout {
             sessions.removeValue(forKey: id)
-            mcpSessionLogger.info("Session \(id, privacy: .public) expired after \(Int(elapsed))s")
+            mcpSessionLogger.info("Session \(id, privacy: .private(mask: .hash)) expired after \(Int(elapsed))s")
             return false
         }
         return true
@@ -61,7 +61,7 @@ final class MCPSessionManager: @unchecked Sendable {
         defer { lock.unlock() }
 
         if sessions.removeValue(forKey: id) != nil {
-            mcpSessionLogger.info("Removed MCP session \(id, privacy: .public)")
+            mcpSessionLogger.info("Removed MCP session \(id, privacy: .private(mask: .hash))")
         }
     }
 

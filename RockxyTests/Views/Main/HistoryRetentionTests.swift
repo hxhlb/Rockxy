@@ -7,17 +7,22 @@ import Testing
 private final class BoolBox: @unchecked Sendable {
     // MARK: Internal
 
-    private(set) var value = false
+    var value: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return _value
+    }
 
     func setTrue() {
         lock.lock()
-        value = true
+        _value = true
         lock.unlock()
     }
 
     // MARK: Private
 
     private let lock = NSLock()
+    private var _value = false
 }
 
 // MARK: - HistoryRetentionTests
@@ -314,6 +319,12 @@ struct HistoryRetentionTests {
             }
             Task { @MainActor in
                 coordinator.processBatch(batch, generation: generation)
+            }
+        }
+        await coordinator.sessionManager.startBatchTimer()
+        defer {
+            Task {
+                await coordinator.sessionManager.stopBatchTimer()
             }
         }
 

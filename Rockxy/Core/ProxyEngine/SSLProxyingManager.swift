@@ -124,6 +124,19 @@ final class SSLProxyingManager {
         save()
     }
 
+    func setRuleEnabled(id: UUID, enabled: Bool) {
+        guard let index = rules.firstIndex(where: { $0.id == id }) else {
+            return
+        }
+        guard rules[index].isEnabled != enabled else {
+            return
+        }
+        let previous = rules[index]
+        rules[index].isEnabled = enabled
+        clearAutoPassthroughIfNeeded(for: [rules[index]], previousRules: [previous])
+        save()
+    }
+
     func updateRule(_ rule: SSLProxyingRule) {
         guard let index = rules.firstIndex(where: { $0.id == rule.id }) else {
             return
@@ -308,11 +321,11 @@ final class SSLProxyingManager {
                 continue
             }
             let rule = SSLProxyingRule(domain: domain)
-            rules.append(rule)
             addedRules.append(rule)
             added += 1
         }
         if added > 0 {
+            rules.append(contentsOf: addedRules)
             clearAutoPassthroughIfNeeded(for: addedRules)
             save()
             Self.logger.info("Added \(added) preset SSL proxying rules")

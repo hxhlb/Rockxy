@@ -128,8 +128,29 @@ final class TLSInterceptHandler: ChannelInboundHandler, RemovableChannelHandler,
     )
         -> HTTPTransaction
     {
-        // swiftlint:disable:next force_unwrapping
-        let tunnelURL = URL(string: "https://\(host):\(port)")!
+        let hostPart: String = if host.contains(":"), !host.hasPrefix("["), !host.hasSuffix("]") {
+            "[\(host)]"
+        } else {
+            host
+        }
+
+        guard let tunnelURL = URL(string: "https://\(hostPart):\(port)") else {
+            tlsLogger.warning("Failed to build CONNECT tunnel URL for host \(host, privacy: .public):\(port)")
+            var fallbackComponents = URLComponents()
+            fallbackComponents.scheme = "https"
+            fallbackComponents.host = "invalid-tunnel.local"
+            fallbackComponents.port = 443
+            let fallbackURL = fallbackComponents.url ?? URL(fileURLWithPath: "/")
+            return makeTunnelTransaction(
+                host: fallbackURL.host ?? "invalid-tunnel.local",
+                port: fallbackURL.port ?? 443,
+                statusCode: statusCode,
+                statusMessage: statusMessage,
+                state: state,
+                sourcePort: sourcePort,
+                isTLSFailure: isTLSFailure
+            )
+        }
         let requestData = HTTPRequestData(
             method: "CONNECT",
             url: tunnelURL,

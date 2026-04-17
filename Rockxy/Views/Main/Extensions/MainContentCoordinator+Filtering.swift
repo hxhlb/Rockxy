@@ -6,7 +6,8 @@ import Foundation
 
 /// Coordinator extension for transaction filtering. Provides both a full recompute
 /// and an incremental append path for batch delivery without user filters active.
-/// Every path that changes `filteredTransactions` ends with `deriveFilteredRows()`.
+/// Incremental paths intentionally append visible rows via `appendDerivedRows(_:to:)`
+/// and may skip bumping `refreshToken` when a batch contributes no non-TLS-failure rows.
 extension MainContentCoordinator {
     // MARK: - Row Derivation (single path for table-facing refresh)
 
@@ -47,10 +48,9 @@ extension MainContentCoordinator {
         if filterCriteria.sidebarScope == .allTraffic, filterCriteria.isEmpty, !hasActiveRules,
            activeSortDescriptors.isEmpty
         {
-            let visibleBatch = batch.filter { !$0.isTLSFailure }
-            filteredTransactions.append(contentsOf: visibleBatch)
+            filteredTransactions.append(contentsOf: batch.filter { !$0.isTLSFailure })
             activeWorkspace.lastDeriveWasAppendOnly = true
-            appendDerivedRows(visibleBatch, to: activeWorkspace)
+            appendDerivedRows(batch, to: activeWorkspace)
         } else {
             recomputeFilteredTransactions()
             return
@@ -162,10 +162,9 @@ extension MainContentCoordinator {
         if workspace.filterCriteria.sidebarScope == .allTraffic,
            workspace.filterCriteria.isEmpty, !hasActiveRules, workspace.activeSortDescriptors.isEmpty
         {
-            let visibleBatch = batch.filter { !$0.isTLSFailure }
-            workspace.filteredTransactions.append(contentsOf: visibleBatch)
+            workspace.filteredTransactions.append(contentsOf: batch.filter { !$0.isTLSFailure })
             workspace.lastDeriveWasAppendOnly = true
-            appendDerivedRows(visibleBatch, to: workspace)
+            appendDerivedRows(batch, to: workspace)
         } else {
             recomputeFilteredTransactions(for: workspace)
             return

@@ -94,6 +94,8 @@ struct RockxyIdentity {
 
     static var isRunningTests: Bool {
         NSClassFromString("XCTestCase") != nil
+            || !(ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] ?? "").isEmpty
+            || NSClassFromString("Testing.Test") != nil
     }
 
     let displayName: String
@@ -190,6 +192,25 @@ struct RockxyIdentity {
 
     // MARK: Private
 
+    private static let testRunToken: String = {
+        let environment = ProcessInfo.processInfo.environment
+        if let explicit = environment["ROCKXY_TEST_RUN_TOKEN"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+            !explicit.isEmpty
+        {
+            return explicit
+        }
+
+        if let configurationPath = environment["XCTestConfigurationFilePath"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+            !configurationPath.isEmpty
+        {
+            return "xc-\(stableHash(configurationPath))"
+        }
+
+        return UUID().uuidString
+    }()
+
     private static func string(
         named key: String,
         in info: [String: Any],
@@ -210,6 +231,17 @@ struct RockxyIdentity {
     )
         -> URL
     {
-        fileManager.temporaryDirectory.appendingPathComponent(directoryName, isDirectory: true)
+        let root = fileManager.temporaryDirectory
+            .appendingPathComponent("rockxy-tests-\(testRunToken)", isDirectory: true)
+        return root.appendingPathComponent(directoryName, isDirectory: true)
+    }
+
+    private static func stableHash(_ value: String) -> String {
+        var hash: UInt64 = 14_695_981_039_346_656_037
+        for byte in value.utf8 {
+            hash ^= UInt64(byte)
+            hash &*= 1_099_511_628_211
+        }
+        return String(hash, radix: 16, uppercase: false)
     }
 }

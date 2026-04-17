@@ -69,6 +69,8 @@ struct TLSInterceptHandlerTests {
 
         #expect(state.successCount == 1)
         #expect(state.receivedError == nil)
+        #expect((try? serverChannel.pipeline.syncOperations.handler(type: RawTunnelHandler.self)) != nil)
+        #expect((try? clientChannel.pipeline.syncOperations.handler(type: RawTunnelHandler.self)) != nil)
 
         _ = try? clientChannel.finish()
         _ = try? serverChannel.finish()
@@ -92,6 +94,22 @@ struct TLSInterceptHandlerTests {
         #expect(transaction.state == .completed)
         #expect(transaction.sourcePort == 54_321)
         #expect(transaction.isTLSFailure == false)
+    }
+
+    @Test("raw tunnel capture builds IPv6 CONNECT transaction")
+    func makeSuccessfulIPv6TunnelTransaction() {
+        let transaction = TLSInterceptHandler.makeTunnelTransaction(
+            host: "2001:db8::1",
+            port: 443,
+            statusCode: 200,
+            statusMessage: "Connection Established",
+            state: .completed,
+            sourcePort: 54_321
+        )
+
+        #expect(transaction.request.method == "CONNECT")
+        #expect(transaction.request.url.absoluteString == "https://[2001:db8::1]:443")
+        #expect(transaction.response?.statusCode == 200)
     }
 
     @Test("TLS handshake failure keeps failed CONNECT metadata")
