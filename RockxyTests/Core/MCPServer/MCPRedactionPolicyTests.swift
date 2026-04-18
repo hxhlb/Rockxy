@@ -174,12 +174,16 @@ struct MCPRedactionPolicyTests {
     }
 
     @Test("Leaves generic key fields intact in JSON bodies")
-    func preserveGenericJSONKeyField() {
+    func preserveGenericJSONKeyField() throws {
         let body = #"{"items":[{"key":"foo","value":"bar"}]}"#
 
         let redacted = enabledPolicy.redactJSONBody(body)
 
-        #expect(redacted == body)
+        // Compare parsed JSON rather than raw strings: JSONSerialization
+        // round-trip is not guaranteed to preserve dictionary key order.
+        let original = try JSONSerialization.jsonObject(with: Data(body.utf8)) as? NSDictionary
+        let parsed = try JSONSerialization.jsonObject(with: Data(redacted.utf8)) as? NSDictionary
+        #expect(original == parsed)
     }
 
     @Test("Disabled policy doesn't redact JSON body")
