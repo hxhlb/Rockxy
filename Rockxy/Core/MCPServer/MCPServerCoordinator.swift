@@ -100,7 +100,10 @@ final class MCPServerCoordinator {
             serverCoordinator: self
         )
 
-        let ruleService = MCPRuleQueryService(ruleEngine: RuleEngine.shared)
+        let ruleService = MCPRuleQueryService(
+            ruleEngine: RuleEngine.shared,
+            redactionPolicy: redactionPolicy
+        )
 
         let registry = MCPToolRegistry(
             flowService: flowService,

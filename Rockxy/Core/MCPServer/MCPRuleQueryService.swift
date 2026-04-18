@@ -9,9 +9,17 @@ nonisolated(unsafe) private let logger = Logger(
 // MARK: - MCPRuleQueryService
 
 struct MCPRuleQueryService {
+    // MARK: Lifecycle
+
+    init(ruleEngine: RuleEngine, redactionPolicy: MCPRedactionPolicy = MCPRedactionPolicy(isEnabled: false)) {
+        self.ruleEngine = ruleEngine
+        self.redactionPolicy = redactionPolicy
+    }
+
     // MARK: Internal
 
     let ruleEngine: RuleEngine
+    let redactionPolicy: MCPRedactionPolicy
 
     func listRules() async -> MCPToolCallResult {
         let rules = await ruleEngine.allRules
@@ -23,7 +31,7 @@ struct MCPRuleQueryService {
                 "is_enabled": .bool(rule.isEnabled),
                 "priority": .int(rule.priority),
                 "action_type": .string(rule.action.toolCategory),
-                "action_summary": .string(rule.action.matchedRuleActionSummary),
+                "action_summary": .string(redactedActionSummary(for: rule)),
             ]
 
             var condition: [String: MCPJSONValue] = [:]
@@ -37,7 +45,9 @@ struct MCPRuleQueryService {
                 condition["header_name"] = .string(headerName)
             }
             if let headerValue = rule.matchCondition.headerValue {
-                condition["header_value"] = .string(headerValue)
+                condition["header_value"] = .string(
+                    redactedHeaderValue(name: rule.matchCondition.headerName, value: headerValue)
+                )
             }
 
             fields["match_condition"] = .object(condition)
@@ -54,6 +64,24 @@ struct MCPRuleQueryService {
     }
 
     // MARK: Private
+
+    private func redactedActionSummary(for rule: ProxyRule) -> String {
+        let summary = rule.action.matchedRuleActionSummary
+        guard redactionPolicy.isEnabled else {
+            return summary
+        }
+        return redactionPolicy.redactGenericText(summary)
+    }
+
+    private func redactedHeaderValue(name: String?, value: String) -> String {
+        guard redactionPolicy.isEnabled else {
+            return value
+        }
+        if let name, MCPRedactionPolicy.sensitiveHeaders.contains(name.lowercased()) {
+            return "[REDACTED]"
+        }
+        return redactionPolicy.redactGenericText(value)
+    }
 
     private func jsonResult(_ value: MCPJSONValue) -> MCPToolCallResult {
         do {
