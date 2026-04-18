@@ -135,6 +135,8 @@ Build and run in Xcode. The Welcome window guides you through root CA setup, hel
 
 **Requirements:** macOS 14.0+, Xcode 16+, Swift 5.9
 
+If you want to connect Rockxy to Claude after installation, see the [MCP Integration guide](docs/features/mcp.mdx).
+
 ## Rockxy vs. Alternatives
 
 |  | **Rockxy** | **Proxyman** | **Charles Proxy** |
@@ -186,6 +188,7 @@ Report vulnerabilities via [SECURITY.md](SECURITY.md). See the [full security ar
 Full documentation available at the [Rockxy Docs](docs/index.mdx):
 
 - [Quickstart Guide](docs/quickstart.mdx) — get up and running in minutes
+- [MCP Integration](docs/features/mcp.mdx) — connect Rockxy to Claude CLI or Claude Desktop
 - [Architecture](docs/development/architecture.mdx) — proxy engine, actor model, data flow
 - [Security Model](docs/development/security.mdx) — trust boundaries, XPC validation, certificate management
 - [Design Decisions](docs/development/design-decisions.mdx) — why SwiftNIO, NSTableView, actors

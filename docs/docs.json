@@ -36,6 +36,7 @@
       {
         "group": "Analysis & Productivity",
         "pages": [
+          "features/mcp",
           "features/log-intelligence",
           "features/diff",
           "features/scripting",
