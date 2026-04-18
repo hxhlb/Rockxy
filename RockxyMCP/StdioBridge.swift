@@ -31,15 +31,6 @@ final class StdioBridge {
             }
             inputBuffer.append(chunk)
 
-            if inputBuffer.count > Self.maxLineSize {
-                writeResponse(makeJSONErrorResponse(
-                    code: -32_700,
-                    message: "input line too large"
-                ))
-                inputBuffer.removeAll(keepingCapacity: false)
-                continue
-            }
-
             while let newlineRange = inputBuffer.range(of: Data("\n".utf8)) {
                 let lineData = inputBuffer.subdata(in: inputBuffer.startIndex ..< newlineRange.lowerBound)
                 inputBuffer.removeSubrange(inputBuffer.startIndex ... newlineRange.lowerBound)
@@ -54,6 +45,17 @@ final class StdioBridge {
                 if let responseData = sendRequest(body: Data(line.utf8)) {
                     writeResponse(responseData)
                 }
+            }
+
+            // After processing all complete lines, only the incomplete tail
+            // remains in the buffer. Cap only that tail to avoid unbounded
+            // memory while keeping already-parsed lines intact.
+            if inputBuffer.count > Self.maxLineSize {
+                writeResponse(makeJSONErrorResponse(
+                    code: -32_700,
+                    message: "input line too large"
+                ))
+                inputBuffer.removeAll(keepingCapacity: false)
             }
         }
 
