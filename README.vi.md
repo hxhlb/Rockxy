@@ -41,7 +41,7 @@
 <!-- BEGIN GENERATED: latest-release -->
 ## Bản Phát Hành Mới Nhất
 
-**v0.8.0** — 2026-04-16
+**v0.9.0** — 2026-04-18
 
 ### Đã Sửa
 
