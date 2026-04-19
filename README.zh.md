@@ -121,6 +121,8 @@
 
 **为大规模而生** — NSTableView 虚拟滚动处理 100k+ 请求。环形缓冲区淘汰、磁盘 body 卸载、批量 UI 更新。零延迟。
 
+**AI-Ready (MCP Server)** — 内置 Model Context Protocol 服务器，让 Claude CLI、Claude Desktop 及其他 MCP 客户端可直接在对话中查询实时流量、规则和代理状态。仅本地运行，使用 token 认证，敏感数据默认脱敏。
+
 > 100% 原生 macOS。没有 Electron。没有 Web 视图。SwiftUI + AppKit + SwiftNIO。
 
 ## 快速开始
@@ -175,6 +177,7 @@ Rockxy 拦截网络流量 — 安全是基础，不是可选项。
 - [x] JavaScript 插件系统（沙箱执行）
 - [x] HAR 导入/导出、原生会话文件、请求对比
 - [x] OSLog 关联和凭证脱敏
+- [x] 面向 AI 助手的 Model Context Protocol (MCP) 服务器（Claude CLI、Claude Desktop）
 - [ ] HTTP/2 和 HTTP/3 支持
 - [ ] 远程设备代理（iOS 通过 USB/Wi-Fi）
 - [ ] CI/CD 流水线的 Headless 模式

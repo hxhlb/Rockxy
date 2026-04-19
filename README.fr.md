@@ -121,6 +121,8 @@ Consultez [CHANGELOG.md](CHANGELOG.md) pour l’historique complet des versions.
 
 **Con&ccedil;u pour la mont&eacute;e en charge** &mdash; NSTableView avec d&eacute;filement virtuel pour 100k+ requ&ecirc;tes. &Eacute;viction par tampon circulaire, d&eacute;chargement des body sur disque, mises &agrave; jour UI group&eacute;es. Z&eacute;ro latence.
 
+**AI-Ready (MCP Server)** &mdash; Serveur Model Context Protocol int&eacute;gr&eacute; qui permet &agrave; Claude CLI, Claude Desktop et aux autres clients MCP d'interroger le trafic en direct, les r&egrave;gles et l'&eacute;tat du proxy directement depuis le chat. Local uniquement, authentifi&eacute; par token, donn&eacute;es sensibles masqu&eacute;es par d&eacute;faut.
+
 > 100 % natif macOS. Pas d'Electron. Pas de vues web. SwiftUI + AppKit + SwiftNIO.
 
 ## D&eacute;marrage rapide
@@ -175,6 +177,7 @@ Signaler les vuln&eacute;rabilit&eacute;s via [SECURITY.md](SECURITY.md). Voir l
 - [x] Syst&egrave;me de plugins JavaScript (ex&eacute;cution sandbox&eacute;e)
 - [x] Import/export HAR, fichiers de session natifs, diff de requ&ecirc;tes
 - [x] Corr&eacute;lation OSLog et masquage des identifiants
+- [x] Serveur Model Context Protocol (MCP) pour les assistants IA (Claude CLI, Claude Desktop)
 - [ ] Support HTTP/2 et HTTP/3
 - [ ] Proxy d'appareil distant (iOS via USB/Wi-Fi)
 - [ ] Mode headless pour les pipelines CI/CD

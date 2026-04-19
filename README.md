@@ -121,6 +121,8 @@ See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 
 **Built for Scale** — NSTableView virtual scrolling handles 100k+ requests. Ring buffer eviction, disk body offloading, batched UI updates. Zero lag.
 
+**AI-Ready (MCP Server)** — Bundled Model Context Protocol server lets Claude CLI, Claude Desktop, and other MCP clients query live traffic, rules, and proxy status directly from chat. Local-only, token-authenticated, sensitive data redacted by default.
+
 > 100% native macOS. No Electron. No web views. SwiftUI + AppKit + SwiftNIO.
 
 ## Quick Start
@@ -177,6 +179,7 @@ Report vulnerabilities via [SECURITY.md](SECURITY.md). See the [full security ar
 - [x] JavaScript plugin system with sandboxed execution
 - [x] HAR import/export, native session files, request diff
 - [x] OSLog correlation and credential redaction
+- [x] Model Context Protocol (MCP) server for AI assistants (Claude CLI, Claude Desktop)
 - [ ] HTTP/2 and HTTP/3 support
 - [ ] Remote device proxy (iOS over USB/Wi-Fi)
 - [ ] Headless mode for CI/CD pipeline integration
