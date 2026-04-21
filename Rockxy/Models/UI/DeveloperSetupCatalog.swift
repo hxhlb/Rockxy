@@ -96,11 +96,11 @@ extension SetupTarget {
         manualSummary: String(
             localized: """
             Import the Rockxy root CA into the active JVM's cacerts with keytool, then route traffic
-            through 127.0.0.1 on Rockxy's port. This flow requires a locally installed JDK or JRE.
+            through 127.0.0.1 on Rockxy's port. This flow requires a locally installed JDK.
             """
         ),
         currentSupportSummary: String(
-            localized: "Rockxy ships a keytool import command and a Java HttpClient sample for a manual capture check on machines with a local Java runtime."
+            localized: "Rockxy ships a keytool import command and a Java HttpClient sample for a manual capture check on machines with a local JDK."
         )
     )
 

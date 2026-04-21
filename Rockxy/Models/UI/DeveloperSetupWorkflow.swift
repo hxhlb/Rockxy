@@ -342,59 +342,59 @@ enum DeveloperSetupWorkflowCatalog {
         -> String?
     {
         let proxyURL = "http://127.0.0.1:\(port)"
-        let certPath = certificatePath ?? certificatePathPlaceholder
+        let rawCertificatePath = certificatePath ?? certificatePathPlaceholder
 
         let snippet: String? = switch (targetID, snippetID) {
         case (.python, .pythonRequests):
-            pythonRequestsSnippet(proxyURL: proxyURL, certPath: certPath)
+            pythonRequestsSnippet(proxyURL: proxyURL, certPath: rawCertificatePath)
         case (.python, .pythonHTTPX):
-            pythonHTTPXSnippet(proxyURL: proxyURL, certPath: certPath)
+            pythonHTTPXSnippet(proxyURL: proxyURL, certPath: rawCertificatePath)
         case (.python, .pythonAIOHTTP):
-            pythonAIOHTTPSnippet(proxyURL: proxyURL, certPath: certPath)
+            pythonAIOHTTPSnippet(proxyURL: proxyURL, certPath: rawCertificatePath)
         case (.python, .pythonURLLib3):
-            pythonURLLib3Snippet(proxyURL: proxyURL, certPath: certPath)
+            pythonURLLib3Snippet(proxyURL: proxyURL, certPath: rawCertificatePath)
         case (.nodeJS, .nodeAxios):
-            nodeAxiosSnippet(port: port, certPath: certPath)
+            nodeAxiosSnippet(port: port, certPath: rawCertificatePath)
         case (.nodeJS, .nodeHTTPS):
-            nodeHTTPSSnippet(proxyURL: proxyURL, certPath: certPath)
+            nodeHTTPSSnippet(proxyURL: proxyURL, certPath: rawCertificatePath)
         case (.nodeJS, .nodeGot):
-            nodeGotSnippet(proxyURL: proxyURL, certPath: certPath)
+            nodeGotSnippet(proxyURL: proxyURL, certPath: rawCertificatePath)
         case (.curl, .curlCommand):
-            curlCommandSnippet(proxyURL: proxyURL, certPath: certPath)
+            curlCommandSnippet(proxyURL: proxyURL, certPath: rawCertificatePath)
         case (.curl, .curlEnvironment):
-            curlEnvironmentSnippet(proxyURL: proxyURL, certPath: certPath)
+            curlEnvironmentSnippet(proxyURL: proxyURL, certPath: rawCertificatePath)
         case (.ruby, .rubyNetHTTP):
-            rubyNetHTTPSnippet(proxyURL: proxyURL, certPath: certPath)
+            rubyNetHTTPSnippet(proxyURL: proxyURL, certPath: rawCertificatePath)
         case (.ruby, .rubyHTTP):
-            rubyHTTPSnippet(port: port, certPath: certPath)
+            rubyHTTPSnippet(port: port, certPath: rawCertificatePath)
         case (.ruby, .rubyFaraday):
-            rubyFaradaySnippet(proxyURL: proxyURL, certPath: certPath)
+            rubyFaradaySnippet(proxyURL: proxyURL, certPath: rawCertificatePath)
         case (.golang, .goNetHTTP):
-            goNetHTTPSnippet(proxyURL: proxyURL, certPath: certPath)
+            goNetHTTPSnippet(proxyURL: proxyURL, certPath: rawCertificatePath)
         case (.golang, .goResty):
-            goRestySnippet(proxyURL: proxyURL, certPath: certPath)
+            goRestySnippet(proxyURL: proxyURL, certPath: rawCertificatePath)
         case (.rust, .rustReqwest):
-            rustReqwestSnippet(proxyURL: proxyURL, certPath: certPath)
+            rustReqwestSnippet(proxyURL: proxyURL, certPath: rawCertificatePath)
         case (.javaVMs, .javaKeytool):
-            javaKeytoolSnippet(certPath: certPath)
+            javaKeytoolSnippet(certPath: rawCertificatePath)
         case (.javaVMs, .javaHttpClient):
-            javaHttpClientSnippet(port: port, certPath: certPath)
+            javaHttpClientSnippet(port: port, certPath: rawCertificatePath)
         case (.firefox, .firefoxConfig):
-            firefoxConfigSnippet(port: port, certPath: certPath)
+            firefoxConfigSnippet(port: port, certPath: rawCertificatePath)
         case (.postman, .postmanConfig):
-            postmanConfigSnippet(port: port, certPath: certPath)
+            postmanConfigSnippet(port: port, certPath: rawCertificatePath)
         case (.insomnia, .insomniaConfig):
-            insomniaConfigSnippet(port: port, certPath: certPath)
+            insomniaConfigSnippet(port: port, certPath: rawCertificatePath)
         case (.paw, .pawConfig):
-            pawConfigSnippet(port: port, certPath: certPath)
+            pawConfigSnippet(port: port, certPath: rawCertificatePath)
         case (.docker, .dockerRun):
-            dockerRunSnippet(port: port, certPath: certPath)
+            dockerRunSnippet(port: port, certPath: rawCertificatePath)
         case (.electronJS, .electronCommand):
-            electronCommandSnippet(port: port, certPath: certPath)
+            electronCommandSnippet(port: port, certPath: rawCertificatePath)
         case (.electronJS, .electronSession):
-            electronSessionSnippet(port: port, certPath: certPath)
+            electronSessionSnippet(port: port, certPath: rawCertificatePath)
         case (.nextJS, .nextJSRouteHandler):
-            nextJSRouteHandlerSnippet(proxyURL: proxyURL, certPath: certPath)
+            nextJSRouteHandlerSnippet(proxyURL: proxyURL, certPath: rawCertificatePath)
         default:
             nil
         }
@@ -415,7 +415,7 @@ enum DeveloperSetupWorkflowCatalog {
     ) -> String? {
         let validationSnippetID = workflow.validation?.preferredSnippetID ?? selectedSnippetID
         let proxyURL = "http://127.0.0.1:\(port)"
-        let certPath = certificatePath ?? certificatePathPlaceholder
+        let rawCertificatePath = certificatePath ?? certificatePathPlaceholder
         let validationURL = validationURL(for: targetID)
 
         if let snippet = generatedSnippet(
@@ -427,14 +427,16 @@ enum DeveloperSetupWorkflowCatalog {
             return snippet.replacingOccurrences(of: defaultValidationURL, with: validationURL)
         }
 
-        return curlCommandSnippet(proxyURL: proxyURL, certPath: certPath)
+        return curlCommandSnippet(proxyURL: proxyURL, certPath: rawCertificatePath)
             .replacingOccurrences(of: defaultValidationURL, with: validationURL)
     }
 
     // MARK: Private
 
     private static func pythonRequestsSnippet(proxyURL: String, certPath: String) -> String {
-        """
+        let proxyURL = escapeForStringLiteral(proxyURL, language: .python)
+        let certPath = escapeForStringLiteral(certPath, language: .python)
+        return """
         import requests
 
         proxies = {
@@ -454,7 +456,9 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func pythonHTTPXSnippet(proxyURL: String, certPath: String) -> String {
-        """
+        let proxyURL = escapeForStringLiteral(proxyURL, language: .python)
+        let certPath = escapeForStringLiteral(certPath, language: .python)
+        return """
         import httpx
 
         with httpx.Client(proxy="\(proxyURL)", verify="\(certPath)", timeout=10.0) as client:
@@ -465,7 +469,9 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func pythonAIOHTTPSnippet(proxyURL: String, certPath: String) -> String {
-        """
+        let proxyURL = escapeForStringLiteral(proxyURL, language: .python)
+        let certPath = escapeForStringLiteral(certPath, language: .python)
+        return """
         import aiohttp
         import asyncio
         import ssl
@@ -488,7 +494,9 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func pythonURLLib3Snippet(proxyURL: String, certPath: String) -> String {
-        """
+        let proxyURL = escapeForStringLiteral(proxyURL, language: .python)
+        let certPath = escapeForStringLiteral(certPath, language: .python)
+        return """
         import urllib3
 
         http = urllib3.ProxyManager(
@@ -504,7 +512,8 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func nodeAxiosSnippet(port: Int, certPath: String) -> String {
-        """
+        let certPath = escapeForStringLiteral(certPath, language: .javaScript)
+        return """
         import axios from "axios";
         import fs from "node:fs";
         import https from "node:https";
@@ -521,24 +530,28 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func nodeHTTPSSnippet(proxyURL: String, certPath: String) -> String {
-        """
+        let proxyURL = escapeForStringLiteral(proxyURL, language: .javaScript)
+        let certPath = escapeForStringLiteral(certPath, language: .javaScript)
+        return """
         import fs from "node:fs";
         import https from "node:https";
+
+        process.env.HTTP_PROXY = "\(proxyURL)";
+        process.env.HTTPS_PROXY = "\(proxyURL)";
+
+        const agent = new https.Agent({
+          ca: fs.readFileSync("\(certPath)"),
+          proxyEnv: true,
+        });
 
         const request = https.request("https://httpbin.org/get", {
           host: "httpbin.org",
           path: "/get",
           method: "GET",
           port: 443,
-          agent: new https.Agent({
-            ca: fs.readFileSync("\(certPath)"),
-          }),
-          proxy: undefined,
+          agent,
           headers: {},
         });
-
-        process.env.HTTP_PROXY = "\(proxyURL)";
-        process.env.HTTPS_PROXY = "\(proxyURL)";
 
         request.on("response", (response) => {
           console.log(response.statusCode);
@@ -551,7 +564,9 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func nodeGotSnippet(proxyURL: String, certPath: String) -> String {
-        """
+        let proxyURL = escapeForStringLiteral(proxyURL, language: .javaScript)
+        let certPath = escapeForStringLiteral(certPath, language: .javaScript)
+        return """
         import fs from "node:fs";
         import got from "got";
         import { HttpsProxyAgent } from "https-proxy-agent";
@@ -572,25 +587,31 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func curlCommandSnippet(proxyURL: String, certPath: String) -> String {
-        """
+        let proxyURL = escapeForShell(proxyURL)
+        let certPath = escapeForShell(certPath)
+        return """
         curl --proxy \(proxyURL) \\
-          --cacert "\(certPath)" \\
+          --cacert \(certPath) \\
           --request GET \\
           "https://httpbin.org/get"
         """
     }
 
     private static func curlEnvironmentSnippet(proxyURL: String, certPath: String) -> String {
-        """
+        let proxyURL = escapeForShell(proxyURL)
+        let certPath = escapeForShell(certPath)
+        return """
         export HTTP_PROXY=\(proxyURL)
         export HTTPS_PROXY=\(proxyURL)
 
-        curl --cacert "\(certPath)" "https://httpbin.org/get"
+        curl --cacert \(certPath) "https://httpbin.org/get"
         """
     }
 
     private static func rubyNetHTTPSnippet(proxyURL: String, certPath: String) -> String {
-        """
+        let proxyURL = escapeForStringLiteral(proxyURL, language: .ruby)
+        let certPath = escapeForStringLiteral(certPath, language: .ruby)
+        return """
         require "net/http"
         require "openssl"
         require "uri"
@@ -609,7 +630,8 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func rubyHTTPSnippet(port: Int, certPath: String) -> String {
-        """
+        let certPath = escapeForStringLiteral(certPath, language: .ruby)
+        return """
         require "http"
 
         response = HTTP.via("127.0.0.1", \(port))
@@ -622,7 +644,9 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func rubyFaradaySnippet(proxyURL: String, certPath: String) -> String {
-        """
+        let proxyURL = escapeForStringLiteral(proxyURL, language: .ruby)
+        let certPath = escapeForStringLiteral(certPath, language: .ruby)
+        return """
         require "faraday"
 
         connection = Faraday.new(
@@ -638,7 +662,9 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func goNetHTTPSnippet(proxyURL: String, certPath: String) -> String {
-        """
+        let proxyURL = escapeForStringLiteral(proxyURL, language: .go)
+        let certPath = escapeForStringLiteral(certPath, language: .go)
+        return """
         package main
 
         import (
@@ -673,7 +699,9 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func goRestySnippet(proxyURL: String, certPath: String) -> String {
-        """
+        let proxyURL = escapeForStringLiteral(proxyURL, language: .go)
+        let certPath = escapeForStringLiteral(certPath, language: .go)
+        return """
         package main
 
         import (
@@ -695,7 +723,9 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func rustReqwestSnippet(proxyURL: String, certPath: String) -> String {
-        """
+        let proxyURL = escapeForStringLiteral(proxyURL, language: .rust)
+        let certPath = escapeForStringLiteral(certPath, language: .rust)
+        return """
         use reqwest::{Certificate, Client, Proxy};
         use std::fs;
 
@@ -716,16 +746,17 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func javaKeytoolSnippet(certPath: String) -> String {
-        """
+        let certPath = escapeForShell(certPath)
+        return """
         # Import the Rockxy root CA into the active JVM's cacerts keystore.
-        # This changes trust for the selected JDK/JRE, so prefer a dedicated
+        # This changes trust for the selected JDK, so prefer a dedicated
         # development JVM or a copied cacerts file if you do not want to mutate
         # a shared installation.
         # Requires the default cacerts password "changeit" unless it was changed.
         keytool -importcert \\
           -noprompt \\
           -alias rockxy-ca \\
-          -file "\(certPath)" \\
+          -file \(certPath) \\
           -keystore "$JAVA_HOME/lib/security/cacerts" \\
           -storepass changeit
 
@@ -735,7 +766,8 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func javaHttpClientSnippet(port: Int, certPath: String) -> String {
-        """
+        let certPath = escapeForStringLiteral(certPath, language: .java)
+        return """
         import java.net.InetSocketAddress;
         import java.net.ProxySelector;
         import java.net.URI;
@@ -766,7 +798,8 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func firefoxConfigSnippet(port: Int, certPath: String) -> String {
-        """
+        let shellCertPath = escapeForShell(certPath)
+        return """
         # 1. Firefox > Settings > Network Settings > Manual proxy configuration
         #    HTTP Proxy:  127.0.0.1    Port: \(port)
         #    [x] Also use this proxy for HTTPS
@@ -778,7 +811,7 @@ enum DeveloperSetupWorkflowCatalog {
         #
         # 3. Verify the proxy works via cURL first:
         curl --proxy http://127.0.0.1:\(port) \\
-          --cacert "\(certPath)" \\
+          --cacert \(shellCertPath) \\
           "https://httpbin.org/get"
         #
         # 4. Open https://httpbin.org/get in Firefox and confirm Rockxy captured it.
@@ -786,7 +819,8 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func postmanConfigSnippet(port: Int, certPath: String) -> String {
-        """
+        let shellCertPath = escapeForShell(certPath)
+        return """
         # 1. Postman > Settings > Proxy
         #    [x] Add a custom proxy configuration
         #    Proxy Type: HTTP + HTTPS
@@ -800,7 +834,7 @@ enum DeveloperSetupWorkflowCatalog {
         #
         # 3. Verify the proxy+cert work via cURL first:
         curl --proxy http://127.0.0.1:\(port) \\
-          --cacert "\(certPath)" \\
+          --cacert \(shellCertPath) \\
           "https://httpbin.org/get"
         #
         # 4. Send GET https://httpbin.org/get from Postman and confirm Rockxy captured it.
@@ -808,7 +842,8 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func insomniaConfigSnippet(port: Int, certPath: String) -> String {
-        """
+        let shellCertPath = escapeForShell(certPath)
+        return """
         # 1. Insomnia > Preferences > Proxy
         #    [x] Enable proxy
         #    HTTP Proxy:  127.0.0.1:\(port)
@@ -822,7 +857,7 @@ enum DeveloperSetupWorkflowCatalog {
         #
         # 3. Verify the proxy+cert work via cURL first:
         curl --proxy http://127.0.0.1:\(port) \\
-          --cacert "\(certPath)" \\
+          --cacert \(shellCertPath) \\
           "https://httpbin.org/get"
         #
         # 4. Send GET https://httpbin.org/get from Insomnia and confirm Rockxy captured it.
@@ -830,7 +865,8 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func pawConfigSnippet(port: Int, certPath: String) -> String {
-        """
+        let shellCertPath = escapeForShell(certPath)
+        return """
         # Paw follows the macOS system proxy, so point the system proxy at Rockxy first.
         #
         # 1. macOS > System Settings > Network > <active interface> > Details > Proxies
@@ -842,7 +878,7 @@ enum DeveloperSetupWorkflowCatalog {
         #
         # 3. Verify the proxy+cert work via cURL first:
         curl --proxy http://127.0.0.1:\(port) \\
-          --cacert "\(certPath)" \\
+          --cacert \(shellCertPath) \\
           "https://httpbin.org/get"
         #
         # 4. Send GET https://httpbin.org/get from Paw and confirm Rockxy captured it.
@@ -850,13 +886,14 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func dockerRunSnippet(port: Int, certPath: String) -> String {
-        """
+        let certPath = escapeForShell(certPath)
+        return """
         # Send one HTTPS request from a throwaway container through Rockxy.
         # Inside the container, the Mac is reachable at host.docker.internal.
         docker run --rm \\
           -e HTTP_PROXY=http://host.docker.internal:\(port) \\
           -e HTTPS_PROXY=http://host.docker.internal:\(port) \\
-          -v "\(certPath):/etc/ssl/certs/rockxy.pem:ro" \\
+          -v \(certPath):/etc/ssl/certs/rockxy.pem:ro \\
           curlimages/curl:latest \\
           --cacert /etc/ssl/certs/rockxy.pem \\
           https://httpbin.org/get
@@ -864,26 +901,28 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func electronCommandSnippet(port: Int, certPath: String) -> String {
-        """
+        let certPath = escapeForShell(certPath)
+        return """
         # Launch the Electron app with Chromium's proxy CLI flag.
         # Use NODE_EXTRA_CA_CERTS so Node code inside the app trusts the Rockxy CA.
-        NODE_EXTRA_CA_CERTS="\(certPath)" \\
+        NODE_EXTRA_CA_CERTS=\(certPath) \\
           ./YourElectronApp --proxy-server=http://127.0.0.1:\(port)
 
         # If the binary lives inside the .app bundle:
-        NODE_EXTRA_CA_CERTS="\(certPath)" \\
+        NODE_EXTRA_CA_CERTS=\(certPath) \\
           /Applications/YourApp.app/Contents/MacOS/YourApp \\
           --proxy-server=http://127.0.0.1:\(port)
         """
     }
 
     private static func electronSessionSnippet(port: Int, certPath: String) -> String {
-        """
+        let certPath = escapeForShell(certPath)
+        return """
+        # Export NODE_EXTRA_CA_CERTS before Electron starts.
+        NODE_EXTRA_CA_CERTS=\(certPath) npx electron .
+
         // main.ts — run inside the Electron main process.
         import { app, session } from "electron";
-
-        // Ensure Node-side TLS inside Electron trusts the Rockxy root CA.
-        process.env.NODE_EXTRA_CA_CERTS = "\(certPath)";
 
         app.whenReady().then(async () => {
           await session.defaultSession.setProxy({
@@ -896,11 +935,13 @@ enum DeveloperSetupWorkflowCatalog {
     }
 
     private static func nextJSRouteHandlerSnippet(proxyURL: String, certPath: String) -> String {
-        """
+        let proxyURL = escapeForShell(proxyURL)
+        let certPath = escapeForShell(certPath)
+        return """
         // app/api/rockxy-check/route.ts — App Router handler.
         // Start the dev server with:
         //   NODE_USE_ENV_PROXY=1 \\
-        //   NODE_EXTRA_CA_CERTS="\(certPath)" \\
+        //   NODE_EXTRA_CA_CERTS=\(certPath) \\
         //   HTTP_PROXY=\(proxyURL) HTTPS_PROXY=\(proxyURL) next dev
         // so the Node.js fetch inside the handler trusts the Rockxy CA
         // and routes through the proxy.
@@ -939,6 +980,48 @@ enum DeveloperSetupWorkflowCatalog {
 
     private static func validationPath(for targetID: SetupTarget.ID) -> String {
         "/anything/rockxy/\(targetID.rawValue)"
+    }
+
+    private enum StringLiteralLanguage {
+        case python
+        case javaScript
+        case ruby
+        case go
+        case rust
+        case java
+    }
+
+    private static func escapeForShell(_ value: String) -> String {
+        "'\(value.replacingOccurrences(of: "'", with: "'\"'\"'"))'"
+    }
+
+    private static func escapeForStringLiteral(_ value: String, language: StringLiteralLanguage) -> String {
+        let escaped = value.unicodeScalars.reduce(into: "") { result, scalar in
+            switch scalar {
+            case "\\":
+                result += "\\\\"
+            case "\"":
+                result += "\\\""
+            case "\n":
+                result += "\\n"
+            case "\r":
+                result += "\\r"
+            case "\t":
+                result += "\\t"
+            default:
+                result.append(String(scalar))
+            }
+        }
+
+        switch language {
+        case .python,
+             .javaScript,
+             .ruby,
+             .go,
+             .rust,
+             .java:
+            return escaped
+        }
     }
 
     private static func snippetStepTitle(for targetID: SetupTarget.ID) -> String {

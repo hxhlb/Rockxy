@@ -362,7 +362,15 @@ enum DeveloperSetupGuideCatalog {
         )
     }
 
-    private static func tip(_ id: String, _ title: String, _ message: String) -> SetupGuideTip {
-        SetupGuideTip(id: id, title: title, message: message)
+    private static func tip(
+        _ id: String,
+        _ title: String.LocalizationValue,
+        _ message: String.LocalizationValue
+    ) -> SetupGuideTip {
+        SetupGuideTip(
+            id: id,
+            title: String(localized: title),
+            message: String(localized: message)
+        )
     }
 }

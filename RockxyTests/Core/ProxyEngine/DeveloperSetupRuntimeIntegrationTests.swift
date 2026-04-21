@@ -397,7 +397,7 @@ struct DeveloperSetupRuntimeIntegrationTests {
                     arguments: [
                         "run",
                         "--rm",
-                        "curlimages/curl:latest",
+                        "curlimages/curl@sha256:9a6f6a17667960e077f1b153009aaf18ac99a622221084e1938a45a06fff057a",
                         "--proxy", "http://\(dockerHostAddress):\(proxyPort)",
                         "--noproxy", "",
                         "--silent",
@@ -485,7 +485,8 @@ struct DeveloperSetupRuntimeIntegrationTests {
                 app_port="$5"
 
                 cd "$project_dir"
-                "$npm_bin" install --silent next react react-dom >/dev/null
+                "$npm_bin" install --package-lock-only --silent next@16.2.4 react@19.2.5 react-dom@19.2.5 >/dev/null
+                "$npm_bin" ci --silent >/dev/null
 
                 NODE_USE_ENV_PROXY=1 \\
                 HTTP_PROXY="$proxy_url" \\
@@ -769,18 +770,36 @@ struct DeveloperSetupRuntimeIntegrationTests {
         }
         try process.run()
 
+        let stdoutReader = Task {
+            var data = Data()
+            for try await byte in stdoutPipe.fileHandleForReading.bytes {
+                data.append(byte)
+            }
+            return data
+        }
+
+        let stderrReader = Task {
+            var data = Data()
+            for try await byte in stderrPipe.fileHandleForReading.bytes {
+                data.append(byte)
+            }
+            return data
+        }
+
         let deadline = ContinuousClock().now + timeout
         while process.isRunning {
             if ContinuousClock().now >= deadline {
                 process.terminate()
                 process.waitUntilExit()
+                stdoutReader.cancel()
+                stderrReader.cancel()
                 throw RuntimeProbeError.processTimedOut(executableURL.lastPathComponent)
             }
             try? await Task.sleep(for: .milliseconds(100))
         }
 
-        let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-        let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+        let stdoutData = (try? await stdoutReader.value) ?? Data()
+        let stderrData = (try? await stderrReader.value) ?? Data()
         let stdout = String(bytes: stdoutData, encoding: .utf8) ?? ""
         let stderr = String(bytes: stderrData, encoding: .utf8) ?? ""
         return ProcessResult(

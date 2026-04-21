@@ -13,6 +13,8 @@ Rockxy's MCP integration is **local-only**:
 - the bundled `rockxy-mcp` binary acts as the stdio bridge used by Claude
 - Rockxy writes a local handshake file with the current port and auth token
 
+On macOS, the bundled bridge reads the handshake from `~/Library/Application Support/com.amunx.rockxy.community/mcp-handshake.json`.
+
 You do **not** add Rockxy through Claude's remote **Connectors** flow.
 
 ## Before You Start
@@ -26,7 +28,7 @@ Make sure all of these are true:
 5. Copy the generated MCP config snippet from Rockxy.
 
 <Tip>
-If you move `Rockxy.app` to a different folder later, open <strong>Settings → MCP</strong> and copy the config again so the `command` path stays correct.
+If you move `Rockxy.app` to a different folder later, open **Settings → MCP** and copy the config again so the `command` path stays correct.
 </Tip>
 
 ## What Rockxy Gives You

@@ -187,6 +187,7 @@ extension MainContentCoordinator {
         sessionGeneration = resolvedGeneration
 
         transactions.removeAll()
+        rebuildObservedDomainsByApp()
         selectedTransactionIDs.removeAll()
         logEntries.removeAll()
         errorCount = 0
@@ -331,6 +332,7 @@ extension MainContentCoordinator {
                 errorCount += 1
             }
         }
+        rebuildObservedDomainsByApp()
 
         updateAllWorkspaces(with: filteredBatch)
 
@@ -354,6 +356,7 @@ extension MainContentCoordinator {
                 deriveFilteredRows(for: workspace)
             }
         }
+        rebuildObservedDomainsByApp()
     }
 
     func updateDomainTree(for transaction: HTTPTransaction) {

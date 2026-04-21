@@ -122,7 +122,10 @@ struct SidebarView: View {
                 isPresented: $isAddFavoritePresented
             )
         }
-        .background(Color.clear.opacity(Double(coordinator.sslProxyingRefreshToken) * 0))
+        .background(
+            // Keep the sidebar invalidated when SSL proxying presentation changes.
+            EmptyView().id(coordinator.sslProxyingRefreshToken)
+        )
     }
 
     // MARK: Private

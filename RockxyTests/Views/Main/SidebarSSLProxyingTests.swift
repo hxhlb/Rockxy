@@ -112,6 +112,8 @@ struct SidebarSSLProxyingTests {
     @Test("observedDomainsForApp falls back to matching transactions and current host")
     func observedDomainsForAppFallsBackToTransactions() {
         let coordinator = MainContentCoordinator()
+        TrafficDomainSnapshot.shared.reset()
+        defer { TrafficDomainSnapshot.shared.reset() }
 
         let connect = TestFixtures.makeTransaction(
             method: "CONNECT",
@@ -125,7 +127,7 @@ struct SidebarSSLProxyingTests {
 
         coordinator.transactions = [connect, second]
         coordinator.appNodes = []
-        TrafficDomainSnapshot.shared.reset()
+        coordinator.rebuildObservedDomainsByApp()
 
         let domains = coordinator.observedDomainsForApp(
             named: "Google Chrome",

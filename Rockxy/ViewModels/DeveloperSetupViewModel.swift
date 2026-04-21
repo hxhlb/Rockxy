@@ -63,6 +63,7 @@ final class DeveloperSetupViewModel {
 
     var snapshot: SetupSnapshot
     var activeIssue: SetupIssue?
+    private var validationRunID: UUID?
 
     var filteredTargetSections: [SetupTargetSection] {
         SetupTarget.filteredSections(matching: sourceListSearchText, pinnedTargetIDs: pinnedTargetIDs)
@@ -281,7 +282,9 @@ final class DeveloperSetupViewModel {
             activeIssue = nextIssue
             snapshot.verificationState = nextIssue == nil ? .readyToVerify : .readinessFailed
         } else if snapshot.verificationState != .waitingForTraffic {
-            activeIssue = Self.validationIssue(for: selectedTarget, snapshot: snapshot, workflow: currentWorkflow)
+            let nextIssue = Self.validationIssue(for: selectedTarget, snapshot: snapshot, workflow: currentWorkflow)
+            activeIssue = nextIssue
+            snapshot.verificationState = nextIssue == nil ? .readyToVerify : .readinessFailed
         }
     }
 
@@ -367,12 +370,18 @@ final class DeveloperSetupViewModel {
 
     func startValidation() {
         validationTask?.cancel()
+        let capturedTargetID = selectedTarget.id
+        let validationRunID = UUID()
+        self.validationRunID = validationRunID
         validationTask = Task { @MainActor [weak self] in
             guard let self else {
                 return
             }
 
             await self.refreshSnapshot()
+            guard self.selectedTarget.id == capturedTargetID, self.validationRunID == validationRunID else {
+                return
+            }
 
             guard let validation = self.currentValidationSpec else {
                 self.activeIssue = .targetIsGuideOnly
@@ -397,6 +406,9 @@ final class DeveloperSetupViewModel {
 
                 while !Task.isCancelled {
                     if !self.supportsValidation {
+                        guard self.selectedTarget.id == capturedTargetID, self.validationRunID == validationRunID else {
+                            return
+                        }
                         self.cancelValidation(markCancelled: true)
                         return
                     }
@@ -405,6 +417,9 @@ final class DeveloperSetupViewModel {
                         || !self.coordinator.isProxyRunning
                         || !self.coordinator.isRecording
                     {
+                        guard self.selectedTarget.id == capturedTargetID, self.validationRunID == validationRunID else {
+                            return
+                        }
                         self.cancelValidation(markCancelled: true)
                         return
                     }
@@ -434,6 +449,9 @@ final class DeveloperSetupViewModel {
                     try? await Task.sleep(for: .milliseconds(250))
                 }
 
+                guard self.selectedTarget.id == capturedTargetID, self.validationRunID == validationRunID else {
+                    return
+                }
                 self.cancelValidation(markCancelled: true)
                 return
             }
@@ -447,6 +465,7 @@ final class DeveloperSetupViewModel {
     func cancelValidation(markCancelled: Bool) {
         validationTask?.cancel()
         validationTask = nil
+        validationRunID = nil
 
         if markCancelled {
             snapshot.verificationState = .cancelled

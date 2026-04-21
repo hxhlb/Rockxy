@@ -38,7 +38,13 @@ private func acquireCrossProcessSettingsLock() throws -> CrossProcessSettingsLoc
 /// and returns a cleanup closure that restores originals and unlocks.
 func installUserDefaultsGuard(keys: [String]) -> (() -> Void) {
     settingsTestLock.lock()
-    let crossProcessLock = try? acquireCrossProcessSettingsLock()
+    let crossProcessLock: CrossProcessSettingsLock?
+    do {
+        crossProcessLock = try acquireCrossProcessSettingsLock()
+    } catch {
+        fputs("warning: failed to acquire cross-process settings lock: \(error)\n", stderr)
+        crossProcessLock = nil
+    }
     let defaults = UserDefaults.standard
     let originals = keys.map { ($0, defaults.object(forKey: $0)) }
 

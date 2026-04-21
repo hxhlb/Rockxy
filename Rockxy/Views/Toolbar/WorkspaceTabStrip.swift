@@ -81,6 +81,7 @@ private struct WorkspaceTabItem: View {
     let onDuplicate: () -> Void
     let onCloseOthers: () -> Void
     let onRename: (String) -> Void
+    private let selectionDelay: Duration = .milliseconds(220)
 
     var body: some View {
         HStack(spacing: 4) {
@@ -116,6 +117,7 @@ private struct WorkspaceTabItem: View {
                 }
                 .buttonStyle(.plain)
                 .opacity(isActive || isHovering ? 1 : 0)
+                .allowsHitTesting(isActive || isHovering)
             }
         }
         .padding(.horizontal, 12)
@@ -129,8 +131,18 @@ private struct WorkspaceTabItem: View {
                 .strokeBorder(tabBorder, lineWidth: isActive ? 1 : 0.5)
         }
         .contentShape(Rectangle())
-        .onTapGesture { onSelect() }
+        .onTapGesture {
+            pendingSelectionTask?.cancel()
+            pendingSelectionTask = Task { @MainActor in
+                try? await Task.sleep(for: selectionDelay)
+                guard !Task.isCancelled else {
+                    return
+                }
+                onSelect()
+            }
+        }
         .onTapGesture(count: 2) {
+            pendingSelectionTask?.cancel()
             guard workspace.isClosable else {
                 return
             }
@@ -159,6 +171,7 @@ private struct WorkspaceTabItem: View {
     @State private var isEditing = false
     @State private var editingTitle = ""
     @State private var isHovering = false
+    @State private var pendingSelectionTask: Task<Void, Never>?
 
     private var tabBackground: Color {
         if isActive {

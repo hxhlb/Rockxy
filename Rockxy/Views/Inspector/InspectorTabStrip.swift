@@ -16,7 +16,7 @@ struct InspectorTabStrip<Content: View, TrailingContent: View>: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            ScrollView(.horizontal, showsIndicators: false) {
+            ScrollView(.horizontal) {
                 HStack(spacing: 0) {
                     content
                 }
@@ -24,6 +24,7 @@ struct InspectorTabStrip<Content: View, TrailingContent: View>: View {
                 .padding(.leading, 4)
                 .frame(minWidth: 0, alignment: .leading)
             }
+            .scrollIndicators(.hidden)
             .frame(maxWidth: .infinity, alignment: .leading)
 
             trailingContent

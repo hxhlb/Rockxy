@@ -30,7 +30,7 @@ struct DeveloperSetupWindowView: View {
             await viewModel.refreshSnapshot()
         }
         .sheet(isPresented: Binding(
-            get: { viewModel.showsAutomationSheet },
+            get: { viewModel.showsAutomationSheet && viewModel.currentAutomationPreview != nil },
             set: { isPresented in
                 if !isPresented {
                     viewModel.closeAutomationSheet()
@@ -54,9 +54,9 @@ struct DeveloperSetupWindowView: View {
         .onChange(of: coordinator.isRecording) { _, _ in refreshSnapshot() }
         .onChange(of: coordinator.activeProxyPort) { _, _ in refreshSnapshot() }
         .onChange(of: coordinator.sessionGeneration) { _, _ in refreshSnapshot() }
-        .onChange(of: ReadinessCoordinator.shared.certReadiness) { refreshSnapshot() }
-        .onChange(of: ReadinessCoordinator.shared.proxyMode) { refreshSnapshot() }
-        .onChange(of: ReadinessCoordinator.shared.activeWarning) { refreshSnapshot() }
+        .onChange(of: ReadinessCoordinator.shared.certReadiness) { _, _ in refreshSnapshot() }
+        .onChange(of: ReadinessCoordinator.shared.proxyMode) { _, _ in refreshSnapshot() }
+        .onChange(of: ReadinessCoordinator.shared.activeWarning) { _, _ in refreshSnapshot() }
         .onDisappear {
             viewModel.cancelValidation(markCancelled: true)
         }

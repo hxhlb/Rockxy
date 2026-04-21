@@ -61,39 +61,44 @@ struct DeveloperSetupSourceList: View {
                     .padding(.vertical, 6)
             } else {
                 ForEach(targets, id: \.id) { target in
-                    HStack(spacing: 10) {
-                        Image(systemName: target.iconName)
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(selectedTarget.id == target.id ? .primary : .secondary)
-                            .frame(width: 16)
+                    ZStack(alignment: .trailing) {
+                        Button {
+                            onSelect(target)
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: target.iconName)
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundStyle(selectedTarget.id == target.id ? .primary : .secondary)
+                                    .frame(width: 16)
 
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(target.title)
-                                .font(.system(size: 13, weight: selectedTarget.id == target.id ? .semibold : .regular))
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(target.title)
+                                        .font(.system(size: 13, weight: selectedTarget.id == target.id ? .semibold : .regular))
+                                        .foregroundStyle(.primary)
+                                        .lineLimit(1)
 
-                            Text(target.supportStatus.title)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
+                                    Text(target.supportStatus.title)
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
+
+                                Spacer(minLength: 32)
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 7)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
-
-                        Spacer(minLength: 8)
+                        .buttonStyle(.plain)
 
                         pinButton(for: target)
+                            .padding(.trailing, 8)
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 7)
-                    .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
                             .fill(selectedTarget.id == target.id ? Color(nsColor: .selectedContentBackgroundColor).opacity(0.45) : .clear)
                     )
                     .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .onTapGesture {
-                        onSelect(target)
-                    }
                     .contextMenu {
                         Button(pinActionTitle(for: target)) {
                             onTogglePinned(target)

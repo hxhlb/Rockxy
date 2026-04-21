@@ -506,8 +506,8 @@ struct DeveloperSetupViewModelTests {
             certificatePath: "/tmp/RockxyRootCA.pem"
         )
 
-        #expect(snippet?.contains("--proxy http://127.0.0.1:9090") == true)
-        #expect(snippet?.contains("--cacert \"/tmp/RockxyRootCA.pem\"") == true)
+        #expect(snippet?.contains("--proxy 'http://127.0.0.1:9090'") == true)
+        #expect(snippet?.contains("--cacert '/tmp/RockxyRootCA.pem'") == true)
     }
 
     @Test("Generated Ruby snippet includes proxy and CA file")
@@ -685,7 +685,7 @@ struct DeveloperSetupViewModelTests {
 
         #expect(snippet?.contains("docker run") == true)
         #expect(snippet?.contains("host.docker.internal:9090") == true)
-        #expect(snippet?.contains("/tmp/RockxyRootCA.pem:/etc/ssl/certs/rockxy.pem:ro") == true)
+        #expect(snippet?.contains("'/tmp/RockxyRootCA.pem':/etc/ssl/certs/rockxy.pem:ro") == true)
         #expect(snippet?.contains("https://httpbin.org/get") == true)
     }
 
@@ -699,7 +699,7 @@ struct DeveloperSetupViewModelTests {
         )
 
         #expect(snippet?.contains("--proxy-server=http://127.0.0.1:9090") == true)
-        #expect(snippet?.contains("NODE_EXTRA_CA_CERTS=\"/tmp/RockxyRootCA.pem\"") == true)
+        #expect(snippet?.contains("NODE_EXTRA_CA_CERTS='/tmp/RockxyRootCA.pem'") == true)
     }
 
     @Test("Generated Electron session snippet calls session.setProxy with proxyRules")
@@ -711,9 +711,9 @@ struct DeveloperSetupViewModelTests {
             certificatePath: "/tmp/RockxyRootCA.pem"
         )
 
+        #expect(snippet?.contains("NODE_EXTRA_CA_CERTS='/tmp/RockxyRootCA.pem' npx electron .") == true)
         #expect(snippet?.contains("session.defaultSession.setProxy") == true)
         #expect(snippet?.contains("proxyRules: \"http=127.0.0.1:9090;https=127.0.0.1:9090\"") == true)
-        #expect(snippet?.contains("NODE_EXTRA_CA_CERTS = \"/tmp/RockxyRootCA.pem\"") == true)
     }
 
     @Test("Generated Next.js snippet provides a route handler + env var hints")
@@ -727,9 +727,9 @@ struct DeveloperSetupViewModelTests {
 
         #expect(snippet?.contains("app/api/rockxy-check/route.ts") == true)
         #expect(snippet?.contains("NODE_USE_ENV_PROXY=1") == true)
-        #expect(snippet?.contains("NODE_EXTRA_CA_CERTS=\"/tmp/RockxyRootCA.pem\"") == true)
-        #expect(snippet?.contains("HTTP_PROXY=http://127.0.0.1:9090") == true)
-        #expect(snippet?.contains("HTTPS_PROXY=http://127.0.0.1:9090") == true)
+        #expect(snippet?.contains("NODE_EXTRA_CA_CERTS='/tmp/RockxyRootCA.pem'") == true)
+        #expect(snippet?.contains("HTTP_PROXY='http://127.0.0.1:9090'") == true)
+        #expect(snippet?.contains("HTTPS_PROXY='http://127.0.0.1:9090'") == true)
         #expect(snippet?.contains("https://httpbin.org/get") == true)
     }
 
@@ -759,7 +759,7 @@ struct DeveloperSetupViewModelTests {
             certificatePath: "/tmp/RockxyRootCA.pem"
         )
 
-        #expect(snippet?.contains("curl --proxy http://127.0.0.1:9090") == true)
+        #expect(snippet?.contains("curl --proxy 'http://127.0.0.1:9090'") == true)
         #expect(snippet?.contains("https://httpbin.org/anything/rockxy/firefox") == true)
     }
 
@@ -774,7 +774,7 @@ struct DeveloperSetupViewModelTests {
             certificatePath: "/tmp/RockxyRootCA.pem"
         )
 
-        #expect(snippet?.contains("curl --proxy http://127.0.0.1:9090") == true)
+        #expect(snippet?.contains("curl --proxy 'http://127.0.0.1:9090'") == true)
         #expect(snippet?.contains("https://httpbin.org/anything/rockxy/electronJS") == true)
     }
 

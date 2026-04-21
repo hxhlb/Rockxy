@@ -639,6 +639,9 @@ struct RockxyMenuCommands: Commands {
                         let response = panel.runModal()
                         if response == .OK, let url = panel.url {
                             try pem.write(to: url, atomically: true, encoding: .utf8)
+                            await MainActor.run {
+                                AppSettingsManager.shared.updateLastExportedRootCAPath(url.path)
+                            }
                         }
                     } catch {
                         certificateError = error.localizedDescription

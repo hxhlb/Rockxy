@@ -53,8 +53,12 @@ enum DeveloperSetupRuntimeTooling {
         case .javaVMs:
             let hasJava = javaTool(named: "java") != nil
             let hasJavac = javaTool(named: "javac") != nil
-            let note = "Java validation needs a local JDK or JRE. Install one on this Mac, then rerun the Java flow."
-            return SetupRuntimeReadiness(isSatisfied: hasJava && hasJavac, note: hasJava && hasJavac ? nil : note)
+            let hasKeytool = javaTool(named: "keytool") != nil
+            let note = "Java validation needs a local JDK with java, javac, and keytool installed. Install a JDK on this Mac, then rerun the Java flow."
+            return SetupRuntimeReadiness(
+                isSatisfied: hasJava && hasJavac && hasKeytool,
+                note: hasJava && hasJavac && hasKeytool ? nil : note
+            )
         case .curl:
             return executableReadiness(
                 title: "cURL",
@@ -65,7 +69,11 @@ enum DeveloperSetupRuntimeTooling {
                 title: "Docker CLI",
                 urls: executableCandidates(
                     name: "docker",
-                    additionalPaths: ["/usr/local/bin/docker", "/opt/homebrew/bin/docker"]
+                    additionalPaths: [
+                        "/usr/local/bin/docker",
+                        "/opt/homebrew/bin/docker",
+                        "/Applications/Docker.app/Contents/Resources/bin/docker",
+                    ]
                 )
             )
         case .nextJS:

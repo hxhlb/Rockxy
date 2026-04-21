@@ -120,10 +120,7 @@ extension MainContentCoordinator {
 
         appendDomains(TrafficDomainSnapshot.shared.domains(forApp: appName))
 
-        let transactionDomains = transactions
-            .filter { $0.clientApp == appName }
-            .map(\.request.host)
-        appendDomains(transactionDomains)
+        appendDomains(Array(observedDomainsByApp[appName] ?? []))
 
         if let fallbackDomain {
             appendDomains([fallbackDomain])
@@ -249,6 +246,22 @@ extension MainContentCoordinator {
                 self?.refreshSSLProxyingPresentation()
             }
         }
+    }
+
+    func rebuildObservedDomainsByApp() {
+        var domainsByApp: [String: Set<String>] = [:]
+
+        for transaction in transactions {
+            let appName = (transaction.clientApp ?? String(localized: "Unknown"))
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let host = transaction.request.host.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !appName.isEmpty, !host.isEmpty else {
+                continue
+            }
+            domainsByApp[appName, default: []].insert(host)
+        }
+
+        observedDomainsByApp = domainsByApp
     }
 
     func installAndTrustCertificateFromInspector() {
@@ -415,6 +428,7 @@ extension MainContentCoordinator {
 
     func removeDomainFromSidebar(_ domain: String) {
         transactions.removeAll { $0.request.host == domain }
+        rebuildObservedDomainsByApp()
 
         if let index = domainIndexMap[domain] {
             domainTree.remove(at: index)
@@ -442,6 +456,7 @@ extension MainContentCoordinator {
 
     func removeAppFromSidebar(_ appName: String) {
         transactions.removeAll { $0.clientApp == appName }
+        rebuildObservedDomainsByApp()
 
         if let index = appNodeIndexMap[appName] {
             appNodes.remove(at: index)

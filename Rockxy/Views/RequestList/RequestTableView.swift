@@ -1383,21 +1383,18 @@ extension RequestTableView {
                let imageView = existing.subviews.first as? NSImageView
             {
                 configureSSLImageView(imageView, row: row)
+                centerSSLImageView(imageView, in: existing)
                 return existing
             }
 
             let container = NSView()
             container.identifier = cellID
 
-            let imageView = NSImageView(frame: NSRect(
-                x: (38 - iconSize) / 2,
-                y: (rowHeight - iconSize) / 2,
-                width: iconSize,
-                height: iconSize
-            ))
+            let imageView = NSImageView(frame: NSRect(x: 0, y: 0, width: iconSize, height: rowHeight))
             imageView.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 11, weight: .medium)
             configureSSLImageView(imageView, row: row)
             container.addSubview(imageView)
+            centerSSLImageView(imageView, in: container)
             return container
         }
 
@@ -1442,6 +1439,17 @@ extension RequestTableView {
 
             imageView.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)
             imageView.contentTintColor = tintColor
+        }
+
+        private func centerSSLImageView(_ imageView: NSImageView, in container: NSView) {
+            imageView.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.deactivate(container.constraints.filter { constraint in
+                constraint.firstItem as AnyObject? === imageView || constraint.secondItem as AnyObject? === imageView
+            })
+            NSLayoutConstraint.activate([
+                imageView.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+                imageView.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            ])
         }
 
         private func appIcon(for appName: String) -> NSImage? {

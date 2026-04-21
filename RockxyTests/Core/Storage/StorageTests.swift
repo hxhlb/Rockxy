@@ -120,6 +120,11 @@ struct AppSettingsStorageTests {
         #expect(loaded.listenIPv6 == true)
         #expect(loaded.autoSelectPort == true)
         #expect(loaded.lastExportedRootCAPath == "/tmp/RockxyRootCA.pem")
+
+        settings.lastExportedRootCAPath = nil
+        AppSettingsStorage.save(settings)
+        let reloaded = AppSettingsStorage.load()
+        #expect(reloaded.lastExportedRootCAPath == nil)
     }
 
     @Test("default values match AppSettings initializer")

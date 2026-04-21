@@ -80,14 +80,7 @@ struct DeveloperSetupAutomationSheet: View {
                 Text(preview.primaryActionTitle)
                     .font(.headline)
 
-                Text(
-                    String(
-                        localized: """
-                        This is the primary automation entrypoint for terminal-based runtimes.
-                        Manual setup remains available in the main window when you want to follow the steps directly.
-                        """
-                    )
-                )
+                Text(preview.summary)
                 .font(.caption)
                 .foregroundStyle(.secondary)
             }

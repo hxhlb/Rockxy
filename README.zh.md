@@ -110,7 +110,7 @@
 ## 当前分支亮点
 
 - Developer Setup Hub 现在覆盖运行时、浏览器、客户端、设备、框架与环境，并提供按目标生成的代码片段、验证监视器和清晰的操作指引。
-- 当按域名或应用启用/禁用 SSL Proxying 时，HTTPS 响应提示、侧边栏操作和主请求表现在会保持同步。
+- 当按域名或应用启用/禁用 SSL Proxying 时，HTTPS 响应提示、侧边栏操作和主请求表的展示会保持同步。
 - Inspector 与主请求表已完成一轮打磨，包括单行可滚动标签、Query 顶部对齐、更清晰的 Status/Code 区分、Request/Response 字节列、Duration 修正以及实时 SSL 状态图标。
 
 ## 功能特性
@@ -198,6 +198,7 @@ Rockxy 拦截网络流量 — 安全是基础，不是可选项。
 
 - [快速入门](docs/quickstart.mdx) — 几分钟内完成设置
 - [Developer Setup Hub](docs/features/developer-setup-hub.mdx) — 运行时代码片段、设备指南、验证探针与支持矩阵
+- [MCP 集成](docs/features/mcp.mdx) — MCP 配置与使用指南
 - [架构](docs/development/architecture.mdx) — 代理引擎、Actor 模型、数据流
 - [安全模型](docs/development/security.mdx) — 信任边界、XPC 验证、证书管理
 - [设计决策](docs/development/design-decisions.mdx) — 为什么选择 SwiftNIO、NSTableView、Actors

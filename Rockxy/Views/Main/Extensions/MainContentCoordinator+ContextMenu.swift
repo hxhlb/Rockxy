@@ -203,7 +203,7 @@ extension MainContentCoordinator {
             return
         }
         enableSSLProxyingForDomain(host)
-        Self.logger.info("Enabled SSL proxying for \(host)")
+        Self.logger.info("Enabled SSL proxying for \(host, privacy: .private)")
     }
 
     // MARK: - Export Body
@@ -325,6 +325,7 @@ extension MainContentCoordinator {
     func deleteTransactions(_ transactionsToDelete: [HTTPTransaction]) {
         let ids = Set(transactionsToDelete.map(\.id))
         transactions.removeAll { ids.contains($0.id) }
+        rebuildObservedDomainsByApp()
         persistedFavorites.removeAll { ids.contains($0.id) }
 
         // Prune selection state
