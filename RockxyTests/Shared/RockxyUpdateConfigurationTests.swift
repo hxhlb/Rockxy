@@ -75,6 +75,21 @@ struct RockxyUpdateConfigurationTests {
         #expect(!configuration.isConfigured)
     }
 
+    @Test("Manual update checks can stay available when automatic updates are off")
+    func supportsManualChecksWithoutAutomaticUpdates() {
+        let configuration = RockxyUpdateConfiguration(infoDictionary: [
+            "RockxyUpdatesEnabled": "NO",
+            "SUFeedURL": "https://raw.githubusercontent.com/RockxyApp/Rockxy/main/appcast.xml",
+            "SUPublicEDKey": "public-key",
+            "RockxyBuildReleaseDate": "2026-04-25T00:00:00Z",
+        ])
+
+        #expect(!configuration.updatesEnabled)
+        #expect(!configuration.isConfigured)
+        #expect(configuration.supportsUserInitiatedUpdateChecks)
+        #expect(!configuration.supportsAutomaticUpdateChecks)
+    }
+
     @Test("Sparkle config fails closed when the build release date is missing")
     func defaultsReleaseDateToDistantFuture() {
         let configuration = RockxyUpdateConfiguration(infoDictionary: [
@@ -106,5 +121,21 @@ struct AppUpdaterTests {
         }
 
         #expect(!updater.canCheckForUpdates)
+    }
+
+    @Test("Manual-only updater keeps user-initiated checks available")
+    func manualOnlyUpdaterAvailability() {
+        let configuration = RockxyUpdateConfiguration(infoDictionary: [
+            "RockxyUpdatesEnabled": "NO",
+            "SUFeedURL": "https://raw.githubusercontent.com/RockxyApp/Rockxy/main/appcast.xml",
+            "SUPublicEDKey": "public-key",
+            "RockxyBuildReleaseDate": "2026-04-25T00:00:00Z",
+        ])
+        let updater = AppUpdater(configuration: configuration)
+
+        #expect(!updater.isConfigured)
+        #expect(updater.supportsManualChecks)
+        #expect(!updater.supportsAutomaticChecks)
+        #expect(updater.canInitiateUpdateCheck)
     }
 }
