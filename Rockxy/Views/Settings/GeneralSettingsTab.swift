@@ -85,11 +85,26 @@ struct GeneralSettingsTab: View {
                 )
             )
         }
+        .sheet(item: $caShareController.currentSession, onDismiss: {
+            Task { await caShareController.stopSharing(clearSession: true) }
+        }) { session in
+            RootCAShareSheet(
+                session: session,
+                fingerprint: caShareController.currentFingerprint,
+                onCopyURL: { copyShareURL(session.publicURL) },
+                onStop: {
+                    Task { await caShareController.stopSharing(clearSession: true) }
+                }
+            )
+        }
         .task {
             await checkCAStatus()
         }
         .onChange(of: ReadinessCoordinator.shared.certReadiness) {
             Task { await checkCAStatus() }
+        }
+        .onDisappear {
+            Task { await caShareController.stopSharing(clearSession: true) }
         }
     }
 
@@ -112,6 +127,7 @@ struct GeneralSettingsTab: View {
     @State private var certLoading = false
     @State private var showResetConfirmation = false
     @State private var certificateStatus: CertificateStatus = .idle
+    @StateObject private var caShareController = CAShareController()
 
     private var sectionDivider: some View {
         Divider().padding(.horizontal, 0)
@@ -205,6 +221,11 @@ struct GeneralSettingsTab: View {
                         Self.logger.info("Root CA exported to \(url.path)")
                     }
 
+                case .share:
+                    let session = try await caShareController.startSharing()
+                    certificateStatus = .success(String(localized: "Root CA sharing link started."))
+                    Self.logger.info("Root CA sharing started on \(session.host):\(session.port)")
+
                 case .reset:
                     showResetConfirmation = true
                     return
@@ -228,6 +249,7 @@ struct GeneralSettingsTab: View {
         Task {
             defer { certLoading = false }
             do {
+                await caShareController.stopSharing(clearSession: true)
                 try await CertificateManager.shared.reset()
                 await MainActor.run {
                     AppSettingsManager.shared.updateLastExportedRootCAPath(nil)
@@ -241,6 +263,15 @@ struct GeneralSettingsTab: View {
                 )
                 Self.logger.error("Certificate reset failed: \(error)")
             }
+        }
+    }
+
+    private func copyShareURL(_ url: URL) {
+        do {
+            try caShareController.copyShareURL(sessionURL: url)
+            certificateStatus = .success(String(localized: "Root CA sharing URL copied."))
+        } catch {
+            certificateStatus = .error(CAShareController.userFacingMessage(for: error))
         }
     }
 }

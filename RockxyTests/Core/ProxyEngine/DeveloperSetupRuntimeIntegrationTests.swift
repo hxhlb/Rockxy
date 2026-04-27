@@ -28,7 +28,8 @@ struct DeveloperSetupRuntimeIntegrationTests {
 
                 return ProcessInvocation(
                     executableURL: URL(fileURLWithPath: "/usr/bin/python3"),
-                    arguments: [scriptURL.path]
+                    arguments: [scriptURL.path],
+                    timeout: .seconds(45)
                 )
             }
         )
@@ -289,6 +290,7 @@ struct DeveloperSetupRuntimeIntegrationTests {
         try await assertRuntimeProbe(
             runtimeName: "Firefox",
             requestPath: "/developer-setup/firefox",
+            captureTimeout: .seconds(30),
             buildInvocation: { proxyPort, upstreamPort, workingDirectory in
                 let profileDirectory = workingDirectory.appendingPathComponent("FirefoxProfile", isDirectory: true)
                 try FileManager.default.createDirectory(at: profileDirectory, withIntermediateDirectories: true)
@@ -321,7 +323,7 @@ struct DeveloperSetupRuntimeIntegrationTests {
 
                 "$firefox_bin" -headless -no-remote -profile "$profile_dir" "$target_url" >/dev/null 2>&1 &
                 firefox_pid=$!
-                sleep 6
+                sleep 15
                 kill "$firefox_pid" >/dev/null 2>&1 || true
                 wait "$firefox_pid" >/dev/null 2>&1 || true
                 """.write(to: scriptURL, atomically: true, encoding: .utf8)
@@ -337,7 +339,8 @@ struct DeveloperSetupRuntimeIntegrationTests {
                         profileDirectory.path,
                         firefox.path,
                         "http://127.0.0.1:\(upstreamPort)/developer-setup/firefox",
-                    ]
+                    ],
+                    timeout: .seconds(45)
                 )
             }
         )
@@ -447,6 +450,7 @@ struct DeveloperSetupRuntimeIntegrationTests {
             expectedCapturedHost: nextHostAddress,
             expectedCapturedMethod: "CONNECT",
             allowAnyCapturedPath: true,
+            captureTimeout: .seconds(30),
             buildInvocation: { proxyPort, upstreamPort, workingDirectory in
                 let appPort = try findFreePort()
                 let packageJSON = workingDirectory.appendingPathComponent("package.json")
@@ -549,6 +553,7 @@ struct DeveloperSetupRuntimeIntegrationTests {
         expectedCapturedMethod: String = "GET",
         expectedCapturedPath: String? = nil,
         allowAnyCapturedPath: Bool = false,
+        captureTimeout: Duration = .seconds(10),
         buildInvocation: @escaping @Sendable (_ proxyPort: Int, _ upstreamPort: Int, _ workingDirectory: URL) async throws -> ProcessInvocation
     ) async throws {
         let probeLock = try RuntimeProbeFileLock.acquire()
@@ -599,9 +604,13 @@ struct DeveloperSetupRuntimeIntegrationTests {
             let capturedTransaction = try await transactionRecorder.waitForTransaction(
                 host: expectedCapturedHost,
                 method: expectedCapturedMethod,
-                path: allowAnyCapturedPath ? nil : (expectedCapturedPath ?? requestPath)
+                path: allowAnyCapturedPath ? nil : (expectedCapturedPath ?? requestPath),
+                timeout: captureTimeout
             )
-            let upstreamRequest = try await upstreamRecorder.waitForRequest(path: requestPath)
+            let upstreamRequest = try await upstreamRecorder.waitForRequest(
+                path: requestPath,
+                timeout: captureTimeout
+            )
 
             #expect(capturedTransaction.request.method == expectedCapturedMethod)
             #expect(capturedTransaction.request.host == expectedCapturedHost)

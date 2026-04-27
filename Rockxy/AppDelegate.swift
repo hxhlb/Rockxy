@@ -22,6 +22,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
         }
         Self.logger.info("Rockxy launched")
+        if !RockxyIdentity.isRunningTests {
+            AppUpdater.shared.startIfConfigured()
+        }
         Task {
             await SystemProxyManager.shared.recoverStaleProxyIfNeeded()
             do {
@@ -31,7 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             await HelperManager.shared.checkStatus()
             await PluginManager.shared.ensureLoadedOnce()
-            guard !ProcessInfo.processInfo.isTestHost else {
+            guard !RockxyIdentity.isRunningTests else {
                 return
             }
             await MCPServerCoordinator.shared.startIfEnabled()

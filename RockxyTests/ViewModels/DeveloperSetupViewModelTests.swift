@@ -250,28 +250,6 @@ struct DeveloperSetupViewModelTests {
         #expect(nextWorkflow.validation?.host == "httpbin.org")
     }
 
-    @Test("Guide catalog covers every remaining guide-only target with setup, validation, and troubleshooting tips")
-    func guideCatalogForGuideOnlyTargets() {
-        let guideTargets: [SetupTarget.ID] = [
-            .iosDevice,
-            .iosSimulator,
-            .androidDevice,
-            .androidEmulator,
-            .tvOSWatchOS,
-            .visionPro,
-            .flutter,
-            .reactNative,
-        ]
-
-        for targetID in guideTargets {
-            let guide = DeveloperSetupGuideCatalog.content(for: targetID)
-            #expect(guide != nil)
-            #expect(guide?.setupTips.isEmpty == false)
-            #expect(guide?.validationTips.isEmpty == false)
-            #expect(guide?.troubleshootingTips.isEmpty == false)
-        }
-    }
-
     @Test("Manual-snippet targets no longer return guide-only content")
     func promotedTargetsSkipGuideCatalog() {
         let promoted: [SetupTarget.ID] = [
@@ -362,10 +340,83 @@ struct DeveloperSetupViewModelTests {
         #expect(issue == .proxyStopped)
     }
 
-    @Test("Guide-only targets surface guide-only validation state")
-    func guideOnlyValidationIssue() {
+    @Test("Unavailable guide workflows surface guide-only validation state")
+    func unavailableGuideWorkflowValidationIssue() {
         let snapshot = SetupSnapshot(
             supportStatus: .guideOnly,
+            proxyRunning: true,
+            recordingEnabled: true,
+            activePort: 9_090,
+            effectiveListenAddress: "127.0.0.1",
+            certificateGenerated: true,
+            certificateTrusted: true,
+            certificateExportable: true,
+            proxyMode: .direct,
+            readinessWarningMessage: nil,
+            selectedSnippetID: nil,
+            verificationState: .idle,
+            matchedTransactionID: nil,
+            matchedHost: nil,
+            matchedMethod: nil,
+            matchedPath: nil
+        )
+
+        let guideOnlyTarget = SetupTarget(
+            id: .androidDevice,
+            title: String(localized: "Android Device"),
+            category: .device,
+            iconName: "iphone.gen2.radiowaves.left.and.right",
+            manualSupport: .guideOnly,
+            automationSupport: .none,
+            shortSummary: "",
+            manualSummary: "",
+            currentSupportSummary: ""
+        )
+
+        let issue = DeveloperSetupViewModel.validationIssue(
+            for: guideOnlyTarget,
+            snapshot: snapshot,
+            workflow: DeveloperSetupWorkflowCatalog.workflow(for: .androidDevice)
+        )
+
+        #expect(issue == .targetIsGuideOnly)
+    }
+
+    @Test("Available guide workflows surface manual validation state")
+    func availableGuideWorkflowValidationIssue() {
+        let snapshot = SetupSnapshot(
+            supportStatus: .availableNow,
+            proxyRunning: true,
+            recordingEnabled: true,
+            activePort: 9_090,
+            effectiveListenAddress: "0.0.0.0",
+            reachableLANAddress: "192.168.1.57",
+            certificateGenerated: true,
+            certificateTrusted: true,
+            certificateExportable: true,
+            proxyMode: .direct,
+            readinessWarningMessage: nil,
+            selectedSnippetID: nil,
+            verificationState: .idle,
+            matchedTransactionID: nil,
+            matchedHost: nil,
+            matchedMethod: nil,
+            matchedPath: nil
+        )
+
+        let issue = DeveloperSetupViewModel.validationIssue(
+            for: .iosDevice,
+            snapshot: snapshot,
+            workflow: DeveloperSetupWorkflowCatalog.workflow(for: .iosDevice)
+        )
+
+        #expect(issue == .manualValidationOnly)
+    }
+
+    @Test("Physical device guides block localhost-only proxy setup")
+    func physicalDeviceGuideRequiresReachableLANProxy() {
+        let snapshot = SetupSnapshot(
+            supportStatus: .availableNow,
             proxyRunning: true,
             recordingEnabled: true,
             activePort: 9_090,
@@ -389,7 +440,7 @@ struct DeveloperSetupViewModelTests {
             workflow: DeveloperSetupWorkflowCatalog.workflow(for: .iosDevice)
         )
 
-        #expect(issue == .targetIsGuideOnly)
+        #expect(issue == .deviceProxyUnreachable)
     }
 
     @Test("Validation matcher ignores old requests and matches the expected probe")
@@ -455,6 +506,14 @@ struct DeveloperSetupViewModelTests {
             .postman,
             .insomnia,
             .paw,
+            .iosDevice,
+            .iosSimulator,
+            .androidDevice,
+            .androidEmulator,
+            .tvOSWatchOS,
+            .visionPro,
+            .flutter,
+            .reactNative,
             .nextJS,
             .electronJS,
             .docker,
