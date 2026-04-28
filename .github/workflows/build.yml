@@ -47,16 +47,22 @@ jobs:
       - uses: actions/checkout@v4
       - name: Select Xcode
         run: |
-          if [ -d /Applications/Xcode_16.4.app ]; then
-            sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
-          elif [ -d /Applications/Xcode_16.app ]; then
-            sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer
-          else
-            echo "Supported Xcode 16 app bundle not found on runner."
-            ls -1 /Applications | grep '^Xcode' || true
-            exit 1
-          fi
-          xcodebuild -version
+          for candidate in \
+            /Applications/Xcode_16.4.app \
+            /Applications/Xcode_16.3.app \
+            /Applications/Xcode_16.2.app \
+            /Applications/Xcode_16.1.app \
+            /Applications/Xcode_16.app \
+            /Applications/Xcode.app; do
+            if [ -d "$candidate" ]; then
+              sudo xcode-select -s "$candidate/Contents/Developer"
+              xcodebuild -version
+              exit 0
+            fi
+          done
+          echo "Supported Xcode app bundle not found on runner."
+          ls -1 /Applications | grep '^Xcode' || true
+          exit 1
       - name: Run tests
         run: |
           mkdir -p build/test-results
@@ -85,16 +91,22 @@ jobs:
       - uses: actions/checkout@v4
       - name: Select Xcode
         run: |
-          if [ -d /Applications/Xcode_16.4.app ]; then
-            sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
-          elif [ -d /Applications/Xcode_16.app ]; then
-            sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer
-          else
-            echo "Supported Xcode 16 app bundle not found on runner."
-            ls -1 /Applications | grep '^Xcode' || true
-            exit 1
-          fi
-          xcodebuild -version
+          for candidate in \
+            /Applications/Xcode_16.4.app \
+            /Applications/Xcode_16.3.app \
+            /Applications/Xcode_16.2.app \
+            /Applications/Xcode_16.1.app \
+            /Applications/Xcode_16.app \
+            /Applications/Xcode.app; do
+            if [ -d "$candidate" ]; then
+              sudo xcode-select -s "$candidate/Contents/Developer"
+              xcodebuild -version
+              exit 0
+            fi
+          done
+          echo "Supported Xcode app bundle not found on runner."
+          ls -1 /Applications | grep '^Xcode' || true
+          exit 1
       - name: Build arm64
         run: |
           xcodebuild -project Rockxy.xcodeproj \
