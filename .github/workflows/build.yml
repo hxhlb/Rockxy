@@ -263,8 +263,8 @@ jobs:
 
             actual_identifier_json="$(plutil -extract AssociatedBundleIdentifiers json -o - "$plist_path")"
             normalized_sets="$(python3 .github/tools/normalize_identifier_set_json.py "$allowed_callers" "$actual_identifier_json")"
-            missing_identifiers="$(python3 -c 'import json,sys; print(\" \".join(json.loads(sys.stdin.read())[\"missing\"]))' <<<"$normalized_sets")"
-            extra_identifiers="$(python3 -c 'import json,sys; print(\" \".join(json.loads(sys.stdin.read())[\"extra\"]))' <<<"$normalized_sets")"
+            missing_identifiers="$(python3 -c 'import json,sys; print(" ".join(json.loads(sys.stdin.read())["missing"]))' <<<"$normalized_sets")"
+            extra_identifiers="$(python3 -c 'import json,sys; print(" ".join(json.loads(sys.stdin.read())["extra"]))' <<<"$normalized_sets")"
 
             if [ -n "$missing_identifiers" ] || [ -n "$extra_identifiers" ]; then
               echo "AssociatedBundleIdentifiers mismatch in $label"
