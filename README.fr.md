@@ -41,25 +41,15 @@
 <!-- BEGIN GENERATED: latest-release -->
 ## Dernière version publiée
 
-**v0.11.0** — 2026-04-25
-
-### Ajouts
-
-- Sparkle-powered automatic updates for signed public releases.
-- Bundled Rockxy MCP support for local developer-tool integrations.
-- Rockxy Pro activation and entitlement-aware upgrade foundations.
+**v0.12.0** — 2026-04-28
 
 ### Corrections
 
-- Improved paid-license activation recovery and product validation reliability.
-- Closed release-readiness gaps around production licensing configuration and update metadata.
-- Fixed release signing settings required for Apple notarization and Gatekeeper acceptance.
+- Fixed Homebrew/public app bundles that could fail helper installation with "unable to read plist" by validating and packaging the bundled helper launchd plist correctly (issue #53).
 
 ### Modifications
 
-- Hardened the release pipeline with production signing, notarization, stapling, checksum, and update-feed validation.
-- Refreshed public documentation, localized README content, and release metadata for the 0.11.0 release.
-- Improved Xcode project and build configuration reproducibility for fresh checkouts.
+- Added a Star History chart to all README translations.
 
 Consultez [CHANGELOG.md](CHANGELOG.md) pour l’historique complet des versions.
 <!-- END GENERATED: latest-release -->
