@@ -179,9 +179,31 @@ struct AppUpdaterTests {
 }
 
 private func loadRepoFile(_ relativePath: String) throws -> String {
-    let repoRoot = URL(fileURLWithPath: #filePath)
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
-    return try String(contentsOf: repoRoot.appendingPathComponent(relativePath), encoding: .utf8)
+    let fileManager = FileManager.default
+    var candidateDirectory = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+
+    while true {
+        let gitMarker = candidateDirectory.appendingPathComponent(".git").path
+        let xcodeProjectMarker = candidateDirectory.appendingPathComponent("Rockxy.xcodeproj").path
+
+        if fileManager.fileExists(atPath: gitMarker) || fileManager.fileExists(atPath: xcodeProjectMarker) {
+            return try String(
+                contentsOf: candidateDirectory.appendingPathComponent(relativePath),
+                encoding: .utf8
+            )
+        }
+
+        let parentDirectory = candidateDirectory.deletingLastPathComponent()
+        guard parentDirectory.path != candidateDirectory.path else {
+            throw NSError(
+                domain: "RockxyUpdateConfigurationTests",
+                code: 1,
+                userInfo: [
+                    NSLocalizedDescriptionKey: "Unable to locate the Rockxy repository root while loading \(relativePath).",
+                ]
+            )
+        }
+
+        candidateDirectory = parentDirectory
+    }
 }

@@ -225,6 +225,31 @@ struct DeveloperSetupViewModelTests {
         #expect(reachableAddress == nil)
     }
 
+    @Test("Reachable LAN address returns nil for an empty listen address")
+    func reachableLANAddressReturnsNilForEmptyAddress() {
+        let reachableAddress = DeveloperSetupViewModel.reachableLANAddress(
+            for: "",
+            discoverLANAddress: {
+                Issue.record("Empty listen addresses should not trigger LAN auto-discovery")
+                return "10.0.0.5"
+            }
+        )
+
+        #expect(reachableAddress == nil)
+    }
+
+    @Test("Reachable LAN address falls back to discovery for wildcard listen addresses")
+    func reachableLANAddressUsesDiscoveryForWildcardAddress() {
+        let reachableAddress = DeveloperSetupViewModel.reachableLANAddress(
+            for: "0.0.0.0",
+            discoverLANAddress: {
+                "10.0.0.5"
+            }
+        )
+
+        #expect(reachableAddress == "10.0.0.5")
+    }
+
     @Test("Node.js workflow exposes runtime snippets and validation")
     func nodeWorkflow() {
         let workflow = DeveloperSetupWorkflowCatalog.workflow(for: .nodeJS)

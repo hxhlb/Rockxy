@@ -236,7 +236,7 @@ struct GeneralSettingsTab: View {
                 }
                 await checkCAStatus()
             } catch {
-                certificateStatus = .error(certificateActionFailureMessage(for: action, error: error))
+                certificateStatus = .error(action.userFacingFailureMessage(for: error))
                 Self.logger.error("Certificate action failed: \(error)")
                 await checkCAStatus()
             }
@@ -273,13 +273,5 @@ struct GeneralSettingsTab: View {
         } catch {
             certificateStatus = .error(CAShareController.userFacingMessage(for: error))
         }
-    }
-
-    private func certificateActionFailureMessage(for action: CertificateAction, error: Error) -> String {
-        if action == .share {
-            return CAShareController.userFacingMessage(for: error)
-        }
-
-        return error.localizedDescription
     }
 }

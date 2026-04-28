@@ -223,10 +223,6 @@ jobs:
           cd artifacts && zip -r "$ARTIFACT_BASENAME-universal.zip" "$APP_NAME.app"
       - name: Verify bundled helper resources
         run: |
-          normalize_identifier_set_json() {
-            python3 -c 'import json, sys; expected = sorted(set(sys.argv[1].split())); actual = sorted(set(json.loads(sys.argv[2]))); payload = {"expected": expected, "actual": actual, "missing": sorted(set(expected) - set(actual)), "extra": sorted(set(actual) - set(expected))}; print(json.dumps(payload))' "$1" "$2"
-          }
-
           verify_helper_resources_in_app() {
             local app_path="$1"
             local label="$2"
@@ -266,7 +262,7 @@ jobs:
             fi
 
             actual_identifier_json="$(plutil -extract AssociatedBundleIdentifiers json -o - "$plist_path")"
-            normalized_sets="$(normalize_identifier_set_json "$allowed_callers" "$actual_identifier_json")"
+            normalized_sets="$(python3 .github/tools/normalize_identifier_set_json.py "$allowed_callers" "$actual_identifier_json")"
             missing_identifiers="$(python3 -c 'import json,sys; print(\" \".join(json.loads(sys.stdin.read())[\"missing\"]))' <<<"$normalized_sets")"
             extra_identifiers="$(python3 -c 'import json,sys; print(\" \".join(json.loads(sys.stdin.read())[\"extra\"]))' <<<"$normalized_sets")"
 

@@ -145,7 +145,7 @@ struct CertificateSetupView: View {
                 }
                 await checkCAStatus()
             } catch {
-                statusMessage = certificateActionFailureMessage(for: action, error: error)
+                statusMessage = action.userFacingFailureMessage(for: error)
                 Self.logger.error("Certificate action failed: \(error)")
                 await checkCAStatus()
             }
@@ -180,13 +180,5 @@ struct CertificateSetupView: View {
         } catch {
             statusMessage = CAShareController.userFacingMessage(for: error)
         }
-    }
-
-    private func certificateActionFailureMessage(for action: CertificateAction, error: Error) -> String {
-        if action == .share {
-            return CAShareController.userFacingMessage(for: error)
-        }
-
-        return error.localizedDescription
     }
 }

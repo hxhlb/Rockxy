@@ -696,7 +696,7 @@ final class HelperManager {
         category: "HelperManager"
     )
     private static let plistName = RockxyIdentity.current.helperPlistName
-    nonisolated private static let bundledHelperBinaryRelativePath = "Contents/Library/HelperTools/RockxyHelperTool"
+    nonisolated static let bundledHelperBinaryRelativePath = "Contents/Library/HelperTools/RockxyHelperTool"
     nonisolated private static let helperApprovalMessage = String(
         localized: "Approve the helper tool in System Settings > Login Items to finish installation."
     )

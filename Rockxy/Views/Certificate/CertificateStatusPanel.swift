@@ -12,6 +12,17 @@ enum CertificateAction: Equatable {
     case recheck
 }
 
+@MainActor
+extension CertificateAction {
+    func userFacingFailureMessage(for error: Error) -> String {
+        if self == .share {
+            return CAShareController.userFacingMessage(for: error)
+        }
+
+        return error.localizedDescription
+    }
+}
+
 // MARK: - CertificateStatusPanel
 
 /// Shared diagnostics panel for root CA certificate status.

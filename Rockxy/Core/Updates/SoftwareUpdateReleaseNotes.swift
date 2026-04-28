@@ -148,13 +148,19 @@ enum SoftwareUpdateReleaseNotesContent: Equatable {
             with: " ",
             options: .regularExpression
         )
+        plainText = decodeNumericHTMLEntities(in: plainText)
+
         let htmlEntityMap = [
             "&nbsp;": " ",
             "&amp;": "&",
             "&quot;": "\"",
+            "&apos;": "'",
             "&#39;": "'",
             "&lt;": "<",
             "&gt;": ">",
+            "&mdash;": "\u{2014}",
+            "&ndash;": "\u{2013}",
+            "&hellip;": "\u{2026}",
         ]
 
         for (entity, replacement) in htmlEntityMap {
@@ -162,6 +168,52 @@ enum SoftwareUpdateReleaseNotesContent: Equatable {
         }
 
         return plainText
+    }
+
+    private static func decodeNumericHTMLEntities(in text: String) -> String {
+        let decodedDecimalEntities = replacingNumericHTMLEntities(
+            in: text,
+            pattern: "&#([0-9]+);",
+            radix: 10
+        )
+
+        return replacingNumericHTMLEntities(
+            in: decodedDecimalEntities,
+            pattern: "&#x([0-9A-Fa-f]+);",
+            radix: 16
+        )
+    }
+
+    private static func replacingNumericHTMLEntities(
+        in text: String,
+        pattern: String,
+        radix: Int
+    ) -> String {
+        guard let expression = try? NSRegularExpression(pattern: pattern) else {
+            return text
+        }
+
+        let fullRange = NSRange(text.startIndex..., in: text)
+        let matches = expression.matches(in: text, range: fullRange)
+        guard !matches.isEmpty else {
+            return text
+        }
+
+        let originalNSString = text as NSString
+        let mutableText = NSMutableString(string: text)
+
+        for match in matches.reversed() {
+            let numericValue = originalNSString.substring(with: match.range(at: 1))
+            guard let scalarValue = Int(numericValue, radix: radix),
+                  let scalar = UnicodeScalar(scalarValue)
+            else {
+                continue
+            }
+
+            mutableText.replaceCharacters(in: match.range, with: String(Character(scalar)))
+        }
+
+        return mutableText as String
     }
 
     private static func normalizeDisplayText(_ text: String) -> String? {

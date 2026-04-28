@@ -387,7 +387,7 @@ final class SoftwareUpdateController: NSObject, ObservableObject, NSWindowDelega
             currentVersion: configuration.appVersion,
             latestVersion: item.displayVersionString,
             buildNumber: item.versionString,
-            updateStageDescription: String(describing: state.stage.rawValue),
+            updateStageDescription: updateStageDescription(for: state.stage),
             publishedDate: item.date as Date?,
             releaseNotes: SoftwareUpdateReleaseNotesContent.from(appcastItem: item),
             detailURL: item.fullReleaseNotesURL ?? item.releaseNotesURL ?? item.infoURL,
@@ -396,6 +396,19 @@ final class SoftwareUpdateController: NSObject, ObservableObject, NSWindowDelega
         )
         activeUpdateContext = context
         return context
+    }
+
+    private func updateStageDescription(for stage: SPUUserUpdateStage) -> String {
+        switch stage {
+        case .notDownloaded:
+            String(localized: "Not downloaded")
+        case .downloaded:
+            String(localized: "Downloaded")
+        case .installing:
+            String(localized: "Installing")
+        @unknown default:
+            String(localized: "Preparing update")
+        }
     }
 }
 

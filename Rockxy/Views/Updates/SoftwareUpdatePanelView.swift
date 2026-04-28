@@ -709,7 +709,9 @@ private struct NativeReleaseNotesTextView: NSViewRepresentable {
         guard let textStorage = textView.textStorage else {
             return
         }
-        if textStorage.isEqual(to: attributedText) {
+        if textStorage.length == attributedText.length,
+           textStorage.string == attributedText.string
+        {
             return
         }
         textStorage.setAttributedString(attributedText)

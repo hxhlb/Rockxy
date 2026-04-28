@@ -797,15 +797,32 @@ struct DeveloperSetupRuntimeIntegrationTests {
         }
 
         let budget = TimeoutBudget(timeout: timeout)
-        while process.isRunning {
-            guard !budget.hasExpired else {
+        func terminateProcessForCancellation() {
+            if process.isRunning {
                 process.terminate()
                 process.waitUntilExit()
-                stdoutReader.cancel()
-                stderrReader.cancel()
+            }
+            stdoutReader.cancel()
+            stderrReader.cancel()
+        }
+
+        while process.isRunning {
+            guard !budget.hasExpired else {
+                terminateProcessForCancellation()
                 throw RuntimeProbeError.processTimedOut(executableURL.lastPathComponent)
             }
-            try? await budget.sleep(step: .milliseconds(100))
+
+            if Task.isCancelled {
+                terminateProcessForCancellation()
+                throw CancellationError()
+            }
+
+            do {
+                try await budget.sleep(step: .milliseconds(100))
+            } catch is CancellationError {
+                terminateProcessForCancellation()
+                throw CancellationError()
+            }
         }
 
         let stdoutData = (try? await stdoutReader.value) ?? Data()
@@ -868,10 +885,11 @@ private final class TransactionRecorder: @unchecked Sendable {
         budget: TimeoutBudget
     ) async throws -> HTTPTransaction {
         while !budget.hasExpired {
+            try Task.checkCancellation()
             if let transaction = matchingTransaction(host: host, method: method, path: path) {
                 return transaction
             }
-            try? await budget.sleep(step: .milliseconds(50))
+            try await budget.sleep(step: .milliseconds(50))
         }
 
         throw RuntimeProbeError.captureTimedOut(path ?? host)
@@ -907,10 +925,11 @@ private final class UpstreamRequestRecorder: @unchecked Sendable {
 
     func waitForRequest(path: String, budget: TimeoutBudget) async throws -> UpstreamRequest {
         while !budget.hasExpired {
+            try Task.checkCancellation()
             if let request = matchingRequest(path: path) {
                 return request
             }
-            try? await budget.sleep(step: .milliseconds(50))
+            try await budget.sleep(step: .milliseconds(50))
         }
 
         throw RuntimeProbeError.upstreamTimedOut(path)

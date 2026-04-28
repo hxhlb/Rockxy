@@ -108,8 +108,7 @@ enum SigningDiagnostics {
 
         private var helperExecutableCandidates: [URL] {
             let bundledHelperURL = Bundle.main.bundleURL
-                .appendingPathComponent("Contents/Library/HelperTools", isDirectory: true)
-                .appendingPathComponent("RockxyHelperTool", isDirectory: false)
+                .appendingPathComponent(HelperManager.bundledHelperBinaryRelativePath, isDirectory: false)
             let legacyInstalledHelperURL = URL(
                 fileURLWithPath: "/Library/PrivilegedHelperTools/\(RockxyIdentity.current.helperBundleIdentifier)"
             )

@@ -325,7 +325,14 @@ final class AppUpdater: NSObject, ObservableObject, SPUUpdaterDelegate {
 
     private func presentUpdaterStartError(_ error: Error) {
         let nsError = error as NSError
-        userDriver?.controller.showError(nsError) {}
+        guard let userDriver else {
+            Self.logger.error(
+                "Unable to present updater start error because the Sparkle user driver is unavailable. domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public) message=\(nsError.localizedDescription, privacy: .public)"
+            )
+            return
+        }
+
+        userDriver.controller.showError(nsError) {}
     }
 
     func updater(_ updater: SPUUpdater, mayPerform updateCheck: SPUUpdateCheck) throws {

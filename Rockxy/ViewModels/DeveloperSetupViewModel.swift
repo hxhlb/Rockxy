@@ -669,7 +669,7 @@ final class DeveloperSetupViewModel {
 
     private static func isLoopbackListenAddress(_ address: String) -> Bool {
         switch address {
-        case "127.0.0.1", "::1", "localhost":
+        case "127.0.0.1", "::1", "[::1]", "localhost":
             true
         default:
             false
