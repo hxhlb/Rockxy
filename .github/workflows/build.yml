@@ -1,6 +1,13 @@
 name: Build & Validate
 
 on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       channel:
@@ -9,10 +16,22 @@ on:
         default: 'dev'
         type: string
 
+permissions:
+  contents: read
+
+concurrency:
+  group: build-validate-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
   lint:
     name: SwiftLint
     runs-on: macos-14
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - name: Install SwiftLint
@@ -20,14 +39,62 @@ jobs:
       - name: Lint
         run: swiftlint lint --strict
 
-  build-universal:
-    name: Build (Universal)
-    needs: lint
+  test:
+    name: Test
     runs-on: macos-14
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.app
+        run: |
+          if [ -d /Applications/Xcode_16.4.app ]; then
+            sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          elif [ -d /Applications/Xcode_16.app ]; then
+            sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer
+          else
+            echo "Supported Xcode 16 app bundle not found on runner."
+            ls -1 /Applications | grep '^Xcode' || true
+            exit 1
+          fi
+          xcodebuild -version
+      - name: Run tests
+        run: |
+          mkdir -p build/test-results
+          xcodebuild -project Rockxy.xcodeproj \
+            -scheme Rockxy \
+            -destination 'platform=macOS' \
+            -parallel-testing-enabled NO \
+            -resultBundlePath build/test-results/Rockxy.xcresult \
+            test
+      - name: Upload test result bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rockxy-test-results
+          path: build/test-results/Rockxy.xcresult
+          if-no-files-found: ignore
+
+  build-universal:
+    name: Build (Universal)
+    needs:
+      - lint
+      - test
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: |
+          if [ -d /Applications/Xcode_16.4.app ]; then
+            sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          elif [ -d /Applications/Xcode_16.app ]; then
+            sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer
+          else
+            echo "Supported Xcode 16 app bundle not found on runner."
+            ls -1 /Applications | grep '^Xcode' || true
+            exit 1
+          fi
+          xcodebuild -version
       - name: Build arm64
         run: |
           xcodebuild -project Rockxy.xcodeproj \
@@ -106,20 +173,7 @@ jobs:
       - name: Verify bundled helper resources
         run: |
           normalize_identifier_set_json() {
-            python3 - "$1" "$2" <<'PY'
-import json
-import sys
-
-expected = sorted(set(sys.argv[1].split()))
-actual = sorted(set(json.loads(sys.argv[2])))
-payload = {
-    "expected": expected,
-    "actual": actual,
-    "missing": sorted(set(expected) - set(actual)),
-    "extra": sorted(set(actual) - set(expected)),
-}
-print(json.dumps(payload))
-PY
+            python3 -c 'import json, sys; expected = sorted(set(sys.argv[1].split())); actual = sorted(set(json.loads(sys.argv[2]))); payload = {"expected": expected, "actual": actual, "missing": sorted(set(expected) - set(actual)), "extra": sorted(set(actual) - set(expected))}; print(json.dumps(payload))' "$1" "$2"
           }
 
           verify_helper_resources_in_app() {
@@ -180,3 +234,4 @@ PY
         with:
           name: rockxy-universal
           path: artifacts/Rockxy-universal.zip
+          if-no-files-found: error
