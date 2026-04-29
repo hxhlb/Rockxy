@@ -650,7 +650,8 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
     private static let maximumTabWidth: CGFloat = 220
     private static let addButtonSize: CGFloat = 28
     private static let dragThreshold: CGFloat = 4
-    private static let reorderAnimationDuration: TimeInterval = 0.18
+    private static let reorderAnimationDuration: TimeInterval = 0.22
+    private static let tabAnimationFrameInterval: TimeInterval = 1 / 120
 
     private weak var manager: RockxyWorkspaceWindowManager!
     private weak var coordinator: MainContentCoordinator?
@@ -1200,7 +1201,7 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
         presentedTabFrames = tabAnimationStartFrames
 
         let timer = Timer(
-            timeInterval: 1 / 60,
+            timeInterval: Self.tabAnimationFrameInterval,
             target: self,
             selector: #selector(advanceTabFrameAnimation(_:)),
             userInfo: nil,
@@ -1214,7 +1215,7 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
     @objc private func advanceTabFrameAnimation(_ timer: Timer) {
         let elapsed = Date().timeIntervalSince(tabAnimationStartDate)
         let progress = min(1, elapsed / Self.reorderAnimationDuration)
-        let easedProgress = easeOutQuart(progress)
+        let easedProgress = easeOutCubic(progress)
 
         presentedTabFrames = Dictionary(uniqueKeysWithValues: tabAnimationTargetFrames.map { workspaceID, targetFrame in
             let startFrame = tabAnimationStartFrames[workspaceID] ?? targetFrame
@@ -1274,9 +1275,9 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
         }
     }
 
-    private func easeOutQuart(_ progress: CGFloat) -> CGFloat {
+    private func easeOutCubic(_ progress: CGFloat) -> CGFloat {
         let clamped = min(max(progress, 0), 1)
-        return 1 - pow(1 - clamped, 4)
+        return 1 - pow(1 - clamped, 3)
     }
 
     private func commitEditingIfNeeded(forClickAt point: NSPoint) -> Bool {
