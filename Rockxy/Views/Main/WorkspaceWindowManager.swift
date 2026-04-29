@@ -456,6 +456,7 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
         }
         mouseDownWorkspaceID = workspaceID
         mouseDownPoint = point
+        dragGrabOffsetX = nil
         manager.selectWorkspace(workspaceID)
     }
 
@@ -470,6 +471,7 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
         if draggingWorkspaceID == nil,
            distance(from: mouseDownPoint, to: point) >= Self.dragThreshold {
             draggingWorkspaceID = mouseDownWorkspaceID
+            dragGrabOffsetX = dragGrabOffset(for: mouseDownWorkspaceID, at: mouseDownPoint)
         }
 
         guard let draggingWorkspaceID else {
@@ -477,7 +479,8 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
         }
 
         draggingPoint = point
-        let insertionIndex = insertionIndex(at: point)
+        let insertionPoint = dragInsertionPoint(for: draggingWorkspaceID, pointer: point)
+        let insertionIndex = insertionIndex(at: insertionPoint)
         dropInsertionIndex = insertionIndex
         if insertionIndex != lastAppliedInsertionIndex {
             lastAppliedInsertionIndex = insertionIndex
@@ -491,7 +494,8 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
     override func mouseUp(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
         if let draggingWorkspaceID {
-            let insertionIndex = dropInsertionIndex ?? insertionIndex(at: point)
+            let insertionPoint = dragInsertionPoint(for: draggingWorkspaceID, pointer: point)
+            let insertionIndex = insertionIndex(at: insertionPoint)
             clearDragState()
             manager.moveWorkspace(draggingWorkspaceID, toInsertionIndex: insertionIndex)
             return
@@ -648,7 +652,7 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
     private static let maximumTabWidth: CGFloat = 220
     private static let addButtonSize: CGFloat = 28
     private static let dragThreshold: CGFloat = 4
-    private static let reorderAnimationDuration: TimeInterval = 0.16
+    private static let reorderAnimationDuration: TimeInterval = 0.18
 
     private weak var manager: RockxyWorkspaceWindowManager!
     private weak var coordinator: MainContentCoordinator?
@@ -667,6 +671,7 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
     private var mouseDownPoint: NSPoint?
     private var draggingWorkspaceID: UUID?
     private var draggingPoint: NSPoint?
+    private var dragGrabOffsetX: CGFloat?
     private var dropInsertionIndex: Int?
     private var lastAppliedInsertionIndex: Int?
     private var editingWorkspaceID: UUID?
@@ -740,10 +745,13 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
         let path = NSBezierPath(roundedRect: stripRect, xRadius: 14, yRadius: 14)
         tabBarFillColor.setFill()
         path.fill()
+        tabBarStrokeColor.setStroke()
+        path.lineWidth = 0.6
+        path.stroke()
     }
 
     private func drawSeparator() {
-        NSColor.separatorColor.withAlphaComponent(isDarkAppearance ? 0.20 : 0.16).setFill()
+        NSColor.separatorColor.withAlphaComponent(isDarkAppearance ? 0.20 : 0.18).setFill()
         NSRect(x: 0, y: bounds.maxY - 1, width: bounds.width, height: 1).fill()
     }
 
@@ -803,9 +811,9 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
         if isActive {
             NSGraphicsContext.saveGraphicsState()
             let shadow = NSShadow()
-            shadow.shadowBlurRadius = 4
+            shadow.shadowBlurRadius = 3
             shadow.shadowOffset = NSSize(width: 0, height: -0.5)
-            shadow.shadowColor = NSColor.black.withAlphaComponent(isDarkAppearance ? 0.20 : 0.055)
+            shadow.shadowColor = NSColor.black.withAlphaComponent(isDarkAppearance ? 0.20 : 0.06)
             shadow.set()
             selectedTabFillColor.setFill()
             path.fill()
@@ -826,7 +834,7 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
         paragraph.lineBreakMode = .byTruncatingMiddle
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 13, weight: isActive ? .medium : .regular),
-            .foregroundColor: (isActive ? NSColor.labelColor : NSColor.secondaryLabelColor).withAlphaComponent(alpha),
+            .foregroundColor: (isActive ? activeTitleColor : inactiveTitleColor).withAlphaComponent(alpha),
             .paragraphStyle: paragraph
         ]
         let attributed = NSAttributedString(string: title, attributes: attributes)
@@ -890,7 +898,7 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
         }()
         NSColor.labelColor.withAlphaComponent(fillAlpha).setFill()
         path.fill()
-        NSColor.separatorColor.withAlphaComponent(canCreate ? (isDarkAppearance ? 0.22 : 0.12) : 0.10).setStroke()
+        addButtonStrokeColor(canCreate: canCreate).setStroke()
         path.lineWidth = 0.7
         path.stroke()
 
@@ -907,8 +915,9 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
 
     private func drawDragGhost(_ title: String, sourceFrame: NSRect, at point: NSPoint) {
         let width = sourceFrame.width
+        let grabOffset = dragGrabOffsetX ?? width / 2
         let rect = NSRect(
-            x: min(max(Self.leftInset, point.x - width / 2), bounds.maxX - Self.rightInset - Self.addButtonSize - width - 10),
+            x: min(max(Self.leftInset, point.x - grabOffset), bounds.maxX - Self.rightInset - Self.addButtonSize - width - 10),
             y: sourceFrame.minY,
             width: width,
             height: sourceFrame.height
@@ -943,34 +952,66 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
         effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
     }
 
+    // swiftlint:disable object_literal
     private var tabBarFillColor: NSColor {
         if isDarkAppearance {
             return NSColor.windowBackgroundColor.withAlphaComponent(0.24)
         }
-        return NSColor.windowBackgroundColor.withAlphaComponent(0.58)
+        return NSColor.windowBackgroundColor.withAlphaComponent(0.34)
+    }
+
+    private var tabBarStrokeColor: NSColor {
+        if isDarkAppearance {
+            return NSColor.white.withAlphaComponent(0.06)
+        }
+        return NSColor(white: 0.82, alpha: 0.50)
     }
 
     private var selectedTabFillColor: NSColor {
         if isDarkAppearance {
             return NSColor.controlBackgroundColor.withAlphaComponent(0.84)
         }
-        return NSColor.textBackgroundColor.withAlphaComponent(0.92)
+        return NSColor(white: 0.985, alpha: 0.96)
     }
 
     private var selectedTabStrokeColor: NSColor {
         if isDarkAppearance {
             return NSColor.white.withAlphaComponent(0.14)
         }
-        return NSColor.white.withAlphaComponent(0.82)
+        return NSColor(white: 0.76, alpha: 0.70)
     }
 
     private var hoverTabFillColor: NSColor {
-        NSColor.labelColor.withAlphaComponent(isDarkAppearance ? 0.08 : 0.045)
+        isDarkAppearance
+            ? NSColor.labelColor.withAlphaComponent(0.08)
+            : NSColor.labelColor.withAlphaComponent(0.035)
+    }
+
+    private var activeTitleColor: NSColor {
+        isDarkAppearance
+            ? NSColor.labelColor.withAlphaComponent(0.90)
+            : NSColor.labelColor.withAlphaComponent(0.76)
+    }
+
+    private var inactiveTitleColor: NSColor {
+        isDarkAppearance
+            ? NSColor.secondaryLabelColor.withAlphaComponent(0.90)
+            : NSColor.secondaryLabelColor.withAlphaComponent(0.88)
     }
 
     private var dividerColor: NSColor {
-        NSColor.separatorColor.withAlphaComponent(isDarkAppearance ? 0.20 : 0.22)
+        isDarkAppearance
+            ? NSColor(displayP3Red: 0.271, green: 0.292, blue: 0.301, alpha: 1.0)
+            : NSColor(white: 0.72, alpha: 0.78)
     }
+
+    private func addButtonStrokeColor(canCreate: Bool) -> NSColor {
+        guard canCreate else {
+            return isDarkAppearance ? NSColor.white.withAlphaComponent(0.08) : NSColor(white: 0.72, alpha: 0.36)
+        }
+        return isDarkAppearance ? NSColor.white.withAlphaComponent(0.18) : NSColor(white: 0.72, alpha: 0.62)
+    }
+    // swiftlint:enable object_literal
 
     private func titleFrame(for frame: NSRect, workspace: WorkspaceState) -> NSRect {
         let leftPadding: CGFloat = 12
@@ -1002,6 +1043,21 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
 
     private func closeWorkspaceID(at point: NSPoint) -> UUID? {
         closeFrames.first { $0.value.contains(point) }?.key
+    }
+
+    private func dragGrabOffset(for workspaceID: UUID, at point: NSPoint) -> CGFloat {
+        guard let frame = currentFrame(for: workspaceID) ?? tabFrames[workspaceID] else {
+            return 0
+        }
+        return min(max(point.x - frame.minX, 0), frame.width)
+    }
+
+    private func dragInsertionPoint(for workspaceID: UUID, pointer point: NSPoint) -> NSPoint {
+        guard let frame = currentFrame(for: workspaceID) ?? tabFrames[workspaceID] else {
+            return point
+        }
+        let grabOffset = dragGrabOffsetX ?? frame.width / 2
+        return NSPoint(x: point.x - grabOffset + frame.width / 2, y: point.y)
     }
 
     private func closeFrame(in tabFrame: NSRect) -> NSRect {
@@ -1054,6 +1110,7 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
     private func clearDragState() {
         draggingWorkspaceID = nil
         draggingPoint = nil
+        dragGrabOffsetX = nil
         dropInsertionIndex = nil
         lastAppliedInsertionIndex = nil
         mouseDownWorkspaceID = nil
@@ -1112,12 +1169,13 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
         )
         tabAnimationTimer = timer
         RunLoop.main.add(timer, forMode: .common)
+        RunLoop.main.add(timer, forMode: .eventTracking)
     }
 
     @objc private func advanceTabFrameAnimation(_ timer: Timer) {
         let elapsed = Date().timeIntervalSince(tabAnimationStartDate)
         let progress = min(1, elapsed / Self.reorderAnimationDuration)
-        let easedProgress = 1 - pow(1 - progress, 3)
+        let easedProgress = easeOutQuart(progress)
 
         presentedTabFrames = Dictionary(uniqueKeysWithValues: tabAnimationTargetFrames.map { workspaceID, targetFrame in
             let startFrame = tabAnimationStartFrames[workspaceID] ?? targetFrame
@@ -1147,6 +1205,11 @@ private final class WorkspaceTabBarView: NSView, NSTextFieldDelegate {
             width: startFrame.width + (targetFrame.width - startFrame.width) * progress,
             height: startFrame.height + (targetFrame.height - startFrame.height) * progress
         )
+    }
+
+    private func easeOutQuart(_ progress: CGFloat) -> CGFloat {
+        let clamped = min(max(progress, 0), 1)
+        return 1 - pow(1 - clamped, 4)
     }
 
     private func commitEditingIfNeeded(forClickAt point: NSPoint) -> Bool {
