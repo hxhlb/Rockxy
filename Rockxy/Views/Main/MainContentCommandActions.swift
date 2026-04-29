@@ -142,7 +142,9 @@ struct MainContentCommandActions {
     }
 
     func hideInspector() {
-        coordinator.inspectorLayout = .hidden
+        withAnimation(.smooth(duration: 0.18)) {
+            coordinator.inspectorLayout = .hidden
+        }
     }
 
     func switchTab(_ tab: MainTab) {

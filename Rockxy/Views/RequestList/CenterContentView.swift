@@ -63,27 +63,12 @@ struct CenterContentView: View {
 
             ActiveFilterSummaryBar(coordinator: coordinator)
 
-            switch coordinator.inspectorLayout {
-            case .hidden:
+            InspectorSplitView(layout: coordinator.inspectorLayout) {
                 tableContent
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .right:
-                HSplitView {
-                    tableContent
-                        .frame(minWidth: 300)
-                    InspectorPanelView(coordinator: coordinator)
-                        .frame(minWidth: 300)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .bottom:
-                VSplitView {
-                    tableContent
-                        .frame(minHeight: 200)
-                    InspectorPanelView(coordinator: coordinator)
-                        .frame(minHeight: 200)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } inspector: {
+                InspectorPanelView(coordinator: coordinator)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             StatusBarView(
                 totalCount: coordinator.filteredTransactions.count,
