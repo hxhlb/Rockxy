@@ -6,26 +6,27 @@
     <description>Rockxy release channel</description>
     <language>en</language>
     <item>
-      <title>Version 0.14.0 (build 22)</title>
-      <pubDate>Wed, 29 Apr 2026 00:00:00 +0000</pubDate>
+      <title>Version 0.15.0 (build 23)</title>
+      <pubDate>Thu, 30 Apr 2026 00:00:00 +0000</pubDate>
       <enclosure
-        url="https://github.com/RockxyApp/Rockxy/releases/download/v0.14.0/Rockxy-0.14.0-22.dmg"
-        sparkle:version="22"
-        sparkle:shortVersionString="0.14.0"
-        sparkle:edSignature="wkz3PZ1lheHdjPZnrFH0BYcjYa2QLV0ShzM6B++RTbwxXiOcOs7jme2KyeX0PEJhp8Lg4ocInfhr/H9QSONVDw=="
-        length="20798679"
+        url="https://github.com/RockxyApp/Rockxy/releases/download/v0.15.0/Rockxy-0.15.0-23.dmg"
+        sparkle:version="23"
+        sparkle:shortVersionString="0.15.0"
+        sparkle:edSignature="92f8+lgYSDcFudOZ9UVz1ZnrtTWz8O+Gz/tHvoGS+DsaudIQ8nPRvlUQ854ZEU57vLPyXfvwh6kPdbhD7DO3Cw=="
+        length="21224234"
         type="application/octet-stream" />
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:releaseNotesLink>https://github.com/RockxyApp/Rockxy/releases/tag/v0.14.0</sparkle:releaseNotesLink>
+      <sparkle:releaseNotesLink>https://github.com/RockxyApp/Rockxy/releases/tag/v0.15.0</sparkle:releaseNotesLink>
       <description><![CDATA[
 <h3>Added</h3>
 <ul>
-  <li>Native macOS workspace tabs for a more familiar multi-workspace workflow.</li>
+  <li>Developer Setup Hub now includes Flutter and React Native mobile setup flows, with licensed Android automation for supported workflows.</li>
+  <li>Favorite request context menus now include richer actions, including opening favorites in new tabs.</li>
+  <li>Developer Setup Hub can now be opened directly from the toolbar.</li>
 </ul>
 <h3>Fixed</h3>
 <ul>
-  <li>Workspace tab creation, inline rename, reorder, and drag interactions are more reliable.</li>
-  <li>Software Update now opens centered when checking for updates.</li>
+  <li>Inspector split panes now resize and animate more smoothly with safer proportions.</li>
 </ul>
       ]]></description>
     </item>

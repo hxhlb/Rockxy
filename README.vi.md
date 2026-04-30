@@ -41,16 +41,17 @@
 <!-- BEGIN GENERATED: latest-release -->
 ## Latest Tagged Release
 
-**v0.14.0** — 2026-04-29
+**v0.15.0** — 2026-04-30
 
 ### Added
 
-- Native macOS workspace tabs for a more familiar multi-workspace workflow.
+- Developer Setup Hub now includes Flutter and React Native mobile setup flows, with licensed Android automation for supported workflows.
+- Favorite request context menus now include richer actions, including opening favorites in new tabs.
+- Developer Setup Hub can now be opened directly from the toolbar.
 
 ### Fixed
 
-- Workspace tab creation, inline rename, reorder, and drag interactions are more reliable.
-- Software Update now opens centered when checking for updates.
+- Inspector split panes now resize and animate more smoothly with safer proportions.
 
 See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 <!-- END GENERATED: latest-release -->
