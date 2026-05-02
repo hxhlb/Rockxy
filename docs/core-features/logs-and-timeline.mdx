@@ -1,0 +1,56 @@
+---
+title: Logs and Timeline
+description: Use Rockxy logs and request timing views to correlate API failures, latency, and client behavior during debugging.
+---
+
+# Logs and Timeline
+
+Traffic alone does not always explain a bug. Sometimes you need nearby application logs or the timing breakdown that shows where latency came from.
+
+## Logs
+
+Rockxy includes a dedicated Logs surface for captured application log output. Use it when:
+
+- a request failed but the server response does not tell the full story,
+- the app logs a local error before or after a network call,
+- or you need more context around a retry, timeout, or parsing failure.
+
+The most useful workflow is to move back and forth between:
+
+- a request in the traffic view,
+- the nearby logs,
+- and the timing breakdown for that request.
+
+## Timeline
+
+Rockxy also exposes request timing views so you can answer questions like:
+
+- was the time spent in DNS, connect, TLS, or transfer?
+- did the call stall before first byte?
+- are several requests happening in parallel or serially?
+
+Timing is especially useful for:
+
+- backend slowness,
+- network-condition testing,
+- mobile app startup flows,
+- and regression checks after replaying or remapping requests.
+
+## When this matters most
+
+Reach for logs and timeline when:
+
+- the response code alone is not enough,
+- the request body is correct but latency is wrong,
+- or you are comparing “it failed locally” versus “it failed in the app.”
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Request Replay" icon="rotate-right" href="/features/request-replay">
+    Replay a request after you identify the likely failure point.
+  </Card>
+  <Card title="Network Conditions" icon="wifi" href="/features/network-conditions">
+    Simulate slower connections and observe how timing changes.
+  </Card>
+</CardGroup>

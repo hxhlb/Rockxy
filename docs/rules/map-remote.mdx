@@ -1,0 +1,44 @@
+---
+title: Map Remote
+description: Rewrite a request destination in Rockxy so traffic goes to a different host, port, path, or protocol during debugging.
+---
+
+# Map Remote
+
+Map Remote rewrites where a request goes without requiring the original client to change its configured base URL.
+
+## Use Map Remote when
+
+- you want production-shaped traffic to hit staging,
+- you need to send one endpoint to a local development server,
+- you are testing a new API version behind the same client,
+- or you need to redirect a CDN or service dependency temporarily.
+
+## Common patterns
+
+### Swap only the host
+
+Useful when the path and query are already correct but the environment is wrong.
+
+### Swap the path
+
+Useful when you want to test a new route while keeping the same host and authentication context.
+
+### Swap protocol or port
+
+Useful when you are sending traffic to a local service or test environment with a different transport shape.
+
+## Practical advice
+
+Start with the smallest rewrite that proves the behavior change you want. If changing only the host works, do not rewrite path and query too.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Map Local" icon="file" href="/rules/map-local">
+    Use a local file when you do not need a real upstream server at all.
+  </Card>
+  <Card title="Request Replay" icon="rotate-right" href="/features/request-replay">
+    Replay the same request after applying the rewrite to verify the result quickly.
+  </Card>
+</CardGroup>

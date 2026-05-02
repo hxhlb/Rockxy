@@ -1,0 +1,46 @@
+---
+title: API Debugging on macOS
+description: Use Rockxy as a native macOS API debugging tool to inspect HTTPS requests, replay calls, export HAR, and troubleshoot real client traffic.
+---
+
+# API Debugging on macOS
+
+Rockxy is most useful when you need to debug the request that the real client sent, not the request you think it sent.
+
+## A practical workflow
+
+1. capture the traffic from the actual client,
+2. filter down to the failing endpoint,
+3. inspect headers, body, query, and timing,
+4. replay the request,
+5. add a rule only if you need to change behavior,
+6. export HAR or cURL once you have isolated the issue.
+
+## Why a system-level proxy debugger helps
+
+Browser DevTools and API clients are helpful, but they do not always show:
+
+- desktop app traffic,
+- SDK-generated requests,
+- simulator or device traffic,
+- or runtime-specific proxy and trust problems.
+
+Rockxy fills that gap.
+
+## Best pages to keep open together
+
+- [Traffic Capture](/features/traffic-capture)
+- [Filters and Search](/core-features/filters-and-search)
+- [Request Replay](/features/request-replay)
+- [Sessions and HAR](/features/sessions)
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Browser DevTools vs System Proxy Debugger" icon="scale-balanced" href="/use-cases/browser-devtools-vs-system-proxy-debugger">
+    Decide when browser-only inspection is enough and when Rockxy is the better tool.
+  </Card>
+  <Card title="MCP Integration" icon="plug" href="/features/mcp">
+    Bring real captured API traffic into Claude.
+  </Card>
+</CardGroup>

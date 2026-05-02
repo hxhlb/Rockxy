@@ -1,0 +1,37 @@
+---
+title: Modify Headers
+description: Add, replace, or remove request and response headers in Rockxy to test auth, caching, routing, and proxy-sensitive behavior.
+---
+
+# Modify Headers
+
+Modify Headers is the right tool when the body is fine but the metadata is not.
+
+## Good use cases
+
+- inject or replace an authorization header,
+- remove a caching header,
+- override a custom routing header,
+- test client behavior with changed content type,
+- strip a header that causes a backend to branch differently.
+
+## Why use a dedicated header rule
+
+Header changes are easier to reason about when they are explicit and isolated. If you only need to change headers, a header rule is usually safer than a breakpoint or a broader rewrite.
+
+## Request versus response headers
+
+Use request header changes when the upstream server should receive different metadata.
+
+Use response header changes when the client should observe a different behavior, such as cache control, content type, or a testing flag.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Breakpoints" icon="circle-pause" href="/rules/breakpoints">
+    Use breakpoints when you need to change the body or URL as well.
+  </Card>
+  <Card title="Network Conditions" icon="wifi" href="/features/network-conditions">
+    Combine header changes with latency testing when you are debugging client resilience.
+  </Card>
+</CardGroup>

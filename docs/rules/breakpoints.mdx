@@ -1,0 +1,51 @@
+---
+title: Breakpoints
+description: Pause HTTP requests and responses in Rockxy, edit them live, and continue the request only after you have changed what matters.
+---
+
+# Breakpoints
+
+Breakpoints are the right tool when you want to inspect or modify a live request or response before it continues.
+
+## Use breakpoints when
+
+- you want to change a request body without changing app code,
+- you need to test a different response payload immediately,
+- you want to alter headers, query parameters, or method mid-flight,
+- or you are reproducing a bug that depends on one precise request shape.
+
+## How the workflow works
+
+1. Create a breakpoint rule from a captured request or from the tool window.
+2. Trigger the matching request again.
+3. Rockxy pauses the request or response.
+4. Edit the relevant fields.
+5. Choose whether to execute, cancel, or abort it.
+
+## Request-phase versus response-phase
+
+Use a request breakpoint when the client is sending the wrong thing.
+
+Use a response breakpoint when the server replied with something close to what you need but not exactly the scenario you want to test.
+
+## Why breakpoints are powerful
+
+They shorten the feedback loop between:
+
+- observe,
+- change,
+- resend,
+- verify.
+
+That makes them especially useful during mobile, frontend, or SDK debugging where reproducing state in code can be slower than changing the wire data directly.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Request Replay" icon="rotate-right" href="/features/request-replay">
+    Use replay when you want a faster resend without pausing live traffic.
+  </Card>
+  <Card title="Map Local" icon="file" href="/rules/map-local">
+    Use a fixed local response once you already know the payload you want.
+  </Card>
+</CardGroup>

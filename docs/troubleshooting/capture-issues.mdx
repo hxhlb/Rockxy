@@ -1,0 +1,50 @@
+---
+title: Capture Issues
+description: Fix the most common reasons Rockxy is not capturing HTTP or HTTPS traffic, including proxy startup, client routing, and runtime-specific setup.
+---
+
+# Capture Issues
+
+If Rockxy shows no useful traffic, the problem is usually one of four things:
+
+- Rockxy did not start cleanly,
+- the client is not using Rockxy,
+- HTTPS trust is incomplete,
+- or the target runtime has its own setup requirements.
+
+## Symptom: nothing appears at all
+
+Check:
+
+- Rockxy is started,
+- the proxy port is correct,
+- the target client is actually routed through Rockxy.
+
+## Symptom: plain HTTP appears, HTTPS does not
+
+Go straight to [Certificates and Trust](/getting-started/certificates-and-trust) or [Certificate and HTTPS Issues](/troubleshooting/certificates-and-https-issues).
+
+## Symptom: one tool works, another does not
+
+That is often expected. Different tools have different proxy and trust behavior.
+
+Use the appropriate setup page:
+
+- [Browsers and API Clients](/setup-guides/browsers-and-api-clients)
+- [Terminal Runtimes and Frameworks](/setup-guides/terminal-runtimes-and-frameworks)
+- [Device Setup Issues](/troubleshooting/device-setup-issues)
+
+## Symptom: a local runtime does not emit traffic
+
+The process may ignore the system proxy or require runtime-specific configuration.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="First Capture Checklist" icon="list-check" href="/getting-started/first-capture">
+    Run the short diagnostic checklist first.
+  </Card>
+  <Card title="Helper and Proxy Issues" icon="wrench" href="/troubleshooting/helper-and-proxy-issues">
+    Continue here if proxy startup itself is unreliable.
+  </Card>
+</CardGroup>

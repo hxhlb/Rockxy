@@ -1,0 +1,56 @@
+---
+title: iOS Simulator Setup
+description: Capture HTTP and HTTPS traffic from iOS Simulator with Rockxy, including proxy behavior, certificate trust, and common simulator debugging issues.
+---
+
+# iOS Simulator Setup
+
+Rockxy can inspect iOS Simulator traffic, but simulator setup still depends on certificate trust and app behavior inside the simulated environment.
+
+## What usually works well
+
+- the simulator shares the Mac's broader network path,
+- Rockxy can still inspect the traffic once trust is correct,
+- the target app is easy to relaunch after a certificate or proxy change.
+
+## What you still need to do
+
+Make sure:
+
+- Rockxy is running and capture is started,
+- the certificate is available to the simulator path,
+- the simulator trusts it,
+- the app is restarted after trust changes.
+
+## Good debugging loop
+
+1. launch the simulator,
+2. make the certificate/trust path complete,
+3. cold-launch the target app,
+4. trigger one HTTPS request,
+5. verify it appears in Rockxy.
+
+## Common issues
+
+### The app still shows SSL errors
+
+The simulator likely does not trust the certificate yet, or the app cached a failed TLS state.
+
+### Some requests never appear
+
+That can be a caching issue, a framework-specific network path, or traffic that never leaves the app because of local failure first.
+
+### The request appears but the body is not readable
+
+That usually means the proxy path exists but HTTPS decryption is still not complete.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Mobile App Network Debugging" icon="mobile" href="/use-cases/mobile-app-network-debugging">
+    See the broader workflow for iOS and Android debugging.
+  </Card>
+  <Card title="Certificate and HTTPS Issues" icon="shield" href="/troubleshooting/certificates-and-https-issues">
+    Fix simulator TLS and trust problems.
+  </Card>
+</CardGroup>

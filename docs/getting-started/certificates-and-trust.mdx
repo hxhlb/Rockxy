@@ -1,0 +1,124 @@
+---
+title: Certificates and Trust
+description: Learn how Rockxy inspects HTTPS traffic on macOS, what the local root certificate does, and how to fix common certificate trust problems.
+---
+
+# Certificates and Trust
+
+HTTPS inspection only works when the client trusts Rockxy's local root certificate. This is the one concept every proxy debugger depends on, so it is worth understanding clearly.
+
+## What Rockxy actually does
+
+When an app connects to `https://example.com`, Rockxy:
+
+1. accepts the client connection,
+2. creates a per-host certificate for `example.com`,
+3. signs that certificate with Rockxy's local root CA,
+4. presents it to the client,
+5. opens a separate TLS connection to the real upstream server,
+6. decrypts traffic in the middle so you can inspect it locally.
+
+That only works if the client accepts the Rockxy-generated certificate chain.
+
+## Where the trust comes from
+
+Rockxy generates a unique local root certificate on first launch and stores the private key in the macOS Keychain. You trust that root locally, on your own machine, so Rockxy can mint per-host certificates for inspection.
+
+Rockxy does not use a shared public certificate and does not need a cloud service to do this.
+
+## The practical rule
+
+- If a client trusts the Rockxy root CA and uses Rockxy as its proxy, HTTPS inspection can work.
+- If it does not trust the Rockxy root CA, you will usually see TLS errors, blank HTTPS content, or only CONNECT tunnels.
+
+## Certificate setup flow
+
+1. Open Rockxy.
+2. Use **Certificate → Install on This Mac...**.
+3. Complete the trust flow.
+4. Restart the target app if it already attempted a TLS connection before trust was in place.
+
+For detailed installation steps, see [Installation](/installation).
+
+## Clients that need extra work
+
+Some clients do not rely solely on the macOS trust store.
+
+Common examples:
+
+- Firefox can require browser-specific certificate import or trust confirmation.
+- Java-based tools often need a JVM trust-store change.
+- Mobile devices and emulators need their own certificate install/trust flow.
+- Certificate-pinned apps may refuse interception entirely.
+
+Use the setup guides for those cases:
+
+- [Browsers and API Clients](/setup-guides/browsers-and-api-clients)
+- [iOS Simulator](/setup-guides/ios-simulator)
+- [iOS Device](/setup-guides/ios-device)
+- [Android Device and Emulator](/setup-guides/android-device-and-emulator)
+- [Terminal Runtimes and Frameworks](/setup-guides/terminal-runtimes-and-frameworks)
+
+## What SSL proxying means in Rockxy
+
+Trusting the root CA is necessary, but it is not the only step. Rockxy also needs to know which traffic should be decrypted. That is what the SSL proxying configuration controls.
+
+Use SSL proxying when:
+
+- you want readable HTTPS requests and responses,
+- you want to inspect bodies, headers, cookies, or timing,
+- or you want rules and replay to operate on decrypted traffic.
+
+## When not to expect interception to work
+
+Rockxy may not be able to inspect traffic cleanly when:
+
+- the app uses certificate pinning,
+- the app bypasses the configured proxy entirely,
+- the trust change was applied after the app cached a failed TLS session,
+- or the device/runtime trust flow is incomplete.
+
+That is a platform constraint, not just a UI problem.
+
+## Common certificate problems
+
+### The browser says the connection is not private
+
+The certificate is probably not trusted in the path the browser is using. Re-check local trust first, then browser-specific setup if needed.
+
+### I only see CONNECT, not the request body
+
+Rockxy is likely tunneling HTTPS without decryption. Check certificate trust and SSL proxying configuration.
+
+### One app works, another still fails
+
+That usually means the second app uses a separate trust store, ignores the system proxy, or pins certificates.
+
+### It worked yesterday but not today
+
+Re-check:
+
+- whether the root certificate still exists,
+- whether the app moved to a different runtime path,
+- whether the target is now using a different network stack,
+- whether a device or simulator lost trust during reset.
+
+## Security posture
+
+Trusting a local root CA is a powerful action. Use it intentionally.
+
+- Keep the certificate local to your machine.
+- Do not export or share private key material.
+- Remove the certificate when you no longer need interception on that machine.
+- Treat mobile-device trust as a real security decision, not just a debugging checkbox.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="HTTPS Interception" icon="lock" href="/features/https-interception">
+    Deep dive into how Rockxy decrypts traffic and where SSL proxying fits.
+  </Card>
+  <Card title="Certificate and HTTPS Issues" icon="triangle-exclamation" href="/troubleshooting/certificates-and-https-issues">
+    Troubleshoot trust failures, TLS errors, and partial HTTPS capture.
+  </Card>
+</CardGroup>

@@ -1,92 +1,111 @@
 ---
 title: Quick Start
-description: Get Rockxy running and capturing network traffic in under 5 minutes.
+description: Learn how to inspect HTTPS traffic on macOS with Rockxy in a few minutes, including certificate trust, first capture, and replay.
 ---
 
 # Quick Start
 
-This guide takes you from download to inspecting your first captured request in about 5 minutes. Rockxy is a free, native macOS app — no account, no license key, no cloud dependency.
+This guide takes you from installation to your first useful debugging session. If your goal is “show me the API call, headers, body, and timing right now,” start here.
 
-## 1. Download Rockxy
+## Before you start
 
-Grab the latest release from [GitHub Releases](https://github.com/RockxyApp/Rockxy/releases). Rockxy currently ships a universal `.dmg` that supports both Apple Silicon and Intel Macs.
+- Rockxy is running on your Mac.
+- You have trusted the Rockxy root certificate.
+- The target app or device is configured to use Rockxy as its HTTP/HTTPS proxy, or it follows the macOS system proxy.
 
-## 2. Install
+If you still need installation details, use [Installation](/installation). If HTTPS requests fail with certificate errors, use [Certificates and Trust](/getting-started/certificates-and-trust).
 
-Open the `.dmg` and drag **Rockxy.app** to the **Applications** folder. Launch it from Applications or Spotlight.
+## 1. Start capture
 
-If macOS blocks the app, right-click it and select **Open**, then click **Open** again in the confirmation dialog.
+Click **Start** in the toolbar. Rockxy starts its local proxy and begins recording traffic that is routed through it.
 
-## 3. Trust the Root CA
+What happens next depends on the client:
 
-<Warning>
-HTTPS interception will not work until you install and trust the root CA certificate. Skip this step only if you need to capture plain HTTP traffic.
-</Warning>
+- Many macOS apps and browsers will start appearing immediately because they follow the system proxy.
+- Some tools need manual proxy and certificate configuration.
+- Device and simulator traffic always needs an explicit setup step.
 
-1. In the Rockxy menu bar, go to **Certificate > Install on This Mac...**.
-2. Enter your macOS password if prompted to add and trust the certificate.
-3. Open **Keychain Access**, find **Rockxy CA**, double-click it.
-4. Expand **Trust** and set **When using this certificate** to **Always Trust**.
-5. Close the dialog and enter your password to confirm.
+If you are not sure which path applies, open the [Developer Setup Hub](/getting-started/developer-setup-hub) and choose the runtime, browser, framework, or device you are debugging.
 
-The root CA private key is stored in your macOS Keychain and never leaves your machine. Per-host certificates are generated on the fly during HTTPS interception.
+## 2. Generate traffic on purpose
 
-## 4. Start Capturing Traffic
+Create one request you can easily recognize:
 
-Click the **Start** button in the toolbar or use the keyboard shortcut. Rockxy sets itself as the system HTTP/HTTPS proxy and begins capturing traffic from all applications.
+- open a page in a browser,
+- trigger one call in your app,
+- send a request from Postman or cURL,
+- or run the validation request for a target inside the Developer Setup Hub.
 
 <Tip>Press **Cmd+Shift+R** to start capture and **Cmd+.** to stop it.</Tip>
 
-Open a browser or any app that makes network requests. You will see requests appear in the request list in real time.
-
-<Frame caption="Rockxy capturing live HTTP and HTTPS traffic.">
-  <img className="block dark:hidden" src="/images/traffic-capture.png" alt="Rockxy traffic capture view" />
-  <img className="hidden dark:block" src="/images/traffic-capture-dark.png" alt="Rockxy traffic capture view (dark mode)" />
-</Frame>
-
-## 5. Inspect a Request
+## 3. Inspect the request
 
 Click any request in the list to open the inspector panel. The inspector has several tabs:
 
-- **Headers** — request and response headers, status code, HTTP version.
-- **Body** — request and response bodies with syntax highlighting for JSON, XML, HTML, and other formats.
-- **Cookies** — parsed cookie key-value pairs from both request and response.
-- **Timing** — connection timing breakdown: DNS, TLS handshake, time to first byte, total duration.
-- **Raw** — the complete raw HTTP message for both request and response.
+- **Headers** for request and response metadata
+- **Query** for URL parameters
+- **Body** for payload inspection
+- **Cookies** and **Set-Cookie** for session work
+- **Timing** for latency breakdown
+- **Raw** when you need the exact wire representation
 
-For WebSocket connections, you will see individual frames listed with their opcode, direction, and payload.
+If the request was GraphQL-over-HTTP or a WebSocket upgrade, Rockxy exposes protocol-specific inspection automatically. See [GraphQL](/features/graphql) and [WebSocket](/features/websocket).
 
-## 6. Explore Logs
+## 4. Narrow the view
 
-Switch to the **Logs** tab in the main content switcher to see captured application logs from OSLog streams and process stdout/stderr. Rockxy currently correlates logs to nearby requests by timestamp so you can jump between network traffic and related log output while debugging.
+Use the built-in filters to answer a specific question fast:
 
-## 7. Connect Rockxy to Claude
+- filter by protocol,
+- search by host, path, method, or status code,
+- click a sidebar domain or app scope,
+- or split work into workspace tabs when you want separate investigations open at once.
 
-If you want to inspect traffic that Rockxy captures for Claude, open **Settings → MCP** in Rockxy, turn on **Enable MCP Server**, and copy the generated config snippet.
+See [Filters and Search](/core-features/filters-and-search) for the full filtering model.
 
-Rockxy uses a **local MCP** setup for Claude CLI and Claude Desktop. It is not configured through Claude's remote **Connectors** flow.
+## 5. Replay the call
 
-For the full setup guide, including Claude CLI and Claude Desktop instructions, see [MCP Integration](/features/mcp).
+When you have found the request you care about:
 
-## Next Steps
+- use **Repeat** for a fast resend,
+- use **Edit and Repeat** if you want to change the URL, method, headers, or body first,
+- or copy the request as cURL if you want to reproduce it in a terminal.
+
+See [Request Replay](/features/request-replay).
+
+## Common first-run problems
+
+### I only see HTTP, not HTTPS
+
+Your certificate is probably not trusted yet. Use [Certificates and Trust](/getting-started/certificates-and-trust).
+
+### I see no traffic from my tool
+
+The client may ignore the system proxy or use its own certificate store. Start with [Developer Setup Hub](/getting-started/developer-setup-hub) or the [Setup Guides](/setup-guides/browsers-and-api-clients).
+
+### I need to inspect simulator or device traffic
+
+Use:
+
+- [iOS Simulator](/setup-guides/ios-simulator)
+- [iOS Device](/setup-guides/ios-device)
+- [Android Device and Emulator](/setup-guides/android-device-and-emulator)
+
+## Next steps
 
 <CardGroup cols={2}>
+  <Card title="First Capture Checklist" icon="list-check" href="/getting-started/first-capture">
+    Use a practical checklist when capture is not behaving the way you expect.
+  </Card>
+  <Card title="Traffic Capture" icon="network-wired" href="/features/traffic-capture">
+    Learn the traffic list, sidebar scopes, selection model, and retention behavior.
+  </Card>
   <Card title="HTTPS Interception" icon="lock" href="/features/https-interception">
-    How Rockxy decrypts TLS traffic and manages certificates.
+    Understand root certificates, SSL proxying, and certificate trust.
   </Card>
-  <Card title="Traffic Rules" icon="filter" href="/features/rules">
-    Set breakpoints, map requests to local files, block or throttle endpoints.
-  </Card>
-  <Card title="Log Intelligence" icon="scroll" href="/features/log-intelligence">
-    Capture and correlate OSLog streams with network requests.
-  </Card>
-  <Card title="Keyboard Shortcuts" icon="keyboard" href="/customization/keyboard-shortcuts">
-    Current menu shortcuts for proxy control, sessions, tabs, rules, diff, and scripting.
-  </Card>
-  <Card title="Sessions & HAR" icon="floppy-disk" href="/features/sessions">
-    Save, restore, import, and export captured traffic.
+  <Card title="Request Replay" icon="rotate-right" href="/features/request-replay">
+    Replay a request, compare the result, and iterate faster.
   </Card>
   <Card title="MCP Integration" icon="plug" href="/features/mcp">
-    Connect Rockxy to Claude and inspect flows directly from your chat.
+    Bring captured traffic into Claude through Rockxy's local MCP bridge.
   </Card>
 </CardGroup>

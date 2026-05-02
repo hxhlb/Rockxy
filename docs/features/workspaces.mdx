@@ -1,0 +1,97 @@
+---
+title: "Workspaces"
+description: "Native macOS tabs that split a single capture into independently filtered, sorted, and inspected views."
+---
+
+# Workspaces
+
+A workspace is an independent view onto the same live traffic stream. Each tab keeps its own filter, sort, sidebar selection, inspector tab, and inspector layout — but every tab is reading the **same underlying capture**, so traffic shows up in all of them at once. Workspaces are native macOS tabs at the window level: drag, reorder, rename in place, and `Cmd`-click as expected.
+
+## Why workspaces
+
+A single capture often serves several investigations at once:
+
+- a "noisy" tab pinned to one app while another tab tracks all `5xx` failures across every host
+- a tab dedicated to the request you are about to replay, with the inspector docked to the right
+- a tab kept on **Logs** with a process filter while the main tab stays on **Traffic**
+
+Without workspaces, every change to filter or layout would clobber the previous setup. Workspaces let multiple investigations stay parked side-by-side.
+
+## What's per-tab vs. shared
+
+Per-tab state (each workspace owns its own copy):
+
+- Filter criteria and the visible filter bar
+- Active main tab (`Traffic` / `Logs`)
+- Sidebar selection (domain, app, or favorite)
+- Inspector tab and layout (right / bottom / hidden)
+- Selected request and selected log entry
+- Per-workspace sort descriptors
+- Per-workspace domain tree, app nodes, and grouping index
+
+Shared across all workspaces:
+
+- The proxy capture itself — bodies, headers, timing
+- Recording state, rules, certificates, plugins
+- Favorites, allow list, SSL proxying list, MCP server state
+
+In other words, you cannot "stop recording" in one tab and "keep recording" in another. The proxy is the proxy. Workspaces only change what you are *looking at*.
+
+## Tab management
+
+| Action | How |
+|--------|-----|
+| New tab | <kbd>Cmd</kbd>+<kbd>T</kbd> or **+** in the tab strip |
+| Close tab | <kbd>Cmd</kbd>+<kbd>W</kbd> (the **All Traffic** tab is non-closable) |
+| Rename in place | <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> or double-click the tab title |
+| Next tab | <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>]</kbd> |
+| Previous tab | <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>[</kbd> |
+| Reorder | Drag the tab to a new position |
+| Duplicate | Right-click the tab → **Duplicate Tab** (preserves filter and selection) |
+| Close other tabs | Right-click the tab → **Close Other Tabs** |
+
+Up to **8 tabs** can be open at a time (`AppPolicy.maxWorkspaceTabs`). Hitting the limit silently no-ops the new-tab action — close one to make room.
+
+## Default tab
+
+Every new window starts with a single, non-closable workspace titled **All Traffic**. Its filter is `.empty`, so it always shows the full capture. Treat it as your unfiltered baseline — close other tabs to come back to it.
+
+## Workflow examples
+
+### Per-app investigation
+
+Open one tab, filter to a single app from the sidebar, rename it after the app. Open a second tab and do the same for another app. Both keep capturing in the background; switch between them with <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>]</kbd> / <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>[</kbd>.
+
+### Errors-only triage
+
+Keep your default **All Traffic** tab unchanged. In a second tab, set a filter rule for status code `>= 400` and rename it `Errors`. The errors tab stays narrow even as you scroll the full capture in the default tab.
+
+### Replay and compare
+
+When replaying a request, open the request in a fresh tab via the favorites context menu (**Open in New Tab**). The new tab inherits the originating filter and selection, so the replayed flow lands next to its source request rather than buried in the global list.
+
+## Per-tab sort
+
+Sorting is a workspace preference, not a window preference. Sort the **Errors** tab by `Duration ↓` to surface the worst offenders, leave the default tab sorted by `Time ↑`, and the two views stay independent. Sorts persist across `Clear Session` so you do not have to re-pick every time.
+
+## Eviction and per-tab views
+
+When the in-memory ring buffer overflows (50k transactions by default), the oldest entries are evicted from every workspace at once. Filter state is preserved; only the underlying rows go away. The sidebar indexes (domain tree + app tree) rebuild automatically per workspace after an eviction — see `MainContentCoordinator+Eviction` for the exact path.
+
+## Limits and gotchas
+
+- The **All Traffic** tab cannot be closed by design. <kbd>Cmd</kbd>+<kbd>W</kbd> when it is the only tab is a no-op.
+- Workspaces share the proxy. There is no per-tab "start" or "stop".
+- Selection is per-tab, but the inspector window scenes (Compose, Diff, Map Local editor, etc.) are app-level — opening one from any tab shows the same draft state.
+- The 8-tab cap is a `Community` policy value (`AppPolicy.maxWorkspaceTabs`); a future Pro tier may raise it.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Keyboard Shortcuts" icon="keyboard" href="/customization/keyboard-shortcuts">
+    All workspace and inspector shortcuts in one table.
+  </Card>
+  <Card title="Sessions and Export" icon="floppy-disk" href="/features/sessions">
+    Save, load, and export the underlying capture that workspaces share.
+  </Card>
+</CardGroup>

@@ -7,6 +7,11 @@ description: "Compare two captured transactions in a dedicated workspace with ca
 
 Rockxy's Diff workspace compares two captured transactions across structured sections — request line, host, query, headers, body, and timing — in a dedicated comparison window. Use it to spot regressions, compare environments, or isolate a parameter that triggers different server behavior.
 
+Rockxy ships two diff experiences:
+
+- **Basic Compare** is available in Community and is documented on this page.
+- **Advanced Diff** is available in Rockxy Pro and opens automatically when Pro is active.
+
 ## Entry Points
 
 | Action | How to Access |
@@ -22,6 +27,20 @@ The Diff window is a resizable workspace (default 1240×820) with four zones:
 2. **Candidate Pool Table** — dense table of comparison candidates with explicit Left/Right assignment
 3. **Diff Viewer** — the active comparison, showing structured sections
 4. **Control Bar** — compare target (Request / Response / Timing), display mode (Side by Side / Unified), and difference count
+
+## Rockxy Pro: Advanced Diff
+
+When Rockxy Pro is active, the Diff window upgrades from Basic Compare to **Advanced Diff**.
+
+Advanced Diff keeps the same core comparison purpose but adds a more workflow-oriented surface, including:
+
+- a larger workspace layout
+- **Compare History** for reopening recent pairs
+- pinned comparison pairs
+- section summaries and jump navigation
+- quick follow-up actions such as **Edit & Repeat**, **Replay**, **Map Local**, **Map Remote**, **Breakpoint**, **Network Conditions**, **Copy cURL**, and **Export HAR**
+
+If Pro is not active, the Community Compare window described below remains fully available.
 
 ## How It Works
 
@@ -92,5 +111,11 @@ Switch between three comparison modes using the segmented control in the footer:
   </Card>
   <Card title="Request Replay" icon="rotate" href="/features/request-replay">
     Re-send requests with modifications and compare against originals.
+  </Card>
+  <Card title="Rockxy Pro" icon="key" href="/features/pro-features">
+    Learn what Advanced Diff includes and how Pro fits into the product.
+  </Card>
+  <Card title="License Management" icon="id-card" href="/features/license-management">
+    Learn how activation and license coverage affect access to Pro features.
   </Card>
 </CardGroup>

@@ -1,0 +1,59 @@
+---
+title: Terminal Runtimes and Frameworks
+description: Set up Node.js, Python, Ruby, Go, Rust, Java, Docker, Electron, Flutter, React Native, and similar environments to work with Rockxy.
+---
+
+# Terminal Runtimes and Frameworks
+
+Local runtimes and framework toolchains are some of the most valuable Rockxy targets, but they are also the least likely to “just work” with the macOS system proxy alone.
+
+## Why this category needs special handling
+
+Many command-line tools and dev runtimes need explicit:
+
+- proxy environment variables,
+- runtime-specific proxy support,
+- or extra certificate trust configuration.
+
+## Typical targets
+
+This setup category includes:
+
+- Node.js
+- Python
+- Ruby
+- Go
+- Rust
+- Java
+- cURL
+- Docker
+- Electron
+- Flutter
+- React Native
+- Next.js
+
+## Recommended approach
+
+1. choose the exact runtime or framework in Developer Setup Hub,
+2. use the generated snippet or guide for that target,
+3. run the validation request first,
+4. only then run the real app or script.
+
+## Common failure pattern
+
+The runtime sends nothing to Rockxy because:
+
+- the process ignores the system proxy,
+- the environment variables were not applied to the actual process,
+- or the runtime rejected the local certificate.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="API Debugging on macOS" icon="code" href="/use-cases/api-debugging-on-macos">
+    See how these runtime flows fit into a practical API debugging workflow.
+  </Card>
+  <Card title="Capture Issues" icon="triangle-exclamation" href="/troubleshooting/capture-issues">
+    Continue here if the runtime still does not emit visible traffic.
+  </Card>
+</CardGroup>

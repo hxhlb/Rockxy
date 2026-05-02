@@ -1,0 +1,96 @@
+---
+title: Filters and Search
+description: Filter HTTP traffic by app, domain, path, protocol, method, status, and content so you can find the one request that matters.
+---
+
+# Filters and Search
+
+The value of a proxy debugger is not just capture volume. It is how quickly you can reduce a noisy session to the handful of requests that explain the bug.
+
+## Three levels of narrowing
+
+Rockxy gives you three useful layers of focus:
+
+### Sidebar scope
+
+Use the sidebar to narrow the session by:
+
+- app,
+- domain,
+- saved or pinned items,
+- or a path-focused domain subtree where available.
+
+This is the fastest way to move from “everything” to “the part of the system I care about.”
+
+### Toolbar filters
+
+Use toolbar filters when you want to refine within the current scope:
+
+- protocol,
+- content family,
+- status-code range,
+- or a more advanced filter expression.
+
+### Free-text search
+
+Use search when you already know a clue:
+
+- endpoint path,
+- host,
+- method,
+- status code,
+- operation name,
+- or a value that appears in the request URL.
+
+## Practical debugging patterns
+
+### Find one failing API call
+
+1. scope to the app or domain,
+2. filter to error status codes,
+3. search for the endpoint name or path segment,
+4. open the request and inspect timing plus response body.
+
+### Isolate GraphQL traffic
+
+1. scope to the relevant API host,
+2. filter to GraphQL or JSON-oriented traffic,
+3. inspect operation names and payloads in the request body.
+
+### Clean up mobile device noise
+
+1. scope to the app or host you care about,
+2. block or filter analytics endpoints if needed,
+3. save the useful requests so they survive session cleanup.
+
+## Workspace tabs are part of filtering
+
+Workspaces are not just UI tabs. They let you preserve multiple filtered investigations at once.
+
+Examples:
+
+- one tab scoped to app traffic,
+- one tab for error-only requests,
+- one tab for a single domain under active replay,
+- one tab kept clean for HAR export.
+
+See [Workspaces](/features/workspaces).
+
+## When to use rules instead of filters
+
+Use filters when you are trying to *see* the right request.
+
+Use rules when you are trying to *change* what happens to the request.
+
+That distinction keeps the debugging loop clear.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Traffic Capture" icon="radar" href="/features/traffic-capture">
+    Learn the broader capture model around filtering and selection.
+  </Card>
+  <Card title="Workspaces" icon="table-columns" href="/features/workspaces">
+    Keep multiple filtered investigations open at once.
+  </Card>
+</CardGroup>

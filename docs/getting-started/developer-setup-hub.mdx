@@ -1,0 +1,218 @@
+---
+title: Developer Setup Hub
+description: Use Rockxy's Developer Setup Hub to configure runtimes, browsers, frameworks, simulators, and devices with both manual setup and automation-aware workflows.
+---
+
+# Developer Setup Hub
+
+Developer Setup Hub is Rockxy's in-app control center for target-specific setup. Use it when the question is not “how do I use Rockxy?” but “how do I get this runtime, browser, framework, simulator, or device to send traffic through Rockxy correctly?”
+
+## What it covers
+
+The hub currently organizes targets across these categories:
+
+- local runtimes such as Python, Node.js, Ruby, Go, Rust, Java, and cURL,
+- browsers and API clients such as Firefox, Postman, Insomnia, and Paw,
+- devices such as iOS and Android,
+- frameworks such as Flutter and React Native,
+- environment-specific targets such as Docker, Electron, and Next.js.
+
+## Window structure
+
+The hub is a real product surface, not just a help page inside the app.
+
+- **Source list** on the left groups targets by category and supports search.
+- **Detail tabs** in the center switch between `Overview`, `Setup`, `Snippets`, `Validate`, and `Troubleshooting`.
+- **Inspector** on the right shows current proxy, certificate, validation, and automation status for the selected target.
+
+## Why this page matters
+
+Proxy debugging breaks down most often at the setup layer, not at the inspector layer. A tool can:
+
+- ignore the macOS system proxy,
+- require a separate certificate trust step,
+- use a custom network stack,
+- or need environment variables that are specific to one runtime.
+
+Developer Setup Hub keeps those paths explicit.
+
+## Manual and automation models
+
+Rockxy documents and exposes two setup modes in this surface:
+
+### Manual setup
+
+Manual is the baseline path and exists for every serious target Rockxy supports.
+
+Manual setup means Rockxy gives you:
+
+- the current proxy host and port,
+- certificate/trust state,
+- target-specific config snippets or step-by-step setup instructions,
+- validation guidance,
+- and troubleshooting notes that match the selected target.
+
+Manual setup does **not** mean Rockxy silently changes a third-party tool for you.
+
+### Automation-aware setup
+
+Developer Setup Hub also has explicit automation concepts in the product model:
+
+- **Automatic Setup** for supported runtime/terminal targets
+- **Automatic Device Setup** for supported device-oriented flows
+
+These appear as automation entry points and status badges inside the hub rather than replacing the manual path outright.
+
+The important product rule is:
+
+- manual setup remains the source of truth,
+- automation is an accelerator on top of that baseline,
+- and Rockxy keeps the manual fallback visible instead of hiding it.
+
+## How to use it
+
+1. Open Developer Setup Hub from Rockxy.
+2. Choose the target you are actually debugging.
+3. Read the support summary first.
+4. Decide whether you want the **manual** path or the available **automation** entry point.
+5. Use the generated snippet or setup instructions for that target.
+6. Run the validation step when offered.
+7. Trigger a real request from your app once the validation path succeeds.
+
+## Support model
+
+Rockxy uses three honest support levels inside this surface:
+
+- **Snippet-backed manual setup** when Rockxy can generate concrete config or code you can paste into the target.
+- **Guide-only setup** when the platform steps are real but Rockxy does not automate them.
+- **Validation-backed setup** when Rockxy can help you prove the path is working with a known request.
+
+That distinction matters. Setup guidance should reduce ambiguity, not hide it.
+
+## What automation means in practice
+
+### Automatic Setup
+
+For supported runtime targets, Automatic Setup is designed to prepare a terminal-oriented session around the selected runtime so you can launch the app or script in a prepped environment instead of assembling the proxy/trust details by hand every time.
+
+That model is especially relevant for targets like:
+
+- Python
+- Node.js
+- Ruby
+- Golang
+- Rust
+- cURL
+
+The manual snippet path still matters because it is the clearest explanation of what the runtime actually needs.
+
+### Automatic Device Setup
+
+Rockxy also models device-oriented automation separately as **Automatic Device Setup**. This is intentionally distinct from runtime automation because device reachability, trust, and platform constraints are different from terminal-based runtimes.
+
+## Validate tab
+
+The `Validate` tab is one of the most important parts of Developer Setup Hub and deserved fuller documentation.
+
+When a target supports validation, Rockxy can:
+
+- generate a target-specific probe request,
+- watch the capture for the matching request,
+- and surface the first blocking issue when validation fails.
+
+Validation is useful because it tells you whether the setup path is working before you go debug your real app flow.
+
+Rockxy's validation model is still honest about its limits:
+
+- it confirms Rockxy saw the target-shaped request,
+- it does not prove which process emitted it,
+- and it can still fail if the network path to the probe destination is blocked.
+
+## Support matrix
+
+### Manual setup with generated snippets and validation
+
+The hub currently documents or generates concrete setup content for runtime, browser/client, framework, and environment targets such as:
+
+- Python
+- Node.js
+- Ruby
+- Golang
+- Rust
+- Java VMs
+- cURL
+- Firefox
+- Postman
+- Insomnia
+- Paw
+- Docker
+- ElectronJS
+- Next.js
+- Flutter
+- React Native
+
+### Guide-only targets
+
+Some targets are intentionally documented as guide-only because the platform still owns too much of the trust or pairing path:
+
+- iOS Device
+- iOS Simulator
+- Android Device
+- Android Emulator
+- tvOS / watchOS
+- Vision Pro
+
+That is not incomplete documentation. It is the product being explicit about where Rockxy helps and where the platform still requires manual work.
+
+## Rockxy Pro note
+
+Developer Setup Hub itself is not a Pro-only feature.
+
+The current paid addition in this area is the in-app **React Native Android Setup** automation workflow for supported Android targets. Without Pro, the manual setup path remains available.
+
+For the full license breakdown, see [Pro Features](/features/pro-features) and [License Management](/features/license-management).
+
+## Why this matters for the docs IA
+
+Developer Setup Hub should be treated as a first-class workflow seam in the docs, not just a supporting appendix. It is where Rockxy explains:
+
+- what is manual,
+- what is automation-supported,
+- what is guide-only,
+- and how to validate the path before debugging real traffic.
+
+## Where to go next
+
+If you already know your target, use the more focused guide:
+
+- [Browsers and API Clients](/setup-guides/browsers-and-api-clients)
+- [iOS Simulator](/setup-guides/ios-simulator)
+- [iOS Device](/setup-guides/ios-device)
+- [Android Device and Emulator](/setup-guides/android-device-and-emulator)
+- [Terminal Runtimes and Frameworks](/setup-guides/terminal-runtimes-and-frameworks)
+
+## When to skip the hub
+
+If Rockxy is already capturing the traffic you care about and you are past setup, move on to:
+
+- [Traffic Capture](/features/traffic-capture)
+- [Filters and Search](/core-features/filters-and-search)
+- [Request Replay](/features/request-replay)
+- [Traffic Rules](/features/rules)
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Terminal Runtimes and Frameworks" icon="terminal" href="/setup-guides/terminal-runtimes-and-frameworks">
+    Use the target-specific runtime and framework guides after choosing the right setup mode.
+  </Card>
+  <Card title="Browsers and API Clients" icon="globe" href="/setup-guides/browsers-and-api-clients">
+    Follow the client-specific setup path for Firefox, Postman, Insomnia, and Paw.
+  </Card>
+  <Card title="Pro Features" icon="sparkles" href="/features/pro-features">
+    See where paid automation fits into the broader product.
+  </Card>
+  <Card title="License Management" icon="key" href="/features/license-management">
+    Review activation and updates coverage for paid features.
+  </Card>
+</CardGroup>

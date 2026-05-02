@@ -1,0 +1,43 @@
+---
+title: Mobile App Network Debugging
+description: Debug iOS and Android app traffic with Rockxy, including setup, HTTPS trust, replay, and targeted request modification.
+---
+
+# Mobile App Network Debugging
+
+Mobile debugging is where a desktop proxy debugger proves its value quickly. App traffic often depends on device state, platform TLS behavior, and real network paths that are hard to reproduce elsewhere.
+
+## Recommended mobile workflow
+
+1. configure the device or simulator to use Rockxy,
+2. verify certificate trust,
+3. trigger one known request,
+4. inspect it in Rockxy,
+5. replay or modify it if needed,
+6. save a session or export HAR once you have a stable repro.
+
+## Why replay and rules matter here
+
+Mobile issues are often expensive to reproduce manually. Once the app emits the request, Rockxy lets you:
+
+- replay it without repeating the full UI path,
+- pause it with a breakpoint,
+- return a local response,
+- or redirect it to another environment.
+
+## Where to start by target
+
+- [iOS Simulator](/setup-guides/ios-simulator)
+- [iOS Device](/setup-guides/ios-device)
+- [Android Device and Emulator](/setup-guides/android-device-and-emulator)
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Traffic Rules" icon="filter" href="/features/rules">
+    Modify mobile traffic once capture is stable.
+  </Card>
+  <Card title="Device Setup Issues" icon="triangle-exclamation" href="/troubleshooting/device-setup-issues">
+    Troubleshoot platform-specific capture failures.
+  </Card>
+</CardGroup>

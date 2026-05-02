@@ -1,16 +1,13 @@
 ---
 title: Traffic Rules
-description: Modify network traffic with breakpoints, URL mapping, blocking, throttling, and header modification.
+description: Use Rockxy traffic rules to intercept, rewrite, block, or delay requests and responses during API debugging on macOS.
 ---
 
 # Traffic Rules
 
-Rockxy's rule engine intercepts matching requests in the proxy pipeline and applies actions before they reach the server or return to the client. Rules are evaluated in priority order against every HTTP and HTTPS request that passes through the proxy.
+Traffic rules are how you move from passive inspection to active debugging. Once Rockxy can see the request, rules let you stop it, change it, reroute it, replace the response, or block it entirely.
 
-<Frame caption="Rockxy rule-management surfaces for traffic modification rules.">
-  <img className="block dark:hidden" src="/images/rules-overview.png" alt="Rockxy rules overview" />
-  <img className="hidden dark:block" src="/images/rules-overview-dark.png" alt="Rockxy rules overview (dark mode)" />
-</Frame>
+Rockxy currently exposes rule types through dedicated tool windows rather than one single generic rules editor. That keeps each workflow explicit and makes it easier to see what the app truly supports today.
 
 ## Entry Points
 
@@ -32,254 +29,82 @@ Rockxy's rule engine intercepts matching requests in the proxy pipeline and appl
 | Network Conditions quick-create | Right-click a captured request > **Tools > Network Conditions...** |
 | Add Breakpoint for selected | Right-click a captured request > **Tools > Breakpoint...** |
 
-## Rule Types
+## Rule types
 
 <CardGroup cols={2}>
-  <Card title="Breakpoint" icon="circle-pause">
-    Pause a request or response for live editing before forwarding. Inspect and modify headers, body, URL, and method in real time.
+  <Card title="Breakpoint" icon="circle-pause" href="/rules/breakpoints">
+    Pause a request or response, edit it live, then execute, cancel, or abort it.
   </Card>
-  <Card title="Map Local" icon="file">
-    Serve a response from a local file instead of forwarding to the server. Returns the file contents with configurable status code and headers.
+  <Card title="Map Local" icon="file" href="/rules/map-local">
+    Return a local file as the response for a matching request.
   </Card>
-  <Card title="Map Remote" icon="arrow-right-arrow-left">
-    Redirect a matching request to a different URL. The client is unaware of the redirect — Rockxy proxies the rewritten request transparently.
+  <Card title="Map Remote" icon="arrow-right-arrow-left" href="/rules/map-remote">
+    Rewrite the upstream destination while keeping the original client flow intact.
   </Card>
-  <Card title="Block" icon="ban">
-    Block matching requests and return a custom HTTP status code. The request never reaches the server.
+  <Card title="Modify Headers" icon="pen-to-square" href="/rules/modify-headers">
+    Add, replace, or remove headers on requests or responses.
   </Card>
-  <Card title="Throttle" icon="gauge-simple-low">
-    Add artificial latency to matching requests. Simulate slow network conditions without changing the actual response.
-  </Card>
-  <Card title="Modify Header" icon="pen-to-square">
-    Add, remove, or replace headers on the request, the response, or both. Applies the modification transparently in the proxy pipeline.
+  <Card title="Block and Allow Lists" icon="filter-circle-xmark" href="/rules/block-and-allow-lists">
+    Stop noisy traffic, isolate a narrow request set, or keep a debugging session focused.
   </Card>
   <Card title="Network Conditions" icon="wifi" href="/features/network-conditions">
-    Simulate slow networks with latency presets (3G, EDGE, LTE, WiFi, Custom). Dedicated window with one-active enforcement and quick-create from requests.
+    Simulate slower networks and validate timeout or retry behavior.
   </Card>
 </CardGroup>
 
-## Creating Rules
+## How to think about rules
 
-Rockxy currently exposes rule editing through dedicated tool windows rather than a single generic Rules editor. Open the window for the action you want, then create a rule from scratch or quick-create one from a captured request or sidebar domain where supported.
+Use the simplest rule that proves your hypothesis:
 
-Typical flow:
+- use **Breakpoint** when you do not yet know the final request or response you want;
+- use **Map Local** when you already have the response you want to return;
+- use **Map Remote** when you need to redirect traffic to another environment;
+- use **Modify Headers** when the payload is fine but metadata is not;
+- use **Block** when you want a request to fail immediately;
+- use **Allow List** when you want to restrict capture or analysis to a narrow slice;
+- use **Network Conditions** when you are testing resilience rather than content.
 
-1. Open the relevant tool window from **Tools**.
-2. Create a new rule or use a request/domain quick-create action.
-3. Configure the match condition — URL pattern, HTTP method, or header match when the editor supports it.
-4. Fill in the action-specific configuration (file path, target URL, delay, header operations, etc.).
-5. Save the rule. It takes effect for new matching requests.
+## Common workflow
 
-## Rule Matching
+1. Capture a real request first.
+2. Right-click the request and choose the tool that matches your goal.
+3. Let Rockxy prefill the match pattern from the selected request where supported.
+4. Keep the rule narrow at first.
+5. Re-send the request or trigger it again.
+6. Check the result in the inspector, not just in your client.
 
-Each rule has a match condition that determines which requests it applies to. Match conditions support three criteria:
+## Matching strategy
 
-- **URL Pattern** — a regular expression matched against the full request URL (scheme, host, path, query string).
-- **HTTP Method** — restrict to GET, POST, PUT, DELETE, PATCH, or any other method.
-- **Header Name/Value** — match requests that contain a specific header with an optional value pattern.
+Most Rockxy traffic modification tools work best when you scope them to:
 
-Rules are evaluated in priority order. The first rule whose match condition is satisfied wins — subsequent rules are skipped for that request.
+- host or domain,
+- path or path prefix,
+- HTTP method,
+- or a small regex that maps cleanly to the endpoint you are testing.
 
 <Note>
 URL patterns use standard regular expressions. To match a literal dot in a domain name, escape it with a backslash: `api\.example\.com`. To match any path under a domain, use `https://api\.example\.com/.*`.
 </Note>
 
-## Breakpoints
+## Rule pages
 
-Breakpoints pause a request at the proxy layer so you can inspect and edit it before it continues.
+Use these pages for implementation details and examples:
 
-**Workflow:**
+- [Breakpoints](/rules/breakpoints)
+- [Map Local](/rules/map-local)
+- [Map Remote](/rules/map-remote)
+- [Modify Headers](/rules/modify-headers)
+- [Block and Allow Lists](/rules/block-and-allow-lists)
+- [Network Conditions](/features/network-conditions)
 
-1. A request matching the breakpoint rule arrives at the proxy.
-2. Rockxy pauses the request and queues it in the Breakpoints window (`Cmd+Shift+B`).
-3. The window uses a two-column layout: a queue list on the left showing all paused requests (with elapsed time), and an editor on the right with editable URL, method, headers, query parameters, and body.
-4. Modify any field, then click **Execute** to forward the modified request, **Cancel** to drop it silently, or **Abort** to return a 503 to the client.
-5. Breakpoints can be set to pause on the request phase, the response phase, or both. Response breakpoints let you edit the status code, headers, and body before the response reaches the client.
-6. Multiple requests can be paused simultaneously — resolve them individually or use **Resolve All**.
+## Related workflows
 
-<Tip>
-Breakpoints are a fast way to mock API behavior during development. Pause a request, edit the response body to return test data, and continue — no server changes needed.
-</Tip>
+Rules are usually most effective when combined with:
 
-## Map Local
-
-Map Local serves a response from a file on disk instead of forwarding the request to the server. Open the dedicated editor from **Tools > Map Local...** or right-click a captured request and choose **Map Local...** to create a rule with prefilled fields.
-
-**Quick-create:** Right-click any captured request in the traffic list and choose **Map Local...**. The Map Local window opens with the editor prefilled from the selected request — URL pattern, method, and name are auto-populated.
-
-**Match modes:**
-
-| Mode | Behavior |
-|------|----------|
-| **Exact Path** | Matches the exact scheme + host + path. Query string is ignored. `/api/users` does not match `/api/users/123`. |
-| **Include Subpaths** | Matches the path and everything under it. `/api/users` also matches `/api/users/123` and `/api/users/123/orders`. |
-| **Regex Advanced** | Full regular expression against the absolute URL. For advanced matching patterns. |
-
-**Map-to modes:**
-
-| Mode | Behavior |
-|------|----------|
-| **Local File** | Serve a single file. Browse to select the file. Content-Type is inferred from the file extension. |
-| **Local Directory** | Map a URL subtree to a directory. Subpaths resolve to local files. Falls back to `index.html` for directory requests. |
-| **Current Response Snapshot** | Save the captured response body as a local file and create a rule pointing to it. Available when the selected request has a response body. |
-
-**Configuration:**
-
-- **File/Directory Path** — absolute path to the local file or directory.
-- **Status Code** — HTTP status code to return (default: 200).
-- **Content-Type** — automatically inferred from the file extension (e.g., `.json` → `application/json`, `.html` → `text/html`). Applies to both file and directory modes.
-
-**Use cases:**
-
-- Mock API responses during frontend development without a running backend.
-- Test error states by mapping an endpoint to a file containing an error response.
-- Work offline by mapping critical endpoints to cached response files.
-- Snapshot a live response and iterate on it locally without re-fetching.
-
-## Map Remote
-
-Map Remote redirects matching requests to a different server by rewriting URL components. Open the dedicated editor from **Tools > Map Remote...** or right-click a captured request and choose **Map Remote...** to create a rule with prefilled fields.
-
-**Quick-create:** Right-click any captured request in the traffic list and choose **Map Remote...**. The Map Remote window opens with the editor prefilled from the selected request.
-
-**Structured destination editing:**
-
-Each URL component can be overridden independently. Leave a field blank to keep the original request value.
-
-| Component | When Set | When Blank |
-|-----------|----------|------------|
-| **Protocol** | Use the specified protocol (http or https) | Keep the original request protocol |
-| **Host** | Route to the specified host | Keep the original host |
-| **Port** | Connect on the specified port | Use the default port for the protocol |
-| **Path** | Replace the request path | Keep the original path |
-| **Query** | Replace the query string | Keep the original query |
-
-**Preserve Host Header** — when enabled, the `Host` header sent to the destination server retains the original request's host value instead of the remapped host. This is useful when the backend validates the `Host` header for routing or security.
-
-**Match modes:**
-
-| Mode | Behavior |
-|------|----------|
-| **Exact Path** | Matches the exact scheme + host + path. Query string is ignored. |
-| **Include Subpaths** | Matches the path and everything under it. |
-| **Regex Advanced** | Full regular expression against the absolute URL. |
-
-**Examples:**
-
-| Original URL | Changed Component | Purpose |
-|---|---|---|
-| `https://api.prod.com/v2/users` | Host → `api.staging.com` | Route production traffic to staging |
-| `https://api.example.com/v1/data` | Path → `/v2/data` | Test against a newer API version |
-| `https://cdn.example.com/bundle.js` | Protocol → `http`, Host → `localhost`, Port → `8080` | Serve local development build |
-
-**HTTP ↔ HTTPS remapping** — Map Remote supports cross-protocol redirection. A plain HTTP request can be remapped to an HTTPS upstream, and vice versa. The proxy handles TLS negotiation automatically.
-
-**Use cases:**
-
-- Route production API traffic to a staging or development server.
-- Test your app against a different API version without code changes.
-- Redirect CDN requests to a local development server.
-- Switch between environments (staging, QA, production) by changing only the host.
-
-## Block
-
-Block prevents matching requests from reaching the server and returns a configurable HTTP status code (default: 403 Forbidden).
-
-**Use cases:**
-
-- Block analytics and tracking endpoints during debugging to reduce noise in the traffic list.
-- Block third-party ad or SDK requests to isolate your app's own network behavior.
-- Simulate server-side blocking to test client error handling.
-
-## Throttle
-
-Throttle adds artificial delay to matching requests. The proxy holds the request for the configured duration before forwarding it, simulating slow network conditions.
-
-**Configuration:**
-
-- **Delay (ms)** — milliseconds of latency added to each matching request.
-
-| Simulated Condition | Suggested Delay |
-|---|---|
-| Fast 4G | 50–100 ms |
-| Slow 4G | 200–500 ms |
-| 3G | 500–1500 ms |
-| Edge / very slow | 2000–5000 ms |
-
-## Modify Header
-
-Modify Header changes request or response headers for matching requests. Each rule can contain multiple header operations that are applied in order.
-
-Open the dedicated editor from **Tools > Modify Headers...** to create and manage header modification rules.
-
-**Operations:**
-
-| Operation | Behavior |
-|---|---|
-| **Add** | Appends a header. If the header already exists, a second value is added. |
-| **Remove** | Removes all instances of the named header (case-insensitive match). |
-| **Replace** | Removes existing values and sets a new one. If the header does not exist, it is added. |
-
-**Phase** — each operation targets a specific direction:
-
-| Phase | When Applied |
-|---|---|
-| **Request** | Before the request is forwarded to the server |
-| **Response** | When the response arrives from the server, before it reaches the client |
-| **Both** | Applied to both the outgoing request and the incoming response |
-
-**Creating a Modify Header rule:**
-
-1. Open **Tools > Modify Headers...**
-2. Click **+** or the **Add Rule** toolbar button.
-3. Enter a name and a URL pattern (regex). Use `.*` to match all traffic.
-4. Add one or more header operations. For each, pick the phase, operation type, header name, and value.
-5. Click **Add Rule**. The rule takes effect immediately.
-
-Operations within a rule are applied top to bottom. If two operations modify the same header, the later one wins.
-
-<Note>
-WebSocket upgrade responses (HTTP 101) are not modified to avoid interfering with the protocol handshake.
-</Note>
-
-**Presets** — common header rules you can create instantly from the Presets menu:
-
-| Preset | What It Does |
-|---|---|
-| **Add CORS Headers** | Adds `Access-Control-Allow-Origin: *` to all responses |
-| **Remove Authorization** | Strips the `Authorization` header from all outgoing requests |
-| **Strip Server Header** | Removes the `Server` header from all incoming responses |
-
-**Use cases:**
-
-- Add authentication headers to test protected endpoints without modifying your app.
-- Strip tracking or fingerprinting headers from responses.
-- Inject CORS headers to bypass cross-origin restrictions during local development.
-- Add feature flags via custom headers to toggle server behavior.
-- Remove caching headers to force fresh responses during debugging.
-
-## Rule Persistence
-
-Rules are stored as JSON at `~/Library/Application Support/com.amunx.rockxy.community/rules.json` for the Community build. This file is human-readable and version-control friendly.
-
-**Import/Export:**
-
-- **Export** — use the rule window's More menu or context menu when available. Exports save a `.json` file you can share.
-- **Import** — use the matching rule window's import action when available. Imported rules are appended to the existing list after validation.
-
-Share rule files between machines or team members to standardize debugging configurations.
-
-## Rule Priority
-
-Rules are evaluated top to bottom. The first matching rule wins — no further rules are checked for that request.
-
-- **Reorder** where the dedicated rule window exposes ordering controls.
-- **Disable** a rule without deleting it by toggling the checkbox next to its name.
-- **Delete** by right-clicking and selecting **Delete Rule**, or pressing the Delete key with the rule selected.
-
-<Warning>
-If multiple rules could match the same request, only the highest-priority (topmost) rule applies. Order your most specific rules above broader catch-all rules.
-</Warning>
+- [HTTPS Interception](/features/https-interception)
+- [Request Replay](/features/request-replay)
+- [Traffic Capture](/features/traffic-capture)
+- [Sessions and HAR](/features/sessions)
 
 ## Next Steps
 

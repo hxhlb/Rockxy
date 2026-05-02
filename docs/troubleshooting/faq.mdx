@@ -1,0 +1,52 @@
+---
+title: FAQ
+description: Quick answers to common Rockxy questions about HTTPS capture, devices, HAR export, replay, Pro licensing, and local MCP setup.
+---
+
+# FAQ
+
+## Why can Rockxy capture HTTP but not HTTPS?
+
+Because HTTPS inspection requires certificate trust, not just proxy routing. Start with [Certificates and Trust](/getting-started/certificates-and-trust).
+
+## Why does one app show traffic while another app shows nothing?
+
+Different apps use different proxy and trust behavior. Some follow the macOS system path. Others need explicit setup. Some pin certificates and may not be interceptable.
+
+## Can Rockxy inspect mobile app traffic?
+
+Yes, if the device or simulator is configured to use Rockxy and the trust path is complete. Use the platform guides.
+
+## Should I use replay or a breakpoint?
+
+Use replay when you want a fast resend. Use a breakpoint when you need to pause and edit live traffic before it continues.
+
+## When should I export HAR versus save a Rockxy session?
+
+Use HAR for cross-tool sharing. Use Rockxy's native session format when you want to preserve Rockxy-specific context and fidelity.
+
+## What does Rockxy Pro include today?
+
+Rockxy Pro currently unlocks unlimited usage caps, Advanced Diff, and the React Native Android automation workflow in Developer Setup Hub. Community keeps the core capture, inspection, replay, rules, sessions, and manual setup flows.
+
+## What does a perpetual Rockxy Pro license mean?
+
+It means you keep the license permanently, but updates are only included through the date shown in **Settings → License**. You can keep using versions released within that covered window.
+
+## Why does Rockxy say "This Build Is Newer Than Your License"?
+
+Your license is still valid, but the installed Rockxy build was released after your covered updates period ended. Renew updates or install an older eligible version.
+
+## How do I move Pro to a new Mac?
+
+Open **Settings → License** on the old Mac and choose **Deactivate on this Mac** first. Then activate on the new Mac with the same license key and purchase email.
+
+## What is "Restore on This Mac" for?
+
+Use it when Rockxy knows this Mac was already activated but needs secure access to the stored license again before it can validate or recover Pro.
+
+For the full walkthrough, see [License Management](/features/license-management).
+
+## How do I use Rockxy with Claude?
+
+Use the local MCP bridge described in [MCP Integration](/features/mcp). It is a local setup, not a remote connector flow.

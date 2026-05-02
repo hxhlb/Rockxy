@@ -1,0 +1,38 @@
+---
+title: Device Setup Issues
+description: Troubleshoot iPhone, iPad, Android, simulator, and emulator traffic capture problems when Rockxy can capture on macOS but not on the target device.
+---
+
+# Device Setup Issues
+
+If Rockxy captures traffic from your Mac but not from a device or simulator, the issue is usually reachability, proxy routing, certificate trust, or app-specific network behavior.
+
+## Start by splitting the problem
+
+Ask these in order:
+
+1. Can the target reach the Mac?
+2. Is the target actually routed through Rockxy?
+3. Does the target trust the certificate?
+4. Does the app use a network stack that still blocks interception?
+
+## Fastest way to isolate the failure
+
+Use one known HTTPS request and one known target. Do not test the full app flow until that simple request behaves correctly.
+
+## Related setup guides
+
+- [iOS Simulator](/setup-guides/ios-simulator)
+- [iOS Device](/setup-guides/ios-device)
+- [Android Device and Emulator](/setup-guides/android-device-and-emulator)
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Mobile App Network Debugging" icon="mobile" href="/use-cases/mobile-app-network-debugging">
+    See the larger mobile debugging workflow after setup is stable.
+  </Card>
+  <Card title="Certificate and HTTPS Issues" icon="shield" href="/troubleshooting/certificates-and-https-issues">
+    Continue here if the remaining problem is TLS-specific.
+  </Card>
+</CardGroup>

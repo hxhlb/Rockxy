@@ -1,0 +1,45 @@
+---
+title: Block and Allow Lists
+description: Use Rockxy block and allow lists to remove noise, isolate the requests you care about, and keep debugging sessions focused.
+---
+
+# Block and Allow Lists
+
+Block and allow lists solve a different problem from replay or rewriting. They help you control *which* traffic matters in the first place.
+
+## Block List
+
+Use Block List when you want matching requests to fail immediately instead of reaching the server.
+
+Good candidates:
+
+- analytics endpoints,
+- ad and tracking SDK traffic,
+- known-noisy background polling,
+- third-party calls that distract from your main debugging session.
+
+## Allow List
+
+Use Allow List when you want to restrict attention to a specific subset of traffic.
+
+This is particularly helpful when:
+
+- one app emits too much unrelated traffic,
+- you want to focus on one service during capture,
+- or you are validating that only a specific endpoint family is active.
+
+## When to choose which
+
+- **Block List** removes traffic by making it fail.
+- **Allow List** narrows the active traffic set to what you intentionally permit.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Filters and Search" icon="magnifying-glass" href="/core-features/filters-and-search">
+    Use filtering for visibility; use lists for actual traffic control.
+  </Card>
+  <Card title="Traffic Rules" icon="filter" href="/features/rules">
+    Return to the broader rules overview.
+  </Card>
+</CardGroup>

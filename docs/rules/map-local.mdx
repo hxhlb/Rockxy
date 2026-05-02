@@ -1,0 +1,50 @@
+---
+title: Map Local
+description: Mock an HTTP response in Rockxy by returning a local file for a matching request, without waiting for backend changes.
+---
+
+# Map Local
+
+Map Local lets you serve a local file as the response for a matching request. It is one of the fastest ways to unblock frontend, mobile, or QA work when the real backend response is not available yet.
+
+## Best use cases
+
+- mock a response while a backend endpoint is still in progress,
+- reproduce one specific payload repeatedly,
+- test error states or empty states,
+- work offline with a known response file,
+- validate UI against unusual payload shapes.
+
+## Recommended workflow
+
+1. Capture a real request.
+2. Right-click it and create a Map Local rule.
+3. Point the rule at a local file.
+4. Trigger the request again.
+5. Inspect the returned response in Rockxy and in the client.
+
+## Keep rules narrow
+
+Map Local is most reliable when the match is specific. Start with:
+
+- one host,
+- one path,
+- one method,
+- and only widen it if the intended flow requires it.
+
+## What to watch for
+
+- The file content becomes the response body.
+- The client still needs to accept the overall proxy and HTTPS setup.
+- If the match is too broad, you may accidentally replace more traffic than intended.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Map Remote" icon="arrow-right-arrow-left" href="/rules/map-remote">
+    Use Map Remote when you need a different server, not a local payload.
+  </Card>
+  <Card title="Modify Headers" icon="pen-to-square" href="/rules/modify-headers">
+    Change metadata without replacing the whole response body.
+  </Card>
+</CardGroup>

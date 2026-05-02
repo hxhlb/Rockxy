@@ -1,0 +1,45 @@
+---
+title: iOS Device Setup
+description: Capture HTTP and HTTPS traffic from an iPhone or iPad with Rockxy by configuring Wi-Fi proxy settings and trusting the certificate on the device.
+---
+
+# iOS Device Setup
+
+Physical iOS devices always need an explicit setup path. The main tasks are:
+
+- route the device through Rockxy,
+- install the certificate on the device,
+- and enable trust in the device certificate settings.
+
+## What this setup is best for
+
+- debugging API calls from a real device,
+- reproducing app-only issues that do not happen in Simulator,
+- validating traffic from device-specific SDK or networking behavior.
+
+## Core checklist
+
+1. Put the Mac and device on a reachable network path.
+2. Start Rockxy.
+3. Configure the device to use Rockxy as its proxy.
+4. install the certificate on the device,
+5. enable trust,
+6. relaunch the app and trigger traffic.
+
+## What often goes wrong
+
+- the device cannot reach the Mac,
+- the certificate is installed but not fully trusted,
+- the app uses certificate pinning,
+- or the device changes networks and the proxy path breaks.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Android Device and Emulator" icon="mobile-screen" href="/setup-guides/android-device-and-emulator">
+    Use the matching platform guide for Android testing.
+  </Card>
+  <Card title="Device Setup Issues" icon="triangle-exclamation" href="/troubleshooting/device-setup-issues">
+    Troubleshoot reachability, trust, and app-specific constraints.
+  </Card>
+</CardGroup>

@@ -1,20 +1,19 @@
 ---
 title: "Settings"
-description: "Configure proxy behavior, certificates, tools, plugins, MCP, updates, helper diagnostics, and privacy settings"
+description: "Configure Rockxy settings for proxy behavior, certificates, privacy, plugins, MCP, licensing, tools, and advanced helper diagnostics."
 ---
 
-## Opening Settings
+# Settings
+
+Rockxy's settings are split by responsibility so you can change everyday behavior without mixing it up with security-sensitive or system-level controls.
+
+## Open Settings
 
 Open the settings panel from the menu bar: **Rockxy → Settings** or press <kbd>Cmd</kbd>+<kbd>,</kbd>.
 
-<Frame caption="Rockxy Settings panel">
-  <img className="block dark:hidden" src="/images/settings.png" alt="Rockxy Settings panel" />
-  <img className="hidden dark:block" src="/images/settings-dark.png" alt="Rockxy Settings panel (dark mode)" />
-</Frame>
-
 ## Settings Tabs
 
-Rockxy's settings window currently has these tabs: **General**, **Appearance**, **Privacy**, **Tools**, **Plugins**, **MCP**, and **Advanced**.
+Rockxy's settings window currently has these tabs: **General**, **Appearance**, **Privacy**, **Tools**, **Plugins**, **MCP**, **Advanced**, and **License**.
 
 ## General
 
@@ -25,15 +24,23 @@ Rockxy's settings window currently has these tabs: **General**, **Appearance**, 
 | Advanced Proxy Setting | N/A | Opens the Advanced Proxy Settings window for listen-address, helper, and proxy diagnostics. |
 | Root CA Certificate | Generated per install | Generate, install and trust, export, share, recheck, or reset the Rockxy root CA. |
 
+Use **General** when you are changing how capture starts or where Rockxy listens. Use [Certificates and Trust](/getting-started/certificates-and-trust) if the problem is HTTPS-specific rather than a general preference question.
+
 ## Tools
 
 | Setting | Default | Description |
 |---------|---------|-------------|
 | Disable caching (No-Cache headers) | Off | Adds no-cache headers and strips conditional cache validators from outbound requests. |
 
+This is useful when an app keeps serving cached data and you need a fresh server response without changing the client code first.
+
 ## Privacy
 
 The Privacy tab discloses local storage paths, export sensitivity, and telemetry behavior. Rockxy does not collect analytics or crash reports.
+
+## Plugins
+
+Use the Plugins tab when you are managing installed plugin surfaces or script-related extensions. Keep expectations grounded in the current product surface: Rockxy supports plugins and scripting, but not every third-party inspection concept is interchangeable.
 
 ## MCP
 
@@ -51,9 +58,79 @@ Important notes:
 - the generated config uses the exact installed path to `rockxy-mcp`
 - if you move `Rockxy.app`, copy the config again from this tab
 - Claude CLI and Claude Desktop use separate MCP config stores
-- Claude Desktop remote **Connectors** are not the right place for Rockxy's local MCP bridge
+- Claude Desktop remote connector flows are not the right place for Rockxy's local bridge
 
 For the full setup walkthrough, see [MCP Integration](/features/mcp).
+
+## License
+
+The **License** tab is where you manage Rockxy Pro on a specific Mac.
+
+Depending on your current state, this tab can show:
+
+- **Status**
+- **Plan**
+- **License** type and **Updates until** date for perpetual licenses
+- **This Mac**
+- **Activations**
+- **Last validated**
+
+The available actions change with the current license state:
+
+| Action | When you use it |
+| --- | --- |
+| **Enter License Key…** | Activate Pro on this Mac for the first time |
+| **Restore on This Mac** | Reconnect Rockxy to the stored license after secure access was lost or denied |
+| **Retry Validation Now** | Retry validation after a temporary failure |
+| **Deactivate on this Mac** | Remove Pro from the current Mac and release that activation seat |
+
+Status text in this tab is also the most reliable place to understand where your license stands. For example:
+
+- **Pro (active)** means Pro is fully active on this Mac
+- **Pro (current version only)** means your updates period ended, but this installed build is still covered
+- **This Build Is Newer Than Your License** means the current Rockxy build is outside your covered updates window
+- **Validation failed** means Rockxy could not verify the stored license and needs recovery
+
+For the full activation, transfer, and troubleshooting guide, see [License Management](/features/license-management).
+
+## Advanced
+
+The **Advanced** tab consolidates everything that affects how Rockxy talks to the system: the privileged proxy helper, software updates, and misc behavioral toggles.
+
+### Proxy Helper Tool
+
+Rockxy ships a privileged helper (`com.amunx.rockxy.helper`) that handles system proxy configuration without prompting for your password on every change. This section shows its live status:
+
+| Field | Meaning |
+|-------|---------|
+| Bundled | Helper version embedded in the running app bundle |
+| Installed | Helper version currently registered with `launchd` (color-coded: green = match, orange = outdated, red = mismatch/unreachable) |
+| Registration | Whether the helper is enabled in **System Settings → Login Items** |
+| XPC | Whether the helper is currently reachable over its XPC service |
+
+Action buttons appear based on state — `Install Helper`, `Update Helper`, `Reinstall`, `Retry Connection`, `Uninstall`, or `Open System Settings` — plus a destructive `Force Reset…` for full deregistration. See [Helper Architecture](/development/architecture) for what the helper actually does.
+
+### Updates
+
+Software Update is gated by your edition. It is enabled for Community and Beta builds and hidden entirely for editions that opt out.
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Check for Updates… | Manual | Runs an immediate update check against the signed Sparkle appcast |
+| Change Logs… | Manual | Opens the GitHub releases page |
+| Automatically check for updates | On | Lets Rockxy check the appcast on a schedule in the background |
+| Automatically download updates in the background | Off | When enabled, Rockxy downloads signed updates ahead of time so install prompts are faster (only available when automatic checks are on and the build allows automatic updates) |
+| Check Frequency | Daily | `Daily`, `Weekly`, or `Monthly` — the picker is disabled when automatic checks are off |
+
+The panel also shows the current version summary and the last-checked timestamp. The same manual check is also reachable from the **Rockxy** menu via **Check for Updates…**.
+
+Updates are delivered through Sparkle, served from the project's signed appcast, and verified against the embedded EdDSA public key. Releases that fail signature, notarization, or stapling checks are rejected before install — see [Security](/development/security) for the full release-pipeline contract.
+
+### Miscellaneous
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Show alert when quitting Rockxy | On | Confirms before quitting if the proxy is still running. Wired into `AppDelegate.applicationShouldTerminate`. |
 
 ## Data Storage Locations
 
@@ -72,13 +149,22 @@ Rockxy stores data across several locations on disk:
   The Root CA private key is stored in the macOS Keychain and protected by system-level access controls. Do not attempt to export or modify it manually — use Rockxy's certificate management UI instead.
 </Warning>
 
-## Next Steps
+## Related pages
 
 <CardGroup cols={2}>
   <Card title="Keyboard Shortcuts" icon="keyboard" href="/customization/keyboard-shortcuts">
-    Learn every shortcut for faster debugging workflows
+    Learn the menu and capture shortcuts that pair with these settings.
   </Card>
-  <Card title="Traffic Capture" icon="globe" href="/features/traffic-capture">
-    Set up HTTP and HTTPS traffic interception
+  <Card title="MCP Integration" icon="plug" href="/features/mcp">
+    Connect Rockxy to Claude with the local MCP bridge.
+  </Card>
+  <Card title="Rockxy Pro" icon="key" href="/features/pro-features">
+    See what Rockxy Pro unlocks in the current app.
+  </Card>
+  <Card title="License Management" icon="id-card" href="/features/license-management">
+    Activate, restore, deactivate, or transfer your Pro license.
+  </Card>
+  <Card title="Helper and Proxy Issues" icon="life-ring" href="/troubleshooting/helper-and-proxy-issues">
+    Troubleshoot helper state, listen address issues, and proxy-control failures.
   </Card>
 </CardGroup>

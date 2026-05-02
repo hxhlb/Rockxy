@@ -19,29 +19,72 @@
     "groups": [
       {
         "group": "Getting Started",
-        "pages": ["index", "quickstart", "installation", "changelog"]
+        "pages": [
+          "index",
+          "quickstart",
+          "installation",
+          "getting-started/certificates-and-trust",
+          "getting-started/first-capture",
+          "getting-started/developer-setup-hub"
+        ]
       },
       {
-        "group": "Core Debugging",
+        "group": "Core Features",
         "pages": [
           "features/traffic-capture",
+          "core-features/filters-and-search",
           "features/https-interception",
           "features/websocket",
           "features/graphql",
+          "core-features/logs-and-timeline",
           "features/request-replay",
+          "features/workspaces",
+          "features/sessions"
+        ]
+      },
+      {
+        "group": "Traffic Modification",
+        "pages": [
           "features/rules",
+          "rules/breakpoints",
+          "rules/map-local",
+          "rules/map-remote",
+          "rules/modify-headers",
+          "rules/block-and-allow-lists",
           "features/network-conditions"
         ]
       },
       {
-        "group": "Analysis & Productivity",
+        "group": "Advanced Tools",
         "pages": [
-          "features/mcp",
-          "features/log-intelligence",
           "features/diff",
           "features/scripting",
-          "features/sessions",
-          "features/developer-setup-hub"
+          "features/mcp"
+        ]
+      },
+      {
+        "group": "Pro Features",
+        "pages": [
+          "features/pro-features",
+          "features/license-management"
+        ]
+      },
+      {
+        "group": "Setup Guides",
+        "pages": [
+          "setup-guides/browsers-and-api-clients",
+          "setup-guides/ios-simulator",
+          "setup-guides/ios-device",
+          "setup-guides/android-device-and-emulator",
+          "setup-guides/terminal-runtimes-and-frameworks"
+        ]
+      },
+      {
+        "group": "Use Cases",
+        "pages": [
+          "use-cases/api-debugging-on-macos",
+          "use-cases/mobile-app-network-debugging",
+          "use-cases/browser-devtools-vs-system-proxy-debugger"
         ]
       },
       {
@@ -49,6 +92,16 @@
         "pages": [
           "customization/settings",
           "customization/keyboard-shortcuts"
+        ]
+      },
+      {
+        "group": "Troubleshooting",
+        "pages": [
+          "troubleshooting/capture-issues",
+          "troubleshooting/certificates-and-https-issues",
+          "troubleshooting/device-setup-issues",
+          "troubleshooting/helper-and-proxy-issues",
+          "troubleshooting/faq"
         ]
       },
       {
@@ -60,6 +113,10 @@
           "development/code-style",
           "development/building"
         ]
+      },
+      {
+        "group": "Release Notes",
+        "pages": ["changelog"]
       }
     ],
     "global": {

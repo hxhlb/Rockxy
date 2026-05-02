@@ -1,0 +1,146 @@
+---
+title: "License Management"
+description: "Understand Rockxy Pro's perpetual license, updates window, activation states, and how to activate, deactivate, restore, or transfer a license on macOS."
+---
+
+# License Management
+
+This page explains how Rockxy Pro licensing works from an end-user perspective: what a perpetual license means, how long updates last, what the app's license states mean, and how to activate, restore, deactivate, or move your license to another Mac.
+
+Rockxy uses the same app for Community and Pro. License management lives in **Settings → License**.
+
+## License Model
+
+### Perpetual License
+
+Rockxy Pro uses a perpetual license model. In practical terms, that means:
+
+- you buy Rockxy Pro once for the plan you selected
+- the license remains yours permanently
+- your purchase includes updates through the date shown in **Settings → License**
+- you can keep using versions released within that covered updates window
+
+The important distinction is this:
+
+- **Perpetual** does not mean unlimited future updates forever
+- it means continued use of eligible versions that fall within your license coverage
+
+### Updates Window
+
+Rockxy shows an **Updates until** date for perpetual licenses in **Settings → License**.
+
+That date controls whether a given Rockxy build is still covered:
+
+- If your installed build was released on or before that date, Pro can stay active on that version.
+- If you install a build released after that date, Rockxy can no longer unlock Pro on that newer build until you renew updates or install an eligible version.
+
+## License States You May See
+
+The **Status** field in **Settings → License** is the best source of truth for your current state.
+
+| Status in the app | What it means |
+| --- | --- |
+| **Community** | No Pro license is active on this Mac. |
+| **Pro (active)** | Pro is active and fully unlocked on this Mac. |
+| **Pro (current version only)** | Your updates period ended, but this installed Rockxy build is still covered. |
+| **This Build Is Newer Than Your License** | The installed build is outside your covered updates window, so Pro is not unlocked on this build. |
+| **Validation failed** | Rockxy could not verify the stored license on this Mac and needs recovery. |
+| **Suspended** | The license is not currently available for use. |
+| **Deactivated** | Pro was explicitly removed from this Mac. |
+
+## Current Plan Names
+
+Rockxy currently recognizes these Pro plan labels in the app:
+
+| Plan | Activation scope |
+| --- | --- |
+| Pro Standard | 1 Mac |
+| Pro Personal | 2 Macs |
+
+## Activate Rockxy Pro
+
+Use these steps on the Mac where you want Pro enabled:
+
+1. Open **Rockxy → Settings** or press <kbd>Cmd</kbd>+<kbd>,</kbd>.
+2. Open the **License** tab.
+3. Click **Enter License Key…**
+4. Enter your license key.
+5. Enter the purchase account email used at checkout.
+6. Click **Activate Pro**.
+7. If macOS asks for confirmation to store the license securely, click **Continue**.
+
+After a successful activation, the **License** tab shows your status, plan, activation usage, and the updates date for perpetual licenses.
+
+## Restore, Deactivate, and Transfer
+
+### Restore on the same Mac
+
+If Rockxy already knows this Mac was activated but can no longer reach the stored license securely, the **License** tab shows **Restore on This Mac** instead of asking you to start over.
+
+Use **Restore on This Mac** when:
+
+- you previously denied secure access
+- macOS no longer grants access to the stored license
+- Rockxy asks you to restore secure license access before validating again
+
+### Deactivate on the current Mac
+
+To remove Pro from the Mac you are using:
+
+1. Open **Rockxy → Settings → License**.
+2. Click **Deactivate on this Mac**.
+3. Confirm **Deactivate Rockxy Pro on this Mac?**
+
+Rockxy then removes Pro from that Mac and releases the activation seat so you can use it elsewhere.
+
+### Transfer Pro to another Mac
+
+To move your license cleanly:
+
+1. Deactivate Pro on the old Mac.
+2. Install or open Rockxy on the new Mac.
+3. Open **Settings → License** on the new Mac.
+4. Activate with the same license key and purchase email.
+
+If you skip the deactivation step and your plan has already used all of its activations, the new Mac may refuse activation until a seat is freed.
+
+## When Activation or Validation Fails
+
+Rockxy surfaces license problems in the **License** tab and, when relevant, through an upgrade or warning banner. Use the table below for the most common cases.
+
+| What you see | What it usually means | What to do |
+| --- | --- | --- |
+| **This license key could not be validated.** | The key is invalid or was entered incorrectly. | Re-enter the key carefully and avoid extra spaces. |
+| **The checkout email does not match this license key.** | The purchase email does not match the license record. | Use the exact email used during checkout. |
+| **This license key is not valid for Rockxy Pro on macOS.** | The key belongs to a different product or variant. | Use a Rockxy Pro macOS license. |
+| **This license key has reached its activation limit.** | All seats for the current plan are already in use. | Deactivate an older Mac first, then activate again. |
+| **This license has expired.** or **This Build Is Newer Than Your License** | Your updates period does not cover the current build. | Renew updates or install a Rockxy version released within your covered period. |
+| **License verification failed** | Rockxy could not verify the stored license on this Mac. | Click **Restore on This Mac** first, then **Retry Validation Now** or re-enter the key if needed. |
+| **Rockxy could not reach the licensing provider...** | A temporary network or service problem blocked validation. | Check your connection and try **Retry Validation Now** again later. |
+| **Rockxy needs your confirmation...** | macOS blocked access to the stored license. | Retry the action and allow secure access when prompted. |
+| **This license is disabled right now** | The license is not currently active for use. | Contact support if you believe this is an error. |
+
+## Troubleshooting Checklist
+
+- Make sure you are using the same purchase email that was used when the license was bought.
+- If you changed Macs, deactivate the old Mac first when possible.
+- If Rockxy shows **Restore on This Mac**, use that before re-entering your key.
+- If validation is failing temporarily, try **Retry Validation Now** from **Settings → License**.
+- If the app says the build is newer than your license covers, install an eligible version or renew updates.
+
+## Related Pages
+
+<CardGroup cols={2}>
+  <Card title="Pro Features" icon="sparkles" href="/features/pro-features">
+    See what Rockxy Pro unlocks today and what stays in Community.
+  </Card>
+  <Card title="Settings" icon="gear" href="/customization/settings">
+    Review the exact License tab location and actions.
+  </Card>
+  <Card title="FAQ" icon="circle-question" href="/troubleshooting/faq">
+    Quick answers to common Pro and license questions.
+  </Card>
+  <Card title="Developer Setup Hub" icon="screwdriver-wrench" href="/features/developer-setup-hub">
+    See where Pro adds in-app Android automation.
+  </Card>
+</CardGroup>

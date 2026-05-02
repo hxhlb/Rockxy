@@ -1,0 +1,40 @@
+---
+title: Browser DevTools vs a System Proxy Debugger
+description: Learn when browser DevTools are enough and when a system-level proxy debugger like Rockxy is the better tool for API and HTTPS inspection.
+---
+
+# Browser DevTools vs a System Proxy Debugger
+
+Browser DevTools are excellent when the problem lives entirely in the browser tab you already control. A system proxy debugger becomes more valuable when the traffic source is outside that narrow boundary.
+
+## Browser DevTools are usually enough when
+
+- the issue is only in one browser page,
+- you only need frontend requests from that page,
+- you do not need to inspect another app, runtime, device, or simulator,
+- and you do not need traffic modification at the proxy layer.
+
+## A system proxy debugger is usually better when
+
+- the traffic comes from a desktop app,
+- the request originates in an SDK or local runtime,
+- you need to capture iOS or Android traffic,
+- you need replay, remapping, or interception outside the browser,
+- or you need a unified place to inspect multiple clients.
+
+## The simplest decision rule
+
+If your debugging question is “what did the browser tab do?”, DevTools may be enough.
+
+If your debugging question is “what did the client on this machine or device actually send?”, Rockxy is usually the better fit.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="API Debugging on macOS" icon="code" href="/use-cases/api-debugging-on-macos">
+    See the broader workflow for real-client API debugging.
+  </Card>
+  <Card title="Mobile App Network Debugging" icon="mobile" href="/use-cases/mobile-app-network-debugging">
+    Use Rockxy when the client is not just a browser tab.
+  </Card>
+</CardGroup>

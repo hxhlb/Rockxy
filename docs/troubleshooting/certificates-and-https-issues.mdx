@@ -1,0 +1,43 @@
+---
+title: Certificate and HTTPS Issues
+description: Troubleshoot TLS errors, untrusted certificates, CONNECT-only capture, and other HTTPS inspection problems in Rockxy.
+---
+
+# Certificate and HTTPS Issues
+
+Most HTTPS failures reduce to trust, SSL proxying scope, or target-client constraints.
+
+## Symptom: CONNECT requests only
+
+The traffic reached Rockxy, but it was not decrypted for inspection. Re-check trust and SSL proxying.
+
+## Symptom: the app says the certificate is invalid
+
+The client does not trust the Rockxy root CA in the path it is using.
+
+## Symptom: one app trusts it, another still fails
+
+That usually means the second app has:
+
+- a separate trust store,
+- certificate pinning,
+- or a different network stack.
+
+## Symptom: simulator or device traffic still fails
+
+Use the matching setup guide:
+
+- [iOS Simulator](/setup-guides/ios-simulator)
+- [iOS Device](/setup-guides/ios-device)
+- [Android Device and Emulator](/setup-guides/android-device-and-emulator)
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Certificates and Trust" icon="certificate" href="/getting-started/certificates-and-trust">
+    Revisit the trust model and install flow.
+  </Card>
+  <Card title="HTTPS Interception" icon="lock" href="/features/https-interception">
+    Understand how Rockxy performs HTTPS inspection.
+  </Card>
+</CardGroup>

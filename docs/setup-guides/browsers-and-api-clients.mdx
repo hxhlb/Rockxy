@@ -1,0 +1,55 @@
+---
+title: Browsers and API Clients
+description: Configure browsers and API clients such as Firefox, Postman, Insomnia, and Paw to send HTTP and HTTPS traffic through Rockxy.
+---
+
+# Browsers and API Clients
+
+Many desktop clients work with Rockxy quickly, but not all of them use the same proxy or certificate-trust behavior.
+
+## Start with this rule of thumb
+
+- If the app follows the macOS system proxy and trust store, setup is usually simple.
+- If it keeps its own proxy settings or certificate path, you need app-specific setup.
+
+## Firefox
+
+Firefox is the most common example of a browser that needs extra care.
+
+Check:
+
+- proxy settings inside Firefox,
+- browser-specific certificate behavior,
+- and whether you restarted Firefox after trust changes.
+
+## Postman and Insomnia
+
+These tools are good fits for Rockxy because they already revolve around explicit request sending.
+
+Verify:
+
+- the proxy host and port match Rockxy,
+- the certificate trust path is complete,
+- and you are testing with one obvious HTTPS request first.
+
+## Paw
+
+Paw often fits best when the macOS system path is clean and the local certificate is already trusted.
+
+## Recommended workflow
+
+1. Use Developer Setup Hub for the target client.
+2. Apply the proxy and trust steps exactly.
+3. Send one HTTPS request you can identify easily.
+4. Confirm the request appears in Rockxy with readable headers and body.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Certificates and Trust" icon="certificate" href="/getting-started/certificates-and-trust">
+    Re-check trust if the client sends traffic but HTTPS still fails.
+  </Card>
+  <Card title="Device Setup Issues" icon="mobile" href="/troubleshooting/device-setup-issues">
+    Continue here if the behavior differs across browsers, tools, and devices.
+  </Card>
+</CardGroup>

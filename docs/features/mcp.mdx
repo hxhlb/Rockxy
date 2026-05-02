@@ -1,11 +1,11 @@
 ---
 title: "MCP Integration"
-description: "Connect Rockxy to Claude CLI or Claude Desktop with the bundled rockxy-mcp local MCP server."
+description: "Connect Rockxy to Claude CLI or Claude Desktop through Rockxy's local MCP bridge so AI tools can inspect captured traffic safely."
 ---
 
 # MCP Integration
 
-Rockxy includes a bundled local MCP server so compatible tools can inspect captured traffic, read proxy and certificate status, list rules, and export requests as cURL without leaving your AI client.
+Rockxy includes a bundled local MCP bridge so compatible AI tools can inspect captured traffic, read proxy and certificate status, list rules, and export requests as cURL without leaving the chat.
 
 Rockxy's MCP integration is **local-only**:
 
@@ -15,9 +15,19 @@ Rockxy's MCP integration is **local-only**:
 
 On macOS, the bundled bridge reads the handshake from `~/Library/Application Support/com.amunx.rockxy.community/mcp-handshake.json`.
 
-You do **not** add Rockxy through Claude's remote **Connectors** flow.
+You do **not** add Rockxy through a remote connectors flow.
 
-## Before You Start
+## What this is for
+
+Use the MCP bridge when you want an AI tool to:
+
+- inspect recent Rockxy traffic,
+- search or filter flows,
+- inspect a specific request in detail,
+- export a captured request as cURL,
+- or check proxy and certificate status without switching apps.
+
+## Before you start
 
 Make sure all of these are true:
 
@@ -31,7 +41,7 @@ Make sure all of these are true:
 If you move `Rockxy.app` to a different folder later, open **Settings → MCP** and copy the config again so the `command` path stays correct.
 </Tip>
 
-## What Rockxy Gives You
+## Available tools
 
 Rockxy currently exposes these MCP tools:
 
@@ -46,7 +56,7 @@ Rockxy currently exposes these MCP tools:
 - `list_rules`
 - `get_ssl_proxying_list`
 
-## Set Up Claude CLI
+## Set up Claude CLI
 
 Claude CLI and Claude Desktop use different MCP config stores. If you want Rockxy in Claude CLI, configure it there directly.
 
@@ -86,7 +96,7 @@ Use the rockxy MCP server and call get_version.
 
 Use `--scope user` for end-user setup so Rockxy is available across all projects on your Mac. Project-local scope can work, but it is easier to misconfigure and may only appear inside one specific workspace.
 
-## Set Up Claude Desktop
+## Set up Claude Desktop
 
 Claude Desktop local MCP is configured separately from Claude CLI.
 
@@ -98,7 +108,7 @@ On macOS, the standard config file for a normal install is:
 
 Some sandboxed or containerized installs can keep the config in an app-container path instead. If you do not see this file yet, create it, then add Rockxy under the top-level `mcpServers` object. If your file already has `preferences`, keep them and add `mcpServers` alongside them so the existing settings stay intact.
 
-### Example
+### Example configuration
 
 ```json
 {
@@ -130,7 +140,7 @@ Then try:
 Use the rockxy MCP server and call get_version.
 ```
 
-## Claude Desktop vs. Connectors
+## Local MCP vs remote connectors
 
 This distinction matters:
 
@@ -139,7 +149,7 @@ This distinction matters:
 
 So if you do not see a place to paste Rockxy JSON into **Settings → Connectors**, that is expected. Rockxy belongs in `claude_desktop_config.json`, not the remote Connectors UI.
 
-## Example Demo Flow
+## Example prompt
 
 Once Claude can see Rockxy, this prompt makes a good end-to-end demo:
 
@@ -186,7 +196,11 @@ If you moved `Rockxy.app`, the old `command` path may be stale. Open **Settings 
 
 The bundled `rockxy-mcp` process only works when Rockxy is running with MCP enabled. If Rockxy is closed, or MCP is disabled, the bridge cannot read the handshake details it needs.
 
-## Next Steps
+### I want privacy defaults
+
+Leave **Redact Sensitive Data Before Sending to AI** enabled unless you have a specific reason not to. Rockxy already treats the MCP path as a separate boundary from the local inspector UI.
+
+## Related pages
 
 <CardGroup cols={2}>
   <Card title="Quick Start" icon="rocket" href="/quickstart">
@@ -194,5 +208,11 @@ The bundled `rockxy-mcp` process only works when Rockxy is running with MCP enab
   </Card>
   <Card title="Settings" icon="sliders" href="/customization/settings">
     Review the MCP toggle, privacy controls, and other app settings.
+  </Card>
+  <Card title="Sessions and HAR" icon="file-export" href="/features/sessions">
+    Decide when to share data through MCP versus export a file artifact.
+  </Card>
+  <Card title="FAQ" icon="circle-question" href="/troubleshooting/faq">
+    Find the quick answer if the bridge is configured but still unavailable.
   </Card>
 </CardGroup>

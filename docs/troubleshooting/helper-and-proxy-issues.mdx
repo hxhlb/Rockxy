@@ -1,0 +1,40 @@
+---
+title: Helper and Proxy Issues
+description: Troubleshoot Rockxy proxy startup, helper tool state, port conflicts, listen-address issues, and system-proxy control problems on macOS.
+---
+
+# Helper and Proxy Issues
+
+If Rockxy cannot reliably start, stop, or control the system proxy path, fix that before debugging anything else.
+
+## Typical symptoms
+
+- capture does not start,
+- Rockxy reports a port conflict,
+- the helper appears outdated or unreachable,
+- the system proxy does not switch cleanly,
+- or capture stops working after an update or reinstall.
+
+## Fast checks
+
+1. verify the configured port is free,
+2. verify Rockxy is allowed to manage its helper path,
+3. inspect the Advanced settings state for helper and proxy diagnostics,
+4. retry with one clean start/stop cycle.
+
+## When this page matters most
+
+Use it when the failure is about proxy control itself, not about one specific client.
+
+If only one runtime or device is broken while the rest of Rockxy works, use the target-specific setup or troubleshooting pages instead.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Settings" icon="sliders" href="/customization/settings">
+    Review the Advanced settings surfaces that expose helper and update state.
+  </Card>
+  <Card title="Capture Issues" icon="bug" href="/troubleshooting/capture-issues">
+    Continue there if Rockxy starts cleanly but the client still sends nothing useful.
+  </Card>
+</CardGroup>

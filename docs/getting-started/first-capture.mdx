@@ -1,0 +1,106 @@
+---
+title: First Capture Checklist
+description: Use this checklist to verify proxy startup, certificate trust, and client routing when Rockxy is not capturing traffic the way you expect.
+---
+
+# First Capture Checklist
+
+Use this page when Rockxy is open but you are not yet sure whether the problem is proxy startup, HTTPS trust, client routing, or the target environment itself.
+
+## 1. Confirm Rockxy is running
+
+Check that:
+
+- the app is open,
+- capture is started,
+- and the configured proxy port is available.
+
+If Rockxy cannot start cleanly, go to [Helper and Proxy Issues](/troubleshooting/helper-and-proxy-issues).
+
+## 2. Trigger a known request
+
+Do not wait for background noise. Trigger one request on purpose so you know what you are looking for.
+
+Good choices:
+
+- an `https://httpbin.org/get` call,
+- a browser page load,
+- a request from Postman,
+- or the validation flow inside Developer Setup Hub.
+
+## 3. Decide whether the client should follow the macOS system proxy
+
+Some targets work immediately with the system proxy. Others do not.
+
+Usually straightforward:
+
+- many macOS apps,
+- Safari and most WebKit-based tooling,
+- clients explicitly configured to use Rockxy.
+
+Usually needs manual setup:
+
+- Firefox,
+- many CLI runtimes,
+- Java-based tools,
+- iOS and Android devices,
+- simulators and emulators,
+- Electron or framework-specific traffic.
+
+If you are unsure, open [Developer Setup Hub](/getting-started/developer-setup-hub).
+
+## 4. Check HTTPS trust
+
+If you see only plain HTTP or certificate errors, verify the Rockxy root certificate is installed and trusted.
+
+Use [Certificates and Trust](/getting-started/certificates-and-trust) if needed.
+
+## 5. Check whether the client uses a separate trust path
+
+This is the most common reason “Rockxy works for browser A but not tool B.”
+
+Examples:
+
+- Firefox
+- Java runtimes
+- devices and simulators
+- frameworks with custom TLS handling
+
+## 6. Inspect what Rockxy did capture
+
+Even partial capture can tell you where the failure is:
+
+- only HTTP requests means HTTPS trust is not complete,
+- only CONNECT tunnels means the proxy path exists but decryption does not,
+- nothing at all means the client may not be using Rockxy,
+- a few requests followed by failure often means cached trust or pinned certificates.
+
+## 7. Use the narrowest guide
+
+Do not stay on generic troubleshooting longer than needed. Jump to the setup path that matches your target:
+
+- [Browsers and API Clients](/setup-guides/browsers-and-api-clients)
+- [iOS Simulator](/setup-guides/ios-simulator)
+- [iOS Device](/setup-guides/ios-device)
+- [Android Device and Emulator](/setup-guides/android-device-and-emulator)
+- [Terminal Runtimes and Frameworks](/setup-guides/terminal-runtimes-and-frameworks)
+
+## 8. Keep the debugging loop short
+
+Once you capture one good request:
+
+1. replay it,
+2. inspect the headers and body,
+3. decide whether you need a rule,
+4. export HAR or cURL only after you have isolated the issue.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Traffic Capture" icon="network-wired" href="/features/traffic-capture">
+    Learn how the traffic list, scopes, and inspector behave once capture is working.
+  </Card>
+  <Card title="Capture Issues" icon="bug" href="/troubleshooting/capture-issues">
+    Go deeper if requests still are not appearing.
+  </Card>
+</CardGroup>

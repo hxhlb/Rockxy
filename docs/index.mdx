@@ -1,52 +1,107 @@
 ---
-title: Introduction
-description: Rockxy is an open-source, native macOS network debugging tool with log intelligence and traffic rules.
+title: Rockxy Documentation
+description: Rockxy is a native macOS HTTP debugging proxy for inspecting HTTPS traffic, replaying requests, debugging mobile apps, exporting HAR, and troubleshooting API calls.
 ---
 
 # Rockxy
 
-Rockxy is a free, open-source, native macOS developer tool for network debugging. Built with SwiftUI, AppKit, and SwiftNIO, it captures HTTP, HTTPS, WebSocket, and GraphQL-over-HTTP traffic alongside application logs. Everything runs locally on your Mac — no cloud accounts, no telemetry, no subscriptions.
+Rockxy is a native macOS proxy debugger for developers who need to inspect HTTP and HTTPS traffic, replay API calls, troubleshoot mobile apps, and understand what a client actually sent over the wire.
+
+Everything runs locally on your Mac. Rockxy captures traffic from macOS apps, browsers, API clients, local runtimes, simulators, and mobile devices that you route through the proxy. It also gives you the tools to replay, modify, export, compare, and share what you capture without leaving the app.
 
 <Frame caption="Rockxy running on macOS — three-column layout with sidebar, request list, and inspector.">
   <img className="block dark:hidden" src="/images/Rockxy-Light.png" alt="Rockxy main window on macOS" />
   <img className="hidden dark:block" src="/images/Rockxy-Dark.png" alt="Rockxy main window on macOS (dark mode)" />
 </Frame>
 
-## Why Rockxy?
+## What Rockxy Helps You Do
 
 <CardGroup cols={2}>
-  <Card title="Network Traffic Capture" icon="network-wired">
-    Intercept and inspect HTTP, HTTPS, WebSocket, and GraphQL traffic from any application on your Mac. Full request/response bodies, headers, cookies, and timing data.
+  <Card title="Inspect HTTPS Traffic on macOS" icon="network-wired">
+    Capture requests and responses from browsers, desktop apps, local servers, simulators, and remote devices once they are routed through Rockxy.
   </Card>
-  <Card title="Log Intelligence" icon="scroll">
-    Capture OSLog streams and process stdout/stderr in real time. Logs are automatically correlated with network requests by timestamp and process, so you see the full picture without switching tools.
+  <Card title="Debug API Calls Faster" icon="repeat">
+    Replay captured requests, edit them before sending, compare responses, and export cURL or HAR when you need to reproduce an issue outside the original client.
   </Card>
-  <Card title="Traffic Rules" icon="filter">
-    Set breakpoints to pause and edit requests mid-flight. Map requests to local files or remote URLs. Block, throttle, or modify headers with an ordered rule engine.
+  <Card title="Set Up Real Clients and Devices" icon="mobile-screen-button">
+    Use the Developer Setup Hub and platform-specific guides to configure iOS simulators, Android devices, browsers, API clients, and local runtimes.
+  </Card>
+  <Card title="Stay Honest About Runtime Reality" icon="circle-check">
+    Rockxy documents what is automatic, what is manual, and where certificate trust, proxy settings, or platform constraints still apply.
   </Card>
 </CardGroup>
 
-## Key Features
+## Core Workflows
 
-### HTTPS Interception
+### Capture and inspect traffic
 
-Rockxy generates a root CA certificate on first launch and creates per-host TLS certificates on the fly (cached via LRU, up to 1,000 hosts). The root CA private key is stored in your macOS Keychain. Once you trust the root CA, all HTTPS traffic is transparently decrypted for inspection.
+Rockxy captures HTTP, HTTPS, WebSocket, and GraphQL-over-HTTP traffic and presents it in a native request inspector with headers, body, query, cookies, raw view, timing, comments, and protocol-specific detail.
 
-### WebSocket and GraphQL
+### Modify and replay requests
 
-WebSocket frames are captured and displayed alongside HTTP traffic. GraphQL-over-HTTP operations are automatically detected from POST requests to `/graphql` endpoints and labeled by operation name and type, making it easy to filter and search API calls.
+When you need to test an edge case, you can repeat a request immediately, edit it before sending, pause traffic with breakpoints, map a request to a local file, rewrite a destination, or change headers on the fly.
 
-### Request Timeline
+### Debug real environments
 
-A visual waterfall view shows request sequences, parallel connections, and dependency chains. Identify bottlenecks at a glance by seeing which requests block others and where latency accumulates.
+Rockxy is especially useful when browser DevTools are not enough: native apps, SDK traffic, CLI tools, iOS simulators, Android devices, or a backend process making requests outside the browser.
 
-### Request Replay
+### Export and share evidence
 
-Select any captured request and re-send it with **Repeat** (fast path) or **Edit and Repeat** (edit method, URL, headers, and body first). Replay uses a proxy-bypass session, so replayed traffic does not re-enter the proxy pipeline. The response is shown in the compose/replay surface with status, headers, and body.
+Use native session files when you want to preserve Rockxy-specific context, or HAR when you need to hand traffic to another tool or attach it to a bug report.
 
-### Sessions and Export
+## Read This First
 
-Save and restore captured traffic with native `.rockxysession` files or the industry-standard HAR format. Copy any request as cURL, raw HTTP, or JSON for use in other tools.
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Install Rockxy, trust the certificate, start capture, and inspect your first request.
+  </Card>
+  <Card title="Installation" icon="download" href="/installation">
+    macOS requirements, certificate trust, local data locations, and build-from-source notes.
+  </Card>
+  <Card title="Certificates and Trust" icon="lock" href="/getting-started/certificates-and-trust">
+    How HTTPS interception works, what trusting the root CA means, and where issues usually come from.
+  </Card>
+  <Card title="Developer Setup Hub" icon="screwdriver-wrench" href="/getting-started/developer-setup-hub">
+    Start with the in-app setup surface if you need to capture traffic from a specific runtime, browser, framework, or device.
+  </Card>
+</CardGroup>
+
+## Popular Topics
+
+<CardGroup cols={2}>
+  <Card title="Traffic Capture" icon="radar" href="/features/traffic-capture">
+    Capture, filter, inspect, and manage live traffic on macOS.
+  </Card>
+  <Card title="HTTPS Interception" icon="shield-halved" href="/features/https-interception">
+    Inspect encrypted traffic by trusting Rockxy's local root certificate.
+  </Card>
+  <Card title="Request Replay" icon="arrows-rotate" href="/features/request-replay">
+    Repeat a captured request or edit it before resending.
+  </Card>
+  <Card title="Sessions and HAR" icon="file-export" href="/features/sessions">
+    Save a capture, import HAR, and export evidence cleanly.
+  </Card>
+  <Card title="Mobile App Debugging" icon="mobile" href="/use-cases/mobile-app-network-debugging">
+    Set up iOS and Android traffic debugging with practical platform notes.
+  </Card>
+  <Card title="MCP Integration" icon="plug" href="/features/mcp">
+    Connect Rockxy to Claude through a local MCP bridge.
+  </Card>
+  <Card title="Rockxy Pro" icon="key" href="/features/pro-features">
+    See what Pro unlocks today and where it adds value over Community.
+  </Card>
+  <Card title="License Management" icon="id-card" href="/features/license-management">
+    Understand perpetual licensing, updates coverage, activation, deactivation, and transfer.
+  </Card>
+</CardGroup>
+
+## Positioning
+
+- Native macOS HTTP debugging proxy
+- Inspect HTTPS traffic from apps, devices, and local runtimes
+- Replay, modify, compare, and export API traffic without leaving your machine
+- Local-first developer tooling with no account requirement
+- Optional Pro upgrade for unlimited caps, Advanced Diff, and React Native Android automation
 
 ## System Requirements
 
@@ -56,20 +111,6 @@ Save and restore captured traffic with native `.rockxysession` files or the indu
 | Processor | Apple Silicon or Intel |
 | Disk Space | ~100 MB for the application |
 | Runtime | No additional runtime dependencies |
-
-## Getting Started
-
-<CardGroup cols={2}>
-  <Card title="Quick Start" icon="rocket" href="/quickstart">
-    Get Rockxy running and capturing traffic in under 5 minutes.
-  </Card>
-  <Card title="Installation" icon="download" href="/installation">
-    Detailed installation steps, certificate setup, build-from-source instructions, and data storage locations.
-  </Card>
-  <Card title="MCP Integration" icon="plug" href="/features/mcp">
-    Connect Rockxy to Claude CLI or Claude Desktop with the bundled local MCP bridge.
-  </Card>
-</CardGroup>
 
 ## Open Source
 
