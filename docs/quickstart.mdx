@@ -9,13 +9,26 @@ This guide takes you from installation to your first useful debugging session. I
 
 ## Before you start
 
-- Rockxy is running on your Mac.
-- You have trusted the Rockxy root certificate.
-- The target app or device is configured to use Rockxy as its HTTP/HTTPS proxy, or it follows the macOS system proxy.
+<Frame caption="Welcome to Rockxy onboarding flow.">
+  <img src="/images/WelcomeRockxy.png" alt="Welcome to Rockxy onboarding flow" />
+</Frame>
 
-If you still need installation details, use [Installation](/installation). If HTTPS requests fail with certificate errors, use [Certificates and Trust](/getting-started/certificates-and-trust).
+The **Welcome to Rockxy** window uses this four-step setup flow:
+
+1. **Generate Root Certificate**: create Rockxy's local root certificate so HTTPS traffic can be inspected.
+2. **Trust Root Certificate**: trust that certificate on your Mac so clients accept Rockxy's HTTPS interception.
+3. **Install Helper Tool**: install Rockxy's privileged helper so system proxy changes and recovery work reliably.
+4. **Enable System Proxy**: route macOS traffic through Rockxy so requests actually reach the proxy.
+
+If all four steps are complete, Rockxy is in the expected baseline state for first-run capture.
+
+If you still need installation details, use [Installation](/installation). If HTTPS requests fail with certificate errors, use [Certificates and Trust](/getting-started/certificates-and-trust). If your target does not follow the system proxy automatically, use [Developer Setup Hub](/getting-started/developer-setup-hub).
 
 ## 1. Start capture
+
+<Frame caption="Start capture from the Rockxy toolbar.">
+  <img src="/images/StartCaptureRockxy.png" alt="Start capture from the Rockxy toolbar" />
+</Frame>
 
 Click **Start** in the toolbar. Rockxy starts its local proxy and begins recording traffic that is routed through it.
 
@@ -27,7 +40,15 @@ What happens next depends on the client:
 
 If you are not sure which path applies, open the [Developer Setup Hub](/getting-started/developer-setup-hub) and choose the runtime, browser, framework, or device you are debugging.
 
+<Frame caption="Developer Setup Hub target selection.">
+  <img src="/images/DevHubRockxy.png" alt="Developer Setup Hub target selection" />
+</Frame>
+
 ## 2. Generate traffic on purpose
+
+<Frame caption="Generate traffic and confirm Rockxy captures the request.">
+  <img src="/images/DebugTrafficRockxy.png" alt="Generate traffic and confirm Rockxy captures the request" />
+</Frame>
 
 Create one request you can easily recognize:
 
@@ -39,6 +60,10 @@ Create one request you can easily recognize:
 <Tip>Press **Cmd+Shift+R** to start capture and **Cmd+.** to stop it.</Tip>
 
 ## 3. Inspect the request
+
+<Frame caption="Inspect the captured request in Rockxy.">
+  <img src="/images/InspectorRockxy.png" alt="Inspect the captured request in Rockxy" />
+</Frame>
 
 Click any request in the list to open the inspector panel. The inspector has several tabs:
 
@@ -52,6 +77,10 @@ Click any request in the list to open the inspector panel. The inspector has sev
 If the request was GraphQL-over-HTTP or a WebSocket upgrade, Rockxy exposes protocol-specific inspection automatically. See [GraphQL](/features/graphql) and [WebSocket](/features/websocket).
 
 ## 4. Narrow the view
+
+<Frame caption="Filter and search traffic in Rockxy.">
+  <img src="/images/SearchUrlRockxy.png" alt="Filter and search traffic in Rockxy" />
+</Frame>
 
 Use the built-in filters to answer a specific question fast:
 
