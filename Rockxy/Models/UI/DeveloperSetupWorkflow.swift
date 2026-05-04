@@ -125,6 +125,7 @@ struct SetupValidationSpec: Equatable {
     let method: String
     let host: String
     let path: String
+    let urlString: String
     let instruction: String
     let preferredSnippetID: SetupSnippetID?
 }
@@ -154,6 +155,7 @@ enum DeveloperSetupWorkflowCatalog {
     // MARK: Internal
 
     static let certificatePathPlaceholder = "<path to exported RockxyRootCA.pem>"
+    static let sampleRequestURL = "https://<your-host>/<your-path>"
 
     static func workflow(for targetID: SetupTarget.ID) -> SetupWorkflow {
         switch targetID {
@@ -165,7 +167,7 @@ enum DeveloperSetupWorkflowCatalog {
                     SetupSnippet(id: .pythonAIOHTTP, title: "aiohttp"),
                     SetupSnippet(id: .pythonURLLib3, title: "urllib3"),
                 ],
-                validation: validationSpec(for: .python, runtimeName: "Python")
+                validation: validationSpec(for: .python, runtimeName: "Python", preferredSnippetID: .pythonRequests)
             )
 
         case .nodeJS:
@@ -175,7 +177,7 @@ enum DeveloperSetupWorkflowCatalog {
                     SetupSnippet(id: .nodeHTTPS, title: "https"),
                     SetupSnippet(id: .nodeGot, title: "got"),
                 ],
-                validation: validationSpec(for: .nodeJS, runtimeName: "Node.js")
+                validation: validationSpec(for: .nodeJS, runtimeName: "Node.js", preferredSnippetID: .nodeAxios)
             )
 
         case .curl:
@@ -184,7 +186,7 @@ enum DeveloperSetupWorkflowCatalog {
                     SetupSnippet(id: .curlCommand, title: String(localized: "Command")),
                     SetupSnippet(id: .curlEnvironment, title: String(localized: "Env")),
                 ],
-                validation: validationSpec(for: .curl, runtimeName: "cURL")
+                validation: validationSpec(for: .curl, runtimeName: "cURL", preferredSnippetID: .curlCommand)
             )
 
         case .ruby:
@@ -194,7 +196,7 @@ enum DeveloperSetupWorkflowCatalog {
                     SetupSnippet(id: .rubyHTTP, title: "http"),
                     SetupSnippet(id: .rubyFaraday, title: "Faraday"),
                 ],
-                validation: validationSpec(for: .ruby, runtimeName: "Ruby")
+                validation: validationSpec(for: .ruby, runtimeName: "Ruby", preferredSnippetID: .rubyNetHTTP)
             )
 
         case .golang:
@@ -376,11 +378,11 @@ enum DeveloperSetupWorkflowCatalog {
             ),
             SetupStep(
                 id: "validate",
-                title: String(localized: "Verify capture"),
+                title: String(localized: "Verify local capture"),
                 description: snapshot.verificationState == .success
-                    ? String(localized: "Rockxy saw the validation request and can reveal it in the main window.")
-                    : String(localized: "Run the validation request and wait for the first matching capture."),
-                actionTitle: String(localized: "Run Test"),
+                    ? String(localized: "Rockxy captured the local validation probe and can reveal it in the main window.")
+                    : String(localized: "Run the local validation probe and wait for the first matching capture."),
+                actionTitle: String(localized: "Run Probe"),
                 actionKind: .runValidation,
                 isComplete: snapshot.verificationState == .success,
                 isEnabled: true
@@ -478,28 +480,48 @@ enum DeveloperSetupWorkflowCatalog {
     static func generatedValidationSnippet(
         for targetID: SetupTarget.ID,
         workflow: SetupWorkflow,
+        validation: SetupValidationSpec? = nil,
         selectedSnippetID: SetupSnippetID,
         port: Int,
         certificatePath: String?
     )
         -> String?
     {
-        let validationSnippetID = workflow.validation?.preferredSnippetID ?? selectedSnippetID
+        let resolvedValidation = validation ?? workflow.validation
+        let validationSnippetID = resolvedValidation?.preferredSnippetID ?? selectedSnippetID
         let proxyURL = "http://127.0.0.1:\(port)"
         let rawCertificatePath = certificatePath ?? certificatePathPlaceholder
-        let validationURL = validationURL(for: targetID)
+        let validationURL = resolvedValidation?.urlString ?? validationURL(for: targetID)
 
         if let snippet = generatedSnippet(
             for: targetID,
             snippetID: validationSnippetID,
             port: port,
             certificatePath: certificatePath
-        ), snippet.contains(defaultValidationURL) {
-            return snippet.replacingOccurrences(of: defaultValidationURL, with: validationURL)
+        ), snippet.contains(sampleRequestURL) {
+            return snippet.replacingOccurrences(of: sampleRequestURL, with: validationURL)
         }
 
         return curlCommandSnippet(proxyURL: proxyURL, certPath: rawCertificatePath)
-            .replacingOccurrences(of: defaultValidationURL, with: validationURL)
+            .replacingOccurrences(of: sampleRequestURL, with: validationURL)
+    }
+
+    static func validationSpec(
+        for targetID: SetupTarget.ID,
+        runtimeName: String,
+        preferredSnippetID: SetupSnippetID?,
+        probeSession: DeveloperSetupProbeSession
+    )
+        -> SetupValidationSpec
+    {
+        SetupValidationSpec(
+            method: probeSession.method,
+            host: probeSession.host,
+            path: probeSession.path,
+            urlString: probeSession.url.absoluteString,
+            instruction: validationInstruction(runtimeName: runtimeName, validationURL: probeSession.url.absoluteString),
+            preferredSnippetID: preferredSnippetID
+        )
     }
 
     // MARK: Private
@@ -514,8 +536,6 @@ enum DeveloperSetupWorkflowCatalog {
         case dart
     }
 
-    private static let defaultValidationURL = "https://httpbin.org/get"
-
     private static func pythonRequestsSnippet(proxyURL: String, certPath: String) -> String {
         let proxyURL = escapeForStringLiteral(proxyURL, language: .python)
         let certPath = escapeForStringLiteral(certPath, language: .python)
@@ -527,8 +547,11 @@ enum DeveloperSetupWorkflowCatalog {
             "https": "\(proxyURL)",
         }
 
-        response = requests.get(
-            "https://httpbin.org/get",
+        session = requests.Session()
+        session.trust_env = False
+
+        response = session.get(
+            "\(sampleRequestURL)",
             proxies=proxies,
             verify="\(certPath)",
             timeout=10,
@@ -544,8 +567,8 @@ enum DeveloperSetupWorkflowCatalog {
         return """
         import httpx
 
-        with httpx.Client(proxy="\(proxyURL)", verify="\(certPath)", timeout=10.0) as client:
-            response = client.get("https://httpbin.org/get")
+        with httpx.Client(proxy="\(proxyURL)", verify="\(certPath)", timeout=10.0, trust_env=False) as client:
+            response = client.get("\(sampleRequestURL)")
             print(response.status_code)
             print(response.json())
         """
@@ -565,7 +588,7 @@ enum DeveloperSetupWorkflowCatalog {
 
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.get(
-                    "https://httpbin.org/get",
+                    "\(sampleRequestURL)",
                     proxy="\(proxyURL)",
                     ssl=ssl_context,
                 ) as response:
@@ -588,7 +611,7 @@ enum DeveloperSetupWorkflowCatalog {
             ca_certs="\(certPath)",
         )
 
-        response = http.request("GET", "https://httpbin.org/get")
+        response = http.request("GET", "\(sampleRequestURL)")
         print(response.status)
         print(response.data.decode())
         """
@@ -601,7 +624,7 @@ enum DeveloperSetupWorkflowCatalog {
         import fs from "node:fs";
         import https from "node:https";
 
-        const response = await axios.get("https://httpbin.org/get", {
+        const response = await axios.get("\(sampleRequestURL)", {
           proxy: { protocol: "http", host: "127.0.0.1", port: \(port) },
           httpsAgent: new https.Agent({ ca: fs.readFileSync("\(certPath)") }),
           timeout: 10_000,
@@ -630,11 +653,9 @@ enum DeveloperSetupWorkflowCatalog {
           },
         });
 
-        const request = https.request("https://httpbin.org/get", {
-          host: "httpbin.org",
-          path: "/get",
+        const probeURL = new URL("\(sampleRequestURL)");
+        const request = https.request(probeURL, {
           method: "GET",
-          port: 443,
           agent,
           headers: {},
         });
@@ -661,7 +682,7 @@ enum DeveloperSetupWorkflowCatalog {
           https: new HttpsProxyAgent("\(proxyURL)"),
         };
 
-        const response = await got("https://httpbin.org/get", {
+        const response = await got("\(sampleRequestURL)", {
           agent,
           https: { certificateAuthority: fs.readFileSync("\(certPath)") },
           timeout: { request: 10_000 },
@@ -677,9 +698,10 @@ enum DeveloperSetupWorkflowCatalog {
         let certPath = escapeForShell(certPath)
         return """
         curl --proxy \(proxyURL) \\
+          --noproxy '' \\
           --cacert \(certPath) \\
           --request GET \\
-          "https://httpbin.org/get"
+          "\(sampleRequestURL)"
         """
     }
 
@@ -689,8 +711,9 @@ enum DeveloperSetupWorkflowCatalog {
         return """
         export HTTP_PROXY=\(proxyURL)
         export HTTPS_PROXY=\(proxyURL)
+        export NO_PROXY=
 
-        curl --cacert \(certPath) "https://httpbin.org/get"
+        curl --cacert \(certPath) "\(sampleRequestURL)"
         """
     }
 
@@ -703,11 +726,11 @@ enum DeveloperSetupWorkflowCatalog {
         require "uri"
 
         proxy_uri = URI("\(proxyURL)")
-        target_uri = URI("https://httpbin.org/get")
+        target_uri = URI("\(sampleRequestURL)")
 
         http = Net::HTTP.new(target_uri.host, target_uri.port, proxy_uri.host, proxy_uri.port)
-        http.use_ssl = true
-        http.ca_file = "\(certPath)"
+        http.use_ssl = target_uri.scheme == "https"
+        http.ca_file = "\(certPath)" if http.use_ssl?
 
         response = http.get(target_uri.request_uri)
         puts response.code
@@ -722,7 +745,7 @@ enum DeveloperSetupWorkflowCatalog {
 
         response = HTTP.via("127.0.0.1", \(port))
           .headers({})
-          .get("https://httpbin.org/get", ssl_context: { ca_file: "\(certPath)" })
+          .get("\(sampleRequestURL)", ssl_context: { ca_file: "\(certPath)" })
 
         puts response.code
         puts response.to_s
@@ -736,7 +759,7 @@ enum DeveloperSetupWorkflowCatalog {
         require "faraday"
 
         connection = Faraday.new(
-          url: "https://httpbin.org",
+          url: "\(sampleRequestURL)",
           proxy: "\(proxyURL)",
           ssl: { ca_file: "\(certPath)" }
         )
@@ -777,7 +800,7 @@ enum DeveloperSetupWorkflowCatalog {
                 },
             }
 
-            response, _ := client.Get("https://httpbin.org/get")
+            response, _ := client.Get("\(sampleRequestURL)")
             defer response.Body.Close()
             fmt.Println(response.Status)
         }
@@ -801,7 +824,7 @@ enum DeveloperSetupWorkflowCatalog {
                 SetProxy("\(proxyURL)").
                 SetRootCertificate("\(certPath)")
 
-            response, _ := client.R().Get("https://httpbin.org/get")
+            response, _ := client.R().Get("\(sampleRequestURL)")
             fmt.Println(response.Status())
             fmt.Println(response.String())
         }
@@ -823,7 +846,7 @@ enum DeveloperSetupWorkflowCatalog {
                 .add_root_certificate(cert)
                 .build()?;
 
-            let response = client.get("https://httpbin.org/get").send().await?;
+            let response = client.get("\(sampleRequestURL)").send().await?;
             println!("{}", response.status());
             println!("{}", response.text().await?);
             Ok(())
@@ -873,7 +896,7 @@ enum DeveloperSetupWorkflowCatalog {
                     .build();
 
                 HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://httpbin.org/get"))
+                    .uri(URI.create("\(sampleRequestURL)"))
                     .GET()
                     .build();
 
@@ -900,9 +923,9 @@ enum DeveloperSetupWorkflowCatalog {
         # 3. Verify the proxy works via cURL first:
         curl --proxy http://127.0.0.1:\(port) \\
           --cacert \(shellCertPath) \\
-          "https://httpbin.org/get"
+          "\(sampleRequestURL)"
         #
-        # 4. Open https://httpbin.org/get in Firefox and confirm Rockxy captured it.
+        # 4. Open \(sampleRequestURL) in Firefox after replacing it with your app URL.
         """
     }
 
@@ -923,9 +946,9 @@ enum DeveloperSetupWorkflowCatalog {
         # 3. Verify the proxy+cert work via cURL first:
         curl --proxy http://127.0.0.1:\(port) \\
           --cacert \(shellCertPath) \\
-          "https://httpbin.org/get"
+          "\(sampleRequestURL)"
         #
-        # 4. Send GET https://httpbin.org/get from Postman and confirm Rockxy captured it.
+        # 4. Send GET \(sampleRequestURL) from Postman after replacing it with your app URL.
         """
     }
 
@@ -946,9 +969,9 @@ enum DeveloperSetupWorkflowCatalog {
         # 3. Verify the proxy+cert work via cURL first:
         curl --proxy http://127.0.0.1:\(port) \\
           --cacert \(shellCertPath) \\
-          "https://httpbin.org/get"
+          "\(sampleRequestURL)"
         #
-        # 4. Send GET https://httpbin.org/get from Insomnia and confirm Rockxy captured it.
+        # 4. Send GET \(sampleRequestURL) from Insomnia after replacing it with your app URL.
         """
     }
 
@@ -967,9 +990,9 @@ enum DeveloperSetupWorkflowCatalog {
         # 3. Verify the proxy+cert work via cURL first:
         curl --proxy http://127.0.0.1:\(port) \\
           --cacert \(shellCertPath) \\
-          "https://httpbin.org/get"
+          "\(sampleRequestURL)"
         #
-        # 4. Send GET https://httpbin.org/get from Paw and confirm Rockxy captured it.
+        # 4. Send GET \(sampleRequestURL) from Paw after replacing it with your app URL.
         """
     }
 
@@ -984,7 +1007,7 @@ enum DeveloperSetupWorkflowCatalog {
           -v \(certPath):/etc/ssl/certs/rockxy.pem:ro \\
           curlimages/curl:latest \\
           --cacert /etc/ssl/certs/rockxy.pem \\
-          https://httpbin.org/get
+          \(sampleRequestURL)
         """
     }
 
@@ -1037,7 +1060,7 @@ enum DeveloperSetupWorkflowCatalog {
         export const dynamic = "force-dynamic";
 
         export async function GET() {
-          const response = await fetch("https://httpbin.org/get", { cache: "no-store" });
+          const response = await fetch("\(sampleRequestURL)", { cache: "no-store" });
           const body = await response.json();
           return Response.json(body);
         }
@@ -1053,25 +1076,30 @@ enum DeveloperSetupWorkflowCatalog {
     {
         SetupValidationSpec(
             method: "GET",
-            host: "httpbin.org",
+            host: DeveloperSetupProbeSession.host,
             path: validationPath(for: targetID),
-            instruction: String(
-                localized: """
-                Run the selected \(runtimeName) validation step and wait for Rockxy to capture \
-                GET \(validationURL(for: targetID)). This confirms a matching probe reached Rockxy, \
-                but it does not attribute the request to a specific app or process.
-                """
-            ),
+            urlString: validationURL(for: targetID),
+            instruction: validationInstruction(runtimeName: runtimeName, validationURL: validationURL(for: targetID)),
             preferredSnippetID: preferredSnippetID
         )
     }
 
+    private static func validationInstruction(runtimeName: String, validationURL: String) -> String {
+        String(
+            localized: """
+            Run the selected \(runtimeName) local validation probe and wait for Rockxy to capture \
+            GET \(validationURL). This confirms the probe reached Rockxy through the proxy, \
+            but it does not attribute the request to a specific app or process.
+            """
+        )
+    }
+
     private static func validationURL(for targetID: SetupTarget.ID) -> String {
-        "https://httpbin.org\(validationPath(for: targetID))"
+        "http://\(DeveloperSetupProbeSession.host)\(validationPath(for: targetID))"
     }
 
     private static func validationPath(for targetID: SetupTarget.ID) -> String {
-        "/anything/rockxy/\(targetID.rawValue)"
+        "\(DeveloperSetupProbeSession.basePath)/\(targetID.rawValue)/<validation-token>"
     }
 
     private static func escapeForShell(_ value: String) -> String {

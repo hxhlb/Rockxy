@@ -1,0 +1,97 @@
+import Foundation
+import NIOHTTP1
+@testable import Rockxy
+import Testing
+
+// MARK: - DeveloperSetupProbeSessionTests
+
+struct DeveloperSetupProbeSessionTests {
+    @Test("session URL includes loopback host target and path token")
+    func sessionURLIncludesLoopbackHostTargetAndToken() {
+        let session = DeveloperSetupProbeSession.make(
+            port: 12_345,
+            targetID: .python,
+            token: "test-token"
+        )
+
+        #expect(session.host == "127.0.0.1")
+        #expect(session.method == "GET")
+        #expect(session.path == "/.well-known/rockxy/dev-setup/python/test-token")
+        #expect(session.url.absoluteString == "http://127.0.0.1:12345/.well-known/rockxy/dev-setup/python/test-token")
+    }
+}
+
+// MARK: - DeveloperSetupProbeResponderTests
+
+struct DeveloperSetupProbeResponderTests {
+    @Test("valid token path returns ok without reflected request data")
+    func validTokenPathReturnsOK() {
+        let session = DeveloperSetupProbeSession.make(port: 12_345, targetID: .python, token: "token")
+
+        let response = DeveloperSetupProbeResponder.response(
+            method: .GET,
+            uri: session.path,
+            session: session
+        )
+
+        #expect(response.status == .ok)
+        #expect(header("Cache-Control", in: response) == "no-store")
+        #expect(header("X-Content-Type-Options", in: response) == "nosniff")
+        #expect(header("Content-Type", in: response) == "application/json; charset=utf-8")
+        #expect(String(decoding: response.body, as: UTF8.self) == "{\"ok\":true}\n")
+        #expect(String(decoding: response.body, as: UTF8.self).contains(session.token) == false)
+    }
+
+    @Test("wrong token path returns not found")
+    func wrongTokenPathReturnsNotFound() {
+        let session = DeveloperSetupProbeSession.make(port: 12_345, targetID: .python, token: "token")
+
+        let response = DeveloperSetupProbeResponder.response(
+            method: .GET,
+            uri: "/.well-known/rockxy/dev-setup/python/wrong-token",
+            session: session
+        )
+
+        #expect(response.status == .notFound)
+    }
+
+    @Test("non GET returns method not allowed")
+    func nonGETReturnsMethodNotAllowed() {
+        let session = DeveloperSetupProbeSession.make(port: 12_345, targetID: .python, token: "token")
+
+        let response = DeveloperSetupProbeResponder.response(
+            method: .POST,
+            uri: session.path,
+            session: session
+        )
+
+        #expect(response.status == .methodNotAllowed)
+    }
+
+    private func header(_ name: String, in response: DeveloperSetupProbeResponse) -> String? {
+        response.headers.first { $0.0.caseInsensitiveCompare(name) == .orderedSame }?.1
+    }
+}
+
+// MARK: - DeveloperSetupProbeServerTests
+
+struct DeveloperSetupProbeServerTests {
+    @Test("server binds loopback and serves active session")
+    func serverBindsLoopbackAndServesActiveSession() async throws {
+        let server = DeveloperSetupProbeServer()
+        let session = try await server.start(targetID: .python)
+        defer { Task { await server.stop() } }
+
+        #expect(session.host == "127.0.0.1")
+        #expect(session.port > 0)
+
+        let (data, response) = try await URLSession.shared.data(from: session.url)
+        let httpResponse = try #require(response as? HTTPURLResponse)
+
+        #expect(httpResponse.statusCode == 200)
+        #expect(String(decoding: data, as: UTF8.self) == "{\"ok\":true}\n")
+
+        await server.stop()
+        #expect(await server.isRunning == false)
+    }
+}

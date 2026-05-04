@@ -395,7 +395,7 @@ extension SetupTarget {
             localized: "Run one throwaway curlimages/curl container with HTTP_PROXY pointed at host.docker.internal and the PEM mounted in, then let Rockxy catch the probe."
         ),
         currentSupportSummary: String(
-            localized: "Rockxy ships a single docker run command that mounts the Rockxy PEM and probes capture against httpbin.org."
+            localized: "Rockxy ships a single docker run command that mounts the Rockxy PEM and probes capture through the local validation path."
         )
     )
 

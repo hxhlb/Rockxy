@@ -187,6 +187,9 @@ enum SetupIssue: String, CaseIterable, Equatable, Identifiable {
     case certificateExportUnavailable
     case deviceProxyUnreachable
     case noTrafficDetected
+    case localProbeUnavailable
+    case localProbeNotCaptured
+    case allowListBlockedValidation
     case wrongSnippetChosen
     case manualValidationOnly
     case targetIsGuideOnly
@@ -213,6 +216,12 @@ enum SetupIssue: String, CaseIterable, Equatable, Identifiable {
             String(localized: "Device proxy unreachable")
         case .noTrafficDetected:
             String(localized: "No traffic detected")
+        case .localProbeUnavailable:
+            String(localized: "Local probe unavailable")
+        case .localProbeNotCaptured:
+            String(localized: "Local probe not captured")
+        case .allowListBlockedValidation:
+            String(localized: "Allow List hides the validation probe")
         case .wrongSnippetChosen:
             String(localized: "Wrong snippet chosen")
         case .manualValidationOnly:
@@ -243,6 +252,12 @@ enum SetupIssue: String, CaseIterable, Equatable, Identifiable {
             )
         case .noTrafficDetected:
             String(localized: "Run the test request again and make sure it points at the Rockxy proxy port.")
+        case .localProbeUnavailable:
+            String(localized: "Rockxy could not start the local validation probe on 127.0.0.1. Close and reopen Developer Setup Hub, then try again.")
+        case .localProbeNotCaptured:
+            String(localized: "Run the local probe again and make sure the selected runtime sends it through Rockxy's proxy port.")
+        case .allowListBlockedValidation:
+            String(localized: "Allow List is active and does not allow the local validation probe URL, so Rockxy forwards it but does not record it.")
         case .wrongSnippetChosen:
             String(localized: "Switch to the snippet that matches the runtime, library, or tool you are using.")
         case .manualValidationOnly:
@@ -266,6 +281,12 @@ enum SetupIssue: String, CaseIterable, Equatable, Identifiable {
             String(localized: "Open Proxy Settings")
         case .noTrafficDetected:
             String(localized: "Run Test Again")
+        case .localProbeUnavailable:
+            String(localized: "Retry")
+        case .localProbeNotCaptured:
+            String(localized: "Run Probe Again")
+        case .allowListBlockedValidation:
+            String(localized: "Open Allow List")
         case .wrongSnippetChosen:
             String(localized: "View Snippets")
         case .manualValidationOnly:
@@ -310,9 +331,9 @@ enum VerificationState: Equatable {
         case .readyToVerify:
             String(localized: "Ready to verify")
         case .waitingForTraffic:
-            String(localized: "Waiting for traffic")
+            String(localized: "Waiting for local probe")
         case .success:
-            String(localized: "Traffic captured")
+            String(localized: "Local probe captured")
         case .timedOut:
             String(localized: "Timed out")
         case .cancelled:

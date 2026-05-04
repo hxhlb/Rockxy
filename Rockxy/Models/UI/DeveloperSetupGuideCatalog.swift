@@ -429,7 +429,7 @@ enum DeveloperSetupGuideCatalog {
                     "Trigger one known HTTPS request",
                     """
                     Run the React Native fetch probe from the Validate tab and confirm Rockxy captures \
-                    the target-specific httpbin request before you debug deeper app flows.
+                    the target-specific local validation probe before you debug deeper app flows.
                     """
                 ),
             ],
