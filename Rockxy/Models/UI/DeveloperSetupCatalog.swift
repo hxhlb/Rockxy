@@ -317,8 +317,9 @@ extension SetupTarget {
         ),
         currentSupportSummary: String(
             localized: """
-            Rockxy ships manual Flutter snippets and a generic capture check. Android Emulator no-code \
-            routing through a local VPN companion is not part of this manual flow.
+            Rockxy ships manual Flutter snippets and a local capture check. The check confirms the probe \
+            reached Rockxy, not which device, emulator, simulator, or Dart runtime emitted it. Android \
+            Emulator no-code routing through a local VPN companion is not part of this manual flow.
             """
         )
     )
@@ -395,7 +396,7 @@ extension SetupTarget {
             localized: "Run one throwaway curlimages/curl container with HTTP_PROXY pointed at host.docker.internal and the PEM mounted in, then let Rockxy catch the probe."
         ),
         currentSupportSummary: String(
-            localized: "Rockxy ships a single docker run command that mounts the Rockxy PEM and probes capture against httpbin.org."
+            localized: "Rockxy ships a single docker run command that mounts the Rockxy PEM and probes capture through the local validation path."
         )
     )
 

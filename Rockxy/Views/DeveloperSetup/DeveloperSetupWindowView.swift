@@ -73,6 +73,7 @@ struct DeveloperSetupWindowView: View {
         .onChange(of: ReadinessCoordinator.shared.activeWarning) { _, _ in refreshSnapshot() }
         .onDisappear {
             viewModel.cancelValidation(markCancelled: true)
+            Task { await viewModel.stopValidationProbe() }
             Task { await caShareController.stopSharing(clearSession: true) }
         }
     }
@@ -446,7 +447,7 @@ struct DeveloperSetupWindowView: View {
         VStack(alignment: .leading, spacing: 16) {
             if viewModel.supportsValidation, let currentSnippetText = viewModel.currentValidationSnippetText {
                 detailCard(
-                    title: String(localized: "Validation request"),
+                    title: String(localized: "Local validation probe"),
                     systemImage: "bolt.horizontal.circle"
                 ) {
                     Text(viewModel.validationInstruction)
@@ -473,7 +474,7 @@ struct DeveloperSetupWindowView: View {
                 }
 
                 HStack(spacing: 10) {
-                    Button(String(localized: "Run Test")) {
+                    Button(String(localized: "Run Local Probe")) {
                         viewModel.startValidation()
                     }
                     .buttonStyle(.borderedProminent)
@@ -811,9 +812,13 @@ struct DeveloperSetupWindowView: View {
             } else {
                 openSettings()
             }
-        case .noTrafficDetected:
+        case .noTrafficDetected,
+             .localProbeUnavailable,
+             .localProbeNotCaptured:
             viewModel.selectTab(.validate)
             viewModel.startValidation()
+        case .allowListBlockedValidation:
+            NotificationCenter.default.post(name: .openAllowListWindow, object: nil)
         case .wrongSnippetChosen:
             viewModel.selectTab(.snippets)
         case .manualValidationOnly:

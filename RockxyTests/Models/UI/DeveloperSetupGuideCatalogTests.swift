@@ -122,7 +122,18 @@ struct DeveloperSetupGuideCatalogTests {
         #expect(summary.contains("Dio") || summary.contains("HttpClient"))
         #expect(summary.contains("package:http"))
         #expect(currentSupport.contains("manual Flutter snippets"))
+        #expect(currentSupport.contains("device, emulator, simulator"))
         #expect(currentSupport.localizedCaseInsensitiveContains("no code change") == false)
+    }
+
+    @Test("Flutter guide explains local validation does not attribute the emitting runtime")
+    func flutterGuideValidationCopyIsSpecificAboutAttributionLimits() throws {
+        let guide = try #require(DeveloperSetupGuideCatalog.content(for: .flutter))
+        let validationMessages = guide.validationTips.map(\.message).joined(separator: " ")
+
+        #expect(validationMessages.contains("validates the proxy path"))
+        #expect(validationMessages.contains("device, emulator, simulator"))
+        #expect(validationMessages.contains("Dart runtime"))
     }
 
     @Test("React Native copy points at the underlying iOS or Android stack")
@@ -167,12 +178,25 @@ struct DeveloperSetupGuideCatalogTests {
         #expect(currentSupport.contains("cURL preflight"))
     }
 
-    @Test("Docker currentSupportSummary references the docker run probe against httpbin")
+    @Test("Docker currentSupportSummary references the docker run local validation probe")
     func dockerSupportCopyIsConcrete() {
         let currentSupport = SetupTarget.docker.currentSupportSummary
 
         #expect(currentSupport.contains("docker run"))
-        #expect(currentSupport.contains("httpbin.org"))
+        #expect(currentSupport.contains("local validation"))
+    }
+
+    @Test("Developer Setup catalog and guide copy do not require httpbin for validation")
+    func developerSetupCopyDoesNotRequireHTTPBin() {
+        for target in SetupTarget.allSections.flatMap(\.targets) {
+            #expect(target.currentSupportSummary.contains("httpbin.org") == false)
+            #expect(target.manualSummary.contains("httpbin.org") == false)
+
+            if let guide = DeveloperSetupGuideCatalog.content(for: target.id) {
+                let messages = (guide.setupTips + guide.validationTips + guide.troubleshootingTips).map(\.message)
+                #expect(messages.contains(where: { $0.contains("httpbin.org") }) == false)
+            }
+        }
     }
 
     @Test("Electron currentSupportSummary mentions both the CLI flag and session.setProxy variants")

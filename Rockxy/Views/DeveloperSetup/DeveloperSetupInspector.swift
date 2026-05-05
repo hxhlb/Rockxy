@@ -96,7 +96,7 @@ struct DeveloperSetupInspector: View {
 
                 if supportsValidation {
                     HStack(spacing: 8) {
-                        Button(String(localized: "Run Test")) {
+                        Button(String(localized: "Run Local Probe")) {
                             onRunTest()
                         }
                         .buttonStyle(.borderedProminent)

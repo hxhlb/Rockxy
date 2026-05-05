@@ -19,7 +19,7 @@ enum DeveloperSetupMobileSnippetCatalog {
           // Debug only. Remove this before release builds.
           client.badCertificateCallback = (certificate, host, port) => true;
 
-          final request = await client.getUrl(Uri.parse('https://httpbin.org/get'));
+          final request = await client.getUrl(Uri.parse('https://<your-host>/<your-path>'));
           final response = await request.close();
           final body = await utf8.decodeStream(response);
           print(response.statusCode);
@@ -47,7 +47,7 @@ enum DeveloperSetupMobileSnippetCatalog {
 
           final client = IOClient(httpClient);
           try {
-            final response = await client.get(Uri.parse('https://httpbin.org/get'));
+            final response = await client.get(Uri.parse('https://<your-host>/<your-path>'));
             print(response.statusCode);
             print(jsonDecode(response.body));
           } finally {
@@ -83,7 +83,7 @@ enum DeveloperSetupMobileSnippetCatalog {
         }
 
         Future<void> runRockxyProbe() async {
-          final response = await makeRockxyDio().get('https://httpbin.org/get');
+          final response = await makeRockxyDio().get('https://<your-host>/<your-path>');
           print(response.statusCode);
           print(response.data);
         }
@@ -126,7 +126,7 @@ enum DeveloperSetupMobileSnippetCatalog {
         // Exported Root CA hint: \(certPath)
 
         export async function runRockxyReactNativeProbe() {
-          const response = await fetch("https://httpbin.org/get", {
+          const response = await fetch("https://<your-host>/<your-path>", {
             method: "GET",
             headers: {
               "Cache-Control": "no-cache",

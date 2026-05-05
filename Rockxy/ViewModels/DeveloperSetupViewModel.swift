@@ -80,7 +80,18 @@ final class DeveloperSetupViewModel {
     }
 
     var currentValidationSpec: SetupValidationSpec? {
-        currentWorkflow.validation
+        guard let template = currentWorkflow.validation else {
+            return nil
+        }
+        guard let probeSession, probeSession.targetID == selectedTarget.id else {
+            return template
+        }
+        return DeveloperSetupWorkflowCatalog.validationSpec(
+            for: selectedTarget.id,
+            runtimeName: selectedTarget.title,
+            preferredSnippetID: template.preferredSnippetID,
+            probeSession: probeSession
+        )
     }
 
     var currentGuideContent: SetupGuideContent? {
@@ -183,6 +194,7 @@ final class DeveloperSetupViewModel {
         return DeveloperSetupWorkflowCatalog.generatedValidationSnippet(
             for: selectedTarget.id,
             workflow: currentWorkflow,
+            validation: currentValidationSpec,
             selectedSnippetID: selectedSnippetID,
             port: Self.resolveSnippetPort(
                 isProxyRunning: snapshot.proxyRunning,
@@ -257,7 +269,7 @@ final class DeveloperSetupViewModel {
             issues.append(.certificateExportUnavailable)
         }
         if snapshot.verificationState == .timedOut {
-            issues.append(.noTrafficDetected)
+            issues.append(.localProbeNotCaptured)
         }
         if currentSnippetOptions.count > 1 {
             issues.append(.wrongSnippetChosen)
@@ -313,7 +325,11 @@ final class DeveloperSetupViewModel {
             return
         }
 
-        let nextIssue = Self.validationIssue(for: target, snapshot: snapshot, workflow: workflow)
+        let probeReady = await prepareValidationProbe()
+        let validationSpec = probeReady ? currentValidationSpec : nil
+        let nextIssue = probeReady
+            ? Self.validationIssue(for: target, snapshot: snapshot, workflow: workflow, validation: validationSpec)
+            : .localProbeUnavailable
         activeIssue = nextIssue
         if workflow.supportsValidation {
             if priorVerificationState != .waitingForTraffic {
@@ -342,6 +358,8 @@ final class DeveloperSetupViewModel {
         snapshot.matchedHost = nil
         snapshot.matchedMethod = nil
         snapshot.matchedPath = nil
+        probeSession = nil
+        Task { await probeServer.stop() }
         activeIssue = Self.validationIssue(for: target, snapshot: snapshot, workflow: currentWorkflow)
 
         if supportsValidation {
@@ -436,7 +454,19 @@ final class DeveloperSetupViewModel {
                 return
             }
 
-            guard let issue = Self.validationIssue(for: self.selectedTarget, snapshot: self.snapshot, workflow: self.currentWorkflow) else {
+            guard self.probeSession?.targetID == capturedTargetID else {
+                self.activeIssue = .localProbeUnavailable
+                self.snapshot.verificationState = .readinessFailed
+                self.selectedTab = .validate
+                return
+            }
+
+            guard let issue = Self.validationIssue(
+                for: self.selectedTarget,
+                snapshot: self.snapshot,
+                workflow: self.currentWorkflow,
+                validation: validation
+            ) else {
                 let baselineSequenceNumber = self.coordinator.transactions.map(\.sequenceNumber).max() ?? 0
                 let baselineSessionGeneration = self.coordinator.sessionGeneration
                 self.activeIssue = nil
@@ -496,7 +526,7 @@ final class DeveloperSetupViewModel {
 
                     if clock.now >= timeoutTask {
                         self.snapshot.verificationState = .timedOut
-                        self.activeIssue = .noTrafficDetected
+                        self.activeIssue = .localProbeNotCaptured
                         return
                     }
 
@@ -529,7 +559,12 @@ final class DeveloperSetupViewModel {
         if markCancelled {
             snapshot.verificationState = .cancelled
         } else if supportsValidation {
-            snapshot.verificationState = Self.validationIssue(for: selectedTarget, snapshot: snapshot, workflow: currentWorkflow) == nil
+            snapshot.verificationState = Self.validationIssue(
+                for: selectedTarget,
+                snapshot: snapshot,
+                workflow: currentWorkflow,
+                validation: currentValidationSpec
+            ) == nil
                 ? .readyToVerify
                 : .readinessFailed
         } else {
@@ -570,7 +605,8 @@ final class DeveloperSetupViewModel {
     static func validationIssue(
         for target: SetupTarget,
         snapshot: SetupSnapshot,
-        workflow: SetupWorkflow
+        workflow: SetupWorkflow,
+        validation: SetupValidationSpec? = nil
     ) -> SetupIssue? {
         if let deviceProxyIssue = deviceProxyIssue(for: target, snapshot: snapshot) {
             return deviceProxyIssue
@@ -596,7 +632,19 @@ final class DeveloperSetupViewModel {
         if !snapshot.certificateExportable || !snapshot.certificateFileReady {
             return .certificateExportUnavailable
         }
+        if let validation,
+           let validationURL = URL(string: validation.urlString),
+           AllowListManager.shared.isActive,
+           !AllowListManager.shared.isRequestAllowed(method: validation.method, url: validationURL)
+        {
+            return .allowListBlockedValidation
+        }
         return nil
+    }
+
+    func stopValidationProbe() async {
+        await probeServer.stop()
+        probeSession = nil
     }
 
     static func deviceProxyIssue(for target: SetupTarget, snapshot: SetupSnapshot) -> SetupIssue? {
@@ -628,6 +676,8 @@ final class DeveloperSetupViewModel {
 
     private var validationTask: Task<Void, Never>?
     private let pinnedStore: DeveloperSetupPinnedStore
+    private let probeServer = DeveloperSetupProbeServer()
+    private var probeSession: DeveloperSetupProbeSession?
 
     private final class ValidationTaskToken {}
 
@@ -648,6 +698,29 @@ final class DeveloperSetupViewModel {
 
     private func defaultSnippetID(for targetID: SetupTarget.ID) -> SetupSnippetID {
         DeveloperSetupWorkflowCatalog.workflow(for: targetID).defaultSnippetID ?? .pythonRequests
+    }
+
+    @discardableResult
+    private func prepareValidationProbe() async -> Bool {
+        guard supportsValidation else {
+            probeSession = nil
+            await probeServer.stop()
+            return false
+        }
+
+        if probeSession?.targetID == selectedTarget.id {
+            return true
+        }
+
+        do {
+            probeSession = try await probeServer.start(targetID: selectedTarget.id)
+            return true
+        } catch {
+            probeSession = nil
+            activeIssue = .localProbeUnavailable
+            snapshot.verificationState = .readinessFailed
+            return false
+        }
     }
 
     private static func exportedCertificateFileReady(from settings: AppSettings) -> Bool {

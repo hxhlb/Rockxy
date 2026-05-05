@@ -290,50 +290,51 @@ struct DeveloperSetupViewModelTests {
         let workflow = DeveloperSetupWorkflowCatalog.workflow(for: .nodeJS)
 
         #expect(workflow.snippets.map(\.id) == [.nodeAxios, .nodeHTTPS, .nodeGot])
-        #expect(workflow.validation?.host == "httpbin.org")
-        #expect(workflow.validation?.path == "/anything/rockxy/nodeJS")
+        #expect(workflow.validation?.host == "127.0.0.1")
+        #expect(workflow.validation?.path == "/.well-known/rockxy/dev-setup/nodeJS/<validation-token>")
+        #expect(workflow.validation?.preferredSnippetID == .nodeAxios)
     }
 
-    @Test("Postman, Insomnia, and Paw ship manual config snippets + the generic httpbin capture check")
+    @Test("Postman, Insomnia, and Paw ship manual config snippets + the local capture check")
     func httpClientWorkflows() {
         let postman = DeveloperSetupWorkflowCatalog.workflow(for: .postman)
         let insomnia = DeveloperSetupWorkflowCatalog.workflow(for: .insomnia)
         let paw = DeveloperSetupWorkflowCatalog.workflow(for: .paw)
 
         #expect(postman.snippets.map(\.id) == [.postmanConfig])
-        #expect(postman.validation?.host == "httpbin.org")
-        #expect(postman.validation?.path == "/anything/rockxy/postman")
+        #expect(postman.validation?.host == "127.0.0.1")
+        #expect(postman.validation?.path == "/.well-known/rockxy/dev-setup/postman/<validation-token>")
 
         #expect(insomnia.snippets.map(\.id) == [.insomniaConfig])
-        #expect(insomnia.validation?.host == "httpbin.org")
-        #expect(insomnia.validation?.path == "/anything/rockxy/insomnia")
+        #expect(insomnia.validation?.host == "127.0.0.1")
+        #expect(insomnia.validation?.path == "/.well-known/rockxy/dev-setup/insomnia/<validation-token>")
 
         #expect(paw.snippets.map(\.id) == [.pawConfig])
-        #expect(paw.validation?.host == "httpbin.org")
-        #expect(paw.validation?.path == "/anything/rockxy/paw")
+        #expect(paw.validation?.host == "127.0.0.1")
+        #expect(paw.validation?.path == "/.well-known/rockxy/dev-setup/paw/<validation-token>")
     }
 
-    @Test("Java VMs, Docker, ElectronJS, Next.js, and Firefox ship manual workflows with the generic capture check")
+    @Test("Java VMs, Docker, ElectronJS, Next.js, and Firefox ship manual workflows with the local capture check")
     func promotedRuntimeAndEnvironmentWorkflows() {
         let javaWorkflow = DeveloperSetupWorkflowCatalog.workflow(for: .javaVMs)
         #expect(javaWorkflow.snippets.map(\.id) == [.javaKeytool, .javaHttpClient])
-        #expect(javaWorkflow.validation?.host == "httpbin.org")
+        #expect(javaWorkflow.validation?.host == "127.0.0.1")
 
         let firefoxWorkflow = DeveloperSetupWorkflowCatalog.workflow(for: .firefox)
         #expect(firefoxWorkflow.snippets.map(\.id) == [.firefoxConfig])
-        #expect(firefoxWorkflow.validation?.host == "httpbin.org")
+        #expect(firefoxWorkflow.validation?.host == "127.0.0.1")
 
         let dockerWorkflow = DeveloperSetupWorkflowCatalog.workflow(for: .docker)
         #expect(dockerWorkflow.snippets.map(\.id) == [.dockerRun])
-        #expect(dockerWorkflow.validation?.host == "httpbin.org")
+        #expect(dockerWorkflow.validation?.host == "127.0.0.1")
 
         let electronWorkflow = DeveloperSetupWorkflowCatalog.workflow(for: .electronJS)
         #expect(electronWorkflow.snippets.map(\.id) == [.electronCommand, .electronSession])
-        #expect(electronWorkflow.validation?.host == "httpbin.org")
+        #expect(electronWorkflow.validation?.host == "127.0.0.1")
 
         let nextWorkflow = DeveloperSetupWorkflowCatalog.workflow(for: .nextJS)
         #expect(nextWorkflow.snippets.map(\.id) == [.nextJSRouteHandler])
-        #expect(nextWorkflow.validation?.host == "httpbin.org")
+        #expect(nextWorkflow.validation?.host == "127.0.0.1")
     }
 
     @Test("Flutter ships hybrid manual snippets, guide content, and validation")
@@ -345,8 +346,8 @@ struct DeveloperSetupViewModelTests {
             .flutterHTTPPackage,
             .flutterAndroidNetworkSecurityConfig,
         ])
-        #expect(workflow.validation?.host == "httpbin.org")
-        #expect(workflow.validation?.path == "/anything/rockxy/flutter")
+        #expect(workflow.validation?.host == "127.0.0.1")
+        #expect(workflow.validation?.path == "/.well-known/rockxy/dev-setup/flutter/<validation-token>")
         #expect(DeveloperSetupGuideCatalog.content(for: .flutter) != nil)
 
         let viewModel = DeveloperSetupViewModel(coordinator: MainContentCoordinator())
@@ -355,6 +356,10 @@ struct DeveloperSetupViewModelTests {
         #expect(viewModel.toolbarCopyEnabled)
         #expect(viewModel.toolbarVerifyEnabled)
         #expect(viewModel.currentGuideContent != nil)
+        #expect(viewModel.supportsAutomation == false)
+        #expect(viewModel.currentAutomationPreview == nil)
+        #expect(viewModel.bottomStatusText.contains("Manual only"))
+        #expect(viewModel.infoBannerText.contains("device, emulator, simulator"))
     }
 
     @Test("React Native ships hybrid snippets, guide content, and validation")
@@ -365,8 +370,8 @@ struct DeveloperSetupViewModelTests {
             .reactNativeAndroidNetworkSecurityConfig,
             .reactNativeMetroChecklist,
         ])
-        #expect(workflow.validation?.host == "httpbin.org")
-        #expect(workflow.validation?.path == "/anything/rockxy/reactNative")
+        #expect(workflow.validation?.host == "127.0.0.1")
+        #expect(workflow.validation?.path == "/.well-known/rockxy/dev-setup/reactNative/<validation-token>")
         #expect(DeveloperSetupGuideCatalog.content(for: .reactNative) != nil)
 
         let viewModel = DeveloperSetupViewModel(coordinator: MainContentCoordinator())
@@ -572,8 +577,8 @@ struct DeveloperSetupViewModelTests {
 
     @Test("Validation matcher ignores old requests and matches the expected probe")
     func validationMatcher() throws {
-        let validation = try #require(DeveloperSetupWorkflowCatalog.workflow(for: .python).validation)
-        let validationURL = try #require(URL(string: "https://\(validation.host)\(validation.path)"))
+        let validation = try validationSpec(for: .python)
+        let validationURL = try #require(URL(string: validation.urlString))
 
         let oldRequest = try HTTPTransaction(
             request: HTTPRequestData(
@@ -616,7 +621,15 @@ struct DeveloperSetupViewModelTests {
         let validation = try #require(DeveloperSetupWorkflowCatalog.workflow(for: .python).validation)
 
         #expect(validation.instruction.contains("does not attribute the request") == true)
-        #expect(validation.instruction.contains("specific app or process") == true)
+        #expect(validation.instruction.contains("specific app, process, device, simulator, emulator, or runtime") == true)
+    }
+
+    @Test("Flutter validation instruction calls out hybrid attribution limits")
+    func flutterValidationInstructionClarifiesHybridAttributionLimits() throws {
+        let validation = try #require(DeveloperSetupWorkflowCatalog.workflow(for: .flutter).validation)
+
+        #expect(validation.instruction.contains("Flutter local validation probe"))
+        #expect(validation.instruction.contains("device, simulator, emulator, or runtime"))
     }
 
     @Test("Available targets use manual setup language instead of validated claims")
@@ -666,7 +679,7 @@ struct DeveloperSetupViewModelTests {
 
         #expect(snippet?.contains("http://127.0.0.1:9090") == true)
         #expect(snippet?.contains("verify=\"/tmp/RockxyRootCA.pem\"") == true)
-        #expect(snippet?.contains("https://httpbin.org/get") == true)
+        #expect(snippet?.contains("https://<your-host>/<your-path>") == true)
     }
 
     @Test("Generated Node.js snippet includes proxy and certificate wiring")
@@ -680,7 +693,7 @@ struct DeveloperSetupViewModelTests {
 
         #expect(snippet?.contains("127.0.0.1") == true)
         #expect(snippet?.contains("/tmp/RockxyRootCA.pem") == true)
-        #expect(snippet?.contains("https://httpbin.org/get") == true)
+        #expect(snippet?.contains("https://<your-host>/<your-path>") == true)
     }
 
     @Test("Generated Node.js https snippet passes proxyEnv as an environment object")
@@ -707,6 +720,7 @@ struct DeveloperSetupViewModelTests {
         )
 
         #expect(snippet?.contains("--proxy 'http://127.0.0.1:9090'") == true)
+        #expect(snippet?.contains("--noproxy ''") == true)
         #expect(snippet?.contains("--cacert '/tmp/RockxyRootCA.pem'") == true)
     }
 
@@ -721,6 +735,8 @@ struct DeveloperSetupViewModelTests {
 
         #expect(snippet?.contains("proxy: \"http://127.0.0.1:9090\"") == true)
         #expect(snippet?.contains("ca_file: \"/tmp/RockxyRootCA.pem\"") == true)
+        #expect(snippet?.contains("connection.get(\"https://<your-host>/<your-path>\")") == true)
+        #expect(snippet?.contains("connection.get(\"/get\")") == false)
     }
 
     @Test("Generated Golang snippet includes proxy and root CA")
@@ -814,7 +830,7 @@ struct DeveloperSetupViewModelTests {
         #expect(snippet?.contains("HttpClient.newBuilder()") == true)
         #expect(snippet?.contains("127.0.0.1") == true)
         #expect(snippet?.contains("9191") == true)
-        #expect(snippet?.contains("https://httpbin.org/get") == true)
+        #expect(snippet?.contains("https://<your-host>/<your-path>") == true)
     }
 
     @Test("Generated Firefox snippet includes settings values and cURL preflight")
@@ -887,7 +903,7 @@ struct DeveloperSetupViewModelTests {
         #expect(snippet?.contains("docker run") == true)
         #expect(snippet?.contains("host.docker.internal:9090") == true)
         #expect(snippet?.contains("'/tmp/RockxyRootCA.pem':/etc/ssl/certs/rockxy.pem:ro") == true)
-        #expect(snippet?.contains("https://httpbin.org/get") == true)
+        #expect(snippet?.contains("https://<your-host>/<your-path>") == true)
     }
 
     @Test("Generated Electron CLI snippet uses --proxy-server + NODE_EXTRA_CA_CERTS")
@@ -931,7 +947,7 @@ struct DeveloperSetupViewModelTests {
         #expect(snippet?.contains("NODE_EXTRA_CA_CERTS='/tmp/RockxyRootCA.pem'") == true)
         #expect(snippet?.contains("HTTP_PROXY='http://127.0.0.1:9090'") == true)
         #expect(snippet?.contains("HTTPS_PROXY='http://127.0.0.1:9090'") == true)
-        #expect(snippet?.contains("https://httpbin.org/get") == true)
+        #expect(snippet?.contains("https://<your-host>/<your-path>") == true)
     }
 
     @Test("Generated Flutter Dio snippet includes proxy host choices and debug-only safety")
@@ -951,7 +967,7 @@ struct DeveloperSetupViewModelTests {
         #expect(snippet?.contains("<LAN device proxy host>:9090") == true)
         #expect(snippet?.contains("/tmp/RockxyRootCA.pem") == true)
         #expect(snippet?.contains("Debug only") == true)
-        #expect(snippet?.contains("https://httpbin.org/get") == true)
+        #expect(snippet?.contains("https://<your-host>/<your-path>") == true)
     }
 
     @Test("Generated Flutter HttpClient snippet sets findProxy and badCertificateCallback")
@@ -1009,7 +1025,7 @@ struct DeveloperSetupViewModelTests {
         )
 
         #expect(snippet?.contains("runRockxyReactNativeProbe") == true)
-        #expect(snippet?.contains("https://httpbin.org/get") == true)
+        #expect(snippet?.contains("https://<your-host>/<your-path>") == true)
         #expect(snippet?.contains("127.0.0.1:9090") == true)
         #expect(snippet?.contains("10.0.2.2:9090") == true)
         #expect(snippet?.contains("/tmp/RockxyRootCA.pem") == true)
@@ -1052,13 +1068,31 @@ struct DeveloperSetupViewModelTests {
         let snippet = DeveloperSetupWorkflowCatalog.generatedValidationSnippet(
             for: .python,
             workflow: workflow,
+            validation: try? validationSpec(for: .python),
             selectedSnippetID: .pythonRequests,
             port: 9_090,
             certificatePath: "/tmp/RockxyRootCA.pem"
         )
 
-        #expect(snippet?.contains("https://httpbin.org/anything/rockxy/python") == true)
-        #expect(snippet?.contains("https://httpbin.org/get") == false)
+        #expect(snippet?.contains("http://127.0.0.1:43210/.well-known/rockxy/dev-setup/python") == true)
+        #expect(snippet?.contains("https://<your-host>/<your-path>") == false)
+    }
+
+    @Test("Node validation uses HTTP-capable axios snippet for local probes")
+    func generatedNodeValidationSnippetUsesAxiosProbe() {
+        let workflow = DeveloperSetupWorkflowCatalog.workflow(for: .nodeJS)
+        let snippet = DeveloperSetupWorkflowCatalog.generatedValidationSnippet(
+            for: .nodeJS,
+            workflow: workflow,
+            validation: try? validationSpec(for: .nodeJS),
+            selectedSnippetID: .nodeHTTPS,
+            port: 9_090,
+            certificatePath: "/tmp/RockxyRootCA.pem"
+        )
+
+        #expect(snippet?.contains("axios.get") == true)
+        #expect(snippet?.contains("https.request") == false)
+        #expect(snippet?.contains("http://127.0.0.1:43210/.well-known/rockxy/dev-setup/nodeJS") == true)
     }
 
     @Test("Firefox validation snippet falls back to the cURL preflight probe")
@@ -1067,13 +1101,14 @@ struct DeveloperSetupViewModelTests {
         let snippet = DeveloperSetupWorkflowCatalog.generatedValidationSnippet(
             for: .firefox,
             workflow: workflow,
+            validation: try? validationSpec(for: .firefox),
             selectedSnippetID: .firefoxConfig,
             port: 9_090,
             certificatePath: "/tmp/RockxyRootCA.pem"
         )
 
         #expect(snippet?.contains("curl --proxy 'http://127.0.0.1:9090'") == true)
-        #expect(snippet?.contains("https://httpbin.org/anything/rockxy/firefox") == true)
+        #expect(snippet?.contains("http://127.0.0.1:43210/.well-known/rockxy/dev-setup/firefox") == true)
     }
 
     @Test("Electron validation snippet falls back to the cURL preflight probe")
@@ -1082,13 +1117,14 @@ struct DeveloperSetupViewModelTests {
         let snippet = DeveloperSetupWorkflowCatalog.generatedValidationSnippet(
             for: .electronJS,
             workflow: workflow,
+            validation: try? validationSpec(for: .electronJS),
             selectedSnippetID: .electronCommand,
             port: 9_090,
             certificatePath: "/tmp/RockxyRootCA.pem"
         )
 
         #expect(snippet?.contains("curl --proxy 'http://127.0.0.1:9090'") == true)
-        #expect(snippet?.contains("https://httpbin.org/anything/rockxy/electronJS") == true)
+        #expect(snippet?.contains("http://127.0.0.1:43210/.well-known/rockxy/dev-setup/electronJS") == true)
     }
 
     @Test("Flutter validation snippet swaps in the Flutter probe path")
@@ -1097,13 +1133,14 @@ struct DeveloperSetupViewModelTests {
         let snippet = DeveloperSetupWorkflowCatalog.generatedValidationSnippet(
             for: .flutter,
             workflow: workflow,
+            validation: try? validationSpec(for: .flutter),
             selectedSnippetID: .flutterDio5,
             port: 9_090,
             certificatePath: "/tmp/RockxyRootCA.pem"
         )
 
-        #expect(snippet?.contains("https://httpbin.org/anything/rockxy/flutter") == true)
-        #expect(snippet?.contains("https://httpbin.org/get") == false)
+        #expect(snippet?.contains("http://127.0.0.1:43210/.well-known/rockxy/dev-setup/flutter") == true)
+        #expect(snippet?.contains("https://<your-host>/<your-path>") == false)
     }
 
     @Test("React Native validation snippet swaps in the React Native probe path")
@@ -1112,13 +1149,51 @@ struct DeveloperSetupViewModelTests {
         let snippet = DeveloperSetupWorkflowCatalog.generatedValidationSnippet(
             for: .reactNative,
             workflow: workflow,
+            validation: try? validationSpec(for: .reactNative),
             selectedSnippetID: .reactNativeFetchProbe,
             port: 9_090,
             certificatePath: "/tmp/RockxyRootCA.pem"
         )
 
-        #expect(snippet?.contains("https://httpbin.org/anything/rockxy/reactNative") == true)
-        #expect(snippet?.contains("https://httpbin.org/get") == false)
+        #expect(snippet?.contains("http://127.0.0.1:43210/.well-known/rockxy/dev-setup/reactNative") == true)
+        #expect(snippet?.contains("https://<your-host>/<your-path>") == false)
+    }
+
+    @Test("Validation specs and snippets do not depend on httpbin")
+    func validationSpecsAndSnippetsDoNotDependOnHTTPBin() throws {
+        var seenTargetIDs = Set<SetupTarget.ID>()
+
+        for target in SetupTarget.allSections.flatMap(\.targets) where seenTargetIDs.insert(target.id).inserted {
+            let workflow = DeveloperSetupWorkflowCatalog.workflow(for: target.id)
+
+            if let validation = workflow.validation {
+                #expect(validation.host.contains("httpbin.org") == false, "\(target.title) validation host")
+                #expect(validation.path.contains("httpbin.org") == false, "\(target.title) validation path")
+                #expect(validation.urlString.contains("httpbin.org") == false, "\(target.title) validation URL")
+
+                let dynamicValidation = try validationSpec(for: target.id)
+                let selectedSnippetID = try #require(validation.preferredSnippetID ?? workflow.snippets.first?.id)
+                let validationSnippet = DeveloperSetupWorkflowCatalog.generatedValidationSnippet(
+                    for: target.id,
+                    workflow: workflow,
+                    validation: dynamicValidation,
+                    selectedSnippetID: selectedSnippetID,
+                    port: 9_090,
+                    certificatePath: "/tmp/RockxyRootCA.pem"
+                )
+                #expect(validationSnippet?.contains("httpbin.org") == false, "\(target.title) validation snippet")
+            }
+
+            for snippet in workflow.snippets {
+                let generatedSnippet = DeveloperSetupWorkflowCatalog.generatedSnippet(
+                    for: target.id,
+                    snippetID: snippet.id,
+                    port: 9_090,
+                    certificatePath: "/tmp/RockxyRootCA.pem"
+                )
+                #expect(generatedSnippet?.contains("httpbin.org") == false, "\(target.title) \(snippet.title)")
+            }
+        }
     }
 
     @Test("View model falls back when the stored certificate export path is missing")
@@ -1150,5 +1225,21 @@ struct DeveloperSetupViewModelTests {
         await viewModel.refreshSnapshot()
 
         #expect(viewModel.snapshot.verificationState == .success)
+    }
+
+    private func validationSpec(for targetID: SetupTarget.ID) throws -> SetupValidationSpec {
+        let workflow = DeveloperSetupWorkflowCatalog.workflow(for: targetID)
+        let template = try #require(workflow.validation)
+        let session = DeveloperSetupProbeSession.make(
+            port: 43_210,
+            targetID: targetID,
+            token: "test-token"
+        )
+        return DeveloperSetupWorkflowCatalog.validationSpec(
+            for: targetID,
+            runtimeName: targetID.rawValue,
+            preferredSnippetID: template.preferredSnippetID,
+            probeSession: session
+        )
     }
 }
