@@ -39,24 +39,25 @@
 ---
 
 <!-- BEGIN GENERATED: latest-release -->
-## Latest Tagged Release
+## 最新标签版本
 
-**v0.18.0** — 2026-05-08
+**v0.19.0** — 2026-05-17
 
-### Added
+### 新增
 
-- Native proxy status and footer controls now expose richer run-state, update-state, and action summaries directly in the main window chrome.
+- Certificate setup now includes a clearer Mac guide, export flow, and custom certificate management path for smoother trusted capture setup.
+- Node.js Developer Setup now includes selected-client validation and a fuller localhost sample guide for `axios`, Node core, and `got`.
 
-### Fixed
+### 修复
 
-- The toolbar update badge now routes to the Software Update window instead of behaving like a passive status indicator.
-- Sidebar and favorite transaction persistence now survive migration and reload paths more reliably.
+- Helper and certificate recovery now surfaces clearer diagnostics when local signing, trust, or helper state blocks capture.
+- Inspector body and response previews are more stable when switching tabs or viewing larger payloads.
 
-### Changed
+### 变更
 
-- Main-window status and footer bars now use a more native macOS presentation with clearer proxy, capture, and update affordances.
+- Clarified Flutter/Dart Developer Setup Hub validation as a manual hybrid flow that checks capture through Rockxy without claiming device, emulator, simulator, or runtime attribution.
 
-See [CHANGELOG.md](CHANGELOG.md) for the full release history.
+完整发布历史请参阅 [CHANGELOG.md](CHANGELOG.md)。
 <!-- END GENERATED: latest-release -->
 
 ## 当前分支亮点
