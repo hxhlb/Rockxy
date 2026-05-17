@@ -47,6 +47,22 @@ struct RockxyApp: App {
         .defaultPosition(.center)
         .windowToolbarStyle(.unifiedCompact)
 
+        Window(String(localized: "Mac Setup Guide"), id: "certificateSetup") {
+            MacCertificateSetupGuideView()
+        }
+        .commandsRemoved()
+        .defaultSize(width: 940, height: 620)
+        .defaultPosition(.center)
+        .windowToolbarStyle(.unifiedCompact)
+
+        Window(String(localized: "Custom Certificates"), id: "customCertificates") {
+            CustomCertificatesView()
+        }
+        .commandsRemoved()
+        .defaultSize(width: 940, height: 600)
+        .defaultPosition(.center)
+        .windowToolbarStyle(.unifiedCompact)
+
         Window(String(localized: "Automatic Setup"), id: "automaticSetup") {
             DeveloperSetupAutomaticWindowView(coordinator: mainCoordinator)
         }
@@ -320,8 +336,7 @@ struct RockxyMenuCommands: Commands {
 
     @AppStorage(NoCacheHeaderMutator.userDefaultsKey) private var isNoCachingEnabled = false
 
-    @State private var certificateError: String?
-    @State private var showCertificateAlert = false
+    private let certificateRouter = CertificateMenuActionRouter()
 
     @CommandsBuilder
     private var appMenu: some Commands {
@@ -677,42 +692,130 @@ struct RockxyMenuCommands: Commands {
 
     private var certificateMenu: some Commands {
         CommandMenu(String(localized: "Certificate")) {
-            Button(String(localized: "Install on This Mac…")) {
-                Task {
-                    do {
-                        try await CertificateManager.shared.installAndTrust()
-                    } catch {
-                        certificateError = error.localizedDescription
-                        showCertificateAlert = true
+            Button(String(localized: "Install Certificate on This Mac…")) {
+                dispatchCertificateAction(.installOnMac)
+            }
+
+            Divider()
+
+            Menu(String(localized: "Install Certificate on iOS")) {
+                Button(String(localized: "iOS Simulator…")) {
+                    dispatchCertificateAction(.installOniOSSimulator)
+                }
+                Button(String(localized: "Physical iPhone or iPad…")) {
+                    dispatchCertificateAction(.installOniOSDevice)
+                }
+            }
+
+            Menu(String(localized: "Install Certificate on Android")) {
+                Button(String(localized: "Android Emulator…")) {
+                    dispatchCertificateAction(.installOnAndroidEmulator)
+                }
+                Button(String(localized: "Android Device…")) {
+                    dispatchCertificateAction(.installOnAndroidDevice)
+                }
+            }
+
+            Divider()
+
+            Button(String(localized: "Install Certificate on Java VMs…")) {
+                dispatchCertificateAction(.installOnJavaVMs)
+            }
+
+            Menu(String(localized: "Install Certificate on Developments")) {
+                Button(String(localized: "Flutter…")) {
+                    dispatchCertificateAction(.installOnDevelopment(.flutter))
+                }
+                Button(String(localized: "React Native…")) {
+                    dispatchCertificateAction(.installOnDevelopment(.reactNative))
+                }
+                Button(String(localized: "Electron…")) {
+                    dispatchCertificateAction(.installOnDevelopment(.electronJS))
+                }
+                Button(String(localized: "Next.js…")) {
+                    dispatchCertificateAction(.installOnDevelopment(.nextJS))
+                }
+            }
+
+            Button(String(localized: "Install Certificate on Firefox Browsers…")) {
+                dispatchCertificateAction(.installOnFirefox)
+            }
+
+            Divider()
+
+            Button(String(localized: "Add Custom Certificates…")) {
+                dispatchCertificateAction(.addCustomCertificates)
+            }
+
+            Divider()
+
+            Menu(String(localized: "Export")) {
+                ForEach(CertificateExportFormat.allCases, id: \.self) { format in
+                    Button(format.menuTitle) {
+                        dispatchCertificateAction(.export(format))
                     }
                 }
             }
 
-            Button(String(localized: "Export Root Certificate…")) {
-                Task {
-                    do {
-                        guard let pem = try await CertificateManager.shared.getRootCAPEM() else {
-                            certificateError = String(localized: "No root certificate found. Install one first.")
-                            showCertificateAlert = true
-                            return
-                        }
-                        let panel = NSSavePanel()
-                        panel.nameFieldStringValue = "RockxyCA.pem"
-                        panel.allowedContentTypes = [.init(filenameExtension: "pem")].compactMap { $0 }
-                        let response = panel.runModal()
-                        if response == .OK, let url = panel.url {
-                            try pem.write(to: url, atomically: true, encoding: .utf8)
-                            await MainActor.run {
-                                AppSettingsManager.shared.updateLastExportedRootCAPath(url.path)
-                            }
-                        }
-                    } catch {
-                        certificateError = error.localizedDescription
-                        showCertificateAlert = true
-                    }
+            Divider()
+
+            Button(String(localized: "Reset all Rockxy Certificates")) {
+                dispatchCertificateAction(.resetAll)
+            }
+        }
+    }
+
+    private func dispatchCertificateAction(_ action: CertificateMenuAction) {
+        switch certificateRouter.route(for: action) {
+        case .openCertificateSetupGuide:
+            openWindow(id: "certificateSetup")
+        case .openDeveloperSetup(let targetID, let tab):
+            DeveloperSetupRouteStore.shared.request(targetID: targetID, tab: tab)
+            openWindow(id: "developerSetupHub")
+        case .openCustomCertificates:
+            openWindow(id: "customCertificates")
+        case .export(let format):
+            CertificateExportPanelPresenter().export(format: format)
+        case .resetAll:
+            confirmAndResetCertificates()
+        }
+    }
+
+    private func confirmAndResetCertificates() {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = String(localized: "Reset all Rockxy Certificates?")
+        alert.informativeText = String(
+            localized: "This removes Rockxy's generated root CA, trust settings, cached host certificates, and custom certificate records."
+        )
+        alert.addButton(withTitle: String(localized: "Reset"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
+        guard alert.runModal() == .alertFirstButtonReturn else {
+            return
+        }
+
+        Task {
+            do {
+                try await CertificateManager.shared.reset()
+                try CustomCertificateManager.shared.deleteAll()
+                await MainActor.run {
+                    AppSettingsManager.shared.updateLastExportedRootCAPath(nil)
+                }
+            } catch {
+                await MainActor.run {
+                    showCertificateError(error.localizedDescription)
                 }
             }
         }
+    }
+
+    private func showCertificateError(_ message: String) {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = String(localized: "Certificate Action Failed")
+        alert.informativeText = message
+        alert.addButton(withTitle: String(localized: "OK"))
+        alert.runModal()
     }
 
     private var setupMenu: some Commands {

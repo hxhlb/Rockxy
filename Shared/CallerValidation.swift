@@ -38,16 +38,10 @@ enum CallerValidation {
         -> Bool
     {
         for identifier in allowedIdentifiers {
-            var requirement: SecRequirement?
-            let status = SecRequirementCreateWithString(
-                "identifier \"\(identifier)\" and anchor apple generic" as CFString,
-                [],
-                &requirement
-            )
-            guard status == errSecSuccess, let requirement else {
-                continue
+            if callerSatisfiesAppleGenericIdentifier(callerCode: callerCode, identifier: identifier) {
+                return true
             }
-            if SecCodeCheckValidity(callerCode, [], requirement) == errSecSuccess {
+            if callerSatisfiesLocalXcodeAdHocIdentifier(callerCode: callerCode, identifier: identifier) {
                 return true
             }
         }
@@ -103,6 +97,11 @@ enum CallerValidation {
         return code
     }
 
+    static func isXcodeDerivedDataBuildProduct(path: String) -> Bool {
+        path.contains("/Library/Developer/Xcode/DerivedData/")
+            && path.contains("/Build/Products/")
+    }
+
     /// Obtains a `SecCode` from raw audit token data (32-byte `audit_token_t`).
     /// Returns nil if the data size is wrong or the Security framework rejects it.
     static func secCodeFromAuditToken(_ tokenData: Data) -> SecCode? {
@@ -152,11 +151,21 @@ enum CallerValidation {
 
     // MARK: Private
 
-    private static func certificatesFromCode(_ code: SecCode) -> [SecCertificate]? {
-        guard let dict = signingInformation(from: code) else {
-            return nil
+    private struct CodeSigningProfile {
+        let identifier: String?
+        let teamIdentifier: String?
+        let certificateDERs: [Data]
+        let executablePath: String?
+
+        var isAdHoc: Bool {
+            teamIdentifier?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
+                && certificateDERs.isEmpty
         }
-        guard let certs = dict[kSecCodeInfoCertificates as String] as? [SecCertificate],
+    }
+
+    private static func certificatesFromCode(_ code: SecCode) -> [SecCertificate]? {
+        guard let dict = signingInformation(from: code),
+              let certs = certificates(from: dict),
               !certs.isEmpty else
         {
             return nil
@@ -164,24 +173,93 @@ enum CallerValidation {
         return certs
     }
 
-    private static func signingAuthoritiesMatch(_ lhs: SecCode, _ rhs: SecCode) -> Bool {
-        if teamIdentifiersMatch(teamIdentifier(from: lhs), teamIdentifier(from: rhs)) {
-            return true
+    private static func signingProfile(from code: SecCode) -> CodeSigningProfile? {
+        guard let dict = signingInformation(from: code) else {
+            return nil
         }
 
-        guard let lhsCerts = certificatesFromCode(lhs),
-              let rhsCerts = certificatesFromCode(rhs) else
-        {
-            return false
-        }
-        return certificateDataChainsMatch(
-            certificateDERData(from: lhsCerts),
-            certificateDERData(from: rhsCerts)
+        let certs = certificates(from: dict) ?? []
+        let executableURL = dict[kSecCodeInfoMainExecutable as String] as? URL
+        return CodeSigningProfile(
+            identifier: dict[kSecCodeInfoIdentifier as String] as? String,
+            teamIdentifier: dict[kSecCodeInfoTeamIdentifier as String] as? String,
+            certificateDERs: certificateDERData(from: certs),
+            executablePath: executableURL?.path
         )
     }
 
-    private static func teamIdentifier(from code: SecCode) -> String? {
-        signingInformation(from: code)?[kSecCodeInfoTeamIdentifier as String] as? String
+    private static func certificates(from signingInfo: [String: Any]) -> [SecCertificate]? {
+        signingInfo[kSecCodeInfoCertificates as String] as? [SecCertificate]
+    }
+
+    private static func callerSatisfiesAppleGenericIdentifier(
+        callerCode: SecCode,
+        identifier: String
+    )
+        -> Bool
+    {
+        var requirement: SecRequirement?
+        let status = SecRequirementCreateWithString(
+            "identifier \"\(identifier)\" and anchor apple generic" as CFString,
+            [],
+            &requirement
+        )
+        guard status == errSecSuccess, let requirement else {
+            return false
+        }
+        return SecCodeCheckValidity(callerCode, [], requirement) == errSecSuccess
+    }
+
+    private static func callerSatisfiesLocalXcodeAdHocIdentifier(
+        callerCode: SecCode,
+        identifier: String
+    )
+        -> Bool
+    {
+        guard let profile = signingProfile(from: callerCode),
+              profile.isAdHoc,
+              profile.identifier == identifier,
+              let executablePath = profile.executablePath,
+              isXcodeDerivedDataBuildProduct(path: executablePath) else
+        {
+            return false
+        }
+        return true
+    }
+
+    private static func signingAuthoritiesMatch(_ lhs: SecCode, _ rhs: SecCode) -> Bool {
+        guard let lhsProfile = signingProfile(from: lhs),
+              let rhsProfile = signingProfile(from: rhs) else
+        {
+            return false
+        }
+
+        if teamIdentifiersMatch(lhsProfile.teamIdentifier, rhsProfile.teamIdentifier) {
+            return true
+        }
+
+        if !lhsProfile.certificateDERs.isEmpty,
+           !rhsProfile.certificateDERs.isEmpty
+        {
+            return certificateDataChainsMatch(lhsProfile.certificateDERs, rhsProfile.certificateDERs)
+        }
+
+        return localXcodeAdHocPair(helper: lhsProfile, caller: rhsProfile)
+    }
+
+    private static func localXcodeAdHocPair(
+        helper: CodeSigningProfile,
+        caller: CodeSigningProfile
+    )
+        -> Bool
+    {
+        guard helper.isAdHoc,
+              caller.isAdHoc,
+              let callerPath = caller.executablePath else
+        {
+            return false
+        }
+        return isXcodeDerivedDataBuildProduct(path: callerPath)
     }
 
     private static func signingInformation(from code: SecCode) -> [String: Any]? {

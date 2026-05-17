@@ -231,7 +231,7 @@ struct WelcomeView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "arrow.triangle.2.circlepath")
                                 .font(.system(size: 10))
-                            Text(String(localized: "Reset Helper Registration"))
+                            Text(String(localized: "Force Reset Helper"))
                                 .font(.caption)
                         }
                     }

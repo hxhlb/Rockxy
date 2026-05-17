@@ -27,6 +27,7 @@ struct DeveloperSetupWindowView: View {
         }
         .frame(minWidth: 1_080, minHeight: 720)
         .task {
+            applyPendingRouteIfNeeded()
             await viewModel.refreshSnapshot()
         }
         .sheet(isPresented: Binding(
@@ -71,6 +72,7 @@ struct DeveloperSetupWindowView: View {
         .onChange(of: ReadinessCoordinator.shared.certReadiness) { _, _ in refreshSnapshot() }
         .onChange(of: ReadinessCoordinator.shared.proxyMode) { _, _ in refreshSnapshot() }
         .onChange(of: ReadinessCoordinator.shared.activeWarning) { _, _ in refreshSnapshot() }
+        .onChange(of: routeStore.pendingRoute) { _, _ in applyPendingRouteIfNeeded() }
         .onDisappear {
             viewModel.cancelValidation(markCancelled: true)
             Task { await viewModel.stopValidationProbe() }
@@ -83,6 +85,7 @@ struct DeveloperSetupWindowView: View {
     @Environment(\.openSettings) private var openSettings
     @Environment(\.openWindow) private var openWindow
     @State private var viewModel: DeveloperSetupViewModel
+    @State private var routeStore = DeveloperSetupRouteStore.shared
     @StateObject private var caShareController = CAShareController()
     @State private var certificateShareStatusMessage: String?
     @State private var presentedShareSession: RootCADownloadSession?
@@ -105,6 +108,15 @@ struct DeveloperSetupWindowView: View {
         return String(
             localized: "Use this host and port when configuring a device, simulator, or client on the same network."
         )
+    }
+
+    private func applyPendingRouteIfNeeded() {
+        guard let route = routeStore.consumePendingRoute(),
+              let target = SetupTarget.target(for: route.targetID) else {
+            return
+        }
+        viewModel.selectTarget(target)
+        viewModel.selectTab(route.tab)
     }
 
     private var toolbar: some View {

@@ -96,6 +96,7 @@ final class TLSInterceptHandler: ChannelInboundHandler, RemovableChannelHandler,
         scriptPluginManager: ScriptPluginManager? = nil,
         connectionLimiter: ConnectionLimiter,
         sslProxyingManager: SSLProxyingManager = .shared,
+        customCertificateManager: CustomCertificateManager = .shared,
         clientSourcePort: UInt16? = nil,
         onTransactionComplete: @escaping @Sendable (HTTPTransaction) -> Void,
         onBreakpointHit: (@Sendable (BreakpointRequestData) async -> (BreakpointDecision, BreakpointRequestData))? = nil
@@ -107,6 +108,7 @@ final class TLSInterceptHandler: ChannelInboundHandler, RemovableChannelHandler,
         self.scriptPluginManager = scriptPluginManager
         self.connectionLimiter = connectionLimiter
         self.sslProxyingManager = sslProxyingManager
+        self.customCertificateManager = customCertificateManager
         self.clientSourcePort = clientSourcePort
         self.onTransactionComplete = onTransactionComplete
         self.onBreakpointHit = onBreakpointHit
@@ -231,6 +233,7 @@ final class TLSInterceptHandler: ChannelInboundHandler, RemovableChannelHandler,
     private let scriptPluginManager: ScriptPluginManager?
     private let connectionLimiter: ConnectionLimiter
     private let sslProxyingManager: SSLProxyingManager
+    private let customCertificateManager: CustomCertificateManager
     private let clientSourcePort: UInt16?
     private let onTransactionComplete: @Sendable (HTTPTransaction) -> Void
     private let onBreakpointHit: (@Sendable (BreakpointRequestData) async -> (
@@ -260,14 +263,19 @@ final class TLSInterceptHandler: ChannelInboundHandler, RemovableChannelHandler,
 
         let eventLoop = context.eventLoop
         let certManager = self.certificateManager
+        let customCertificateManager = self.customCertificateManager
         let ruleEngine = self.ruleEngine
         let callback = self.onTransactionComplete
         let scriptPluginManager = self.scriptPluginManager
         let sourcePort = self.clientSourcePort
         let breakpointHit = self.onBreakpointHit
 
-        let certFuture: EventLoopFuture<(leafPEM: String, keyPEM: String)> =
+        let certFuture: EventLoopFuture<CustomTLSIdentity> =
             eventLoop.makeFutureWithTask {
+                if let customIdentity = customCertificateManager.serverIdentity(for: host) {
+                    return customIdentity
+                }
+
                 let result = try await certManager.certificateForHost(host)
 
                 var serializer = DER.Serializer()
@@ -275,7 +283,7 @@ final class TLSInterceptHandler: ChannelInboundHandler, RemovableChannelHandler,
                 let leafPEM = PEMDocument(type: "CERTIFICATE", derBytes: serializer.serializedBytes).pemString
                 let keyPEM = result.privateKey.pemRepresentation
 
-                return (leafPEM: leafPEM, keyPEM: keyPEM)
+                return CustomTLSIdentity(certificateChainPEM: [leafPEM], privateKeyPEM: keyPEM)
             }
 
         certFuture.whenComplete { result in
@@ -287,8 +295,7 @@ final class TLSInterceptHandler: ChannelInboundHandler, RemovableChannelHandler,
             case let .success(certResult):
                 self.installTLSHandlers(
                     context: context,
-                    leafPEM: certResult.leafPEM,
-                    keyPEM: certResult.keyPEM,
+                    identity: certResult,
                     host: host,
                     port: port,
                     ruleEngine: ruleEngine,
@@ -305,8 +312,7 @@ final class TLSInterceptHandler: ChannelInboundHandler, RemovableChannelHandler,
 
     nonisolated private func installTLSHandlers(
         context: ChannelHandlerContext,
-        leafPEM: String,
-        keyPEM: String,
+        identity: CustomTLSIdentity,
         host: String,
         port: Int,
         ruleEngine: RuleEngine,
@@ -314,14 +320,14 @@ final class TLSInterceptHandler: ChannelInboundHandler, RemovableChannelHandler,
         callback: @escaping @Sendable (HTTPTransaction) -> Void,
         breakpointHit: (@Sendable (BreakpointRequestData) async -> (BreakpointDecision, BreakpointRequestData))? = nil
     ) {
-        guard !leafPEM.isEmpty, !keyPEM.isEmpty else {
+        guard !identity.certificateChainPEM.isEmpty, !identity.privateKeyPEM.isEmpty else {
             tlsLogger.warning("Empty certificate data for \(host), passing through raw bytes")
             setupRawTunnel(context: context, host: host, port: port)
             return
         }
 
         do {
-            let sslContext = try createServerSSLContext(leafPEM: leafPEM, keyPEM: keyPEM)
+            let sslContext = try NIOSSLContext(configuration: Self.makeServerTLSConfiguration(identity: identity))
             let sslHandler = NIOSSLServerHandler(context: sslContext)
 
             let postHandshake = PostHandshakeHandler(
@@ -331,6 +337,7 @@ final class TLSInterceptHandler: ChannelInboundHandler, RemovableChannelHandler,
                 scriptPluginManager: scriptPluginManager,
                 connectionLimiter: self.connectionLimiter,
                 sslProxyingManager: self.sslProxyingManager,
+                customCertificateManager: self.customCertificateManager,
                 clientSourcePort: self.clientSourcePort,
                 onTransactionComplete: callback,
                 onBreakpointHit: breakpointHit
@@ -386,25 +393,14 @@ final class TLSInterceptHandler: ChannelInboundHandler, RemovableChannelHandler,
         }
     }
 
-    nonisolated private func createServerSSLContext(
-        leafPEM: String,
-        keyPEM: String
-    )
-        throws -> NIOSSLContext
-    {
-        let certificate = try NIOSSLCertificate(bytes: Array(leafPEM.utf8), format: .pem)
-        let privateKey = try NIOSSLPrivateKey(bytes: Array(keyPEM.utf8), format: .pem)
-
-        let chain: [NIOSSLCertificateSource] = [.certificate(certificate)]
-
+    nonisolated static func makeServerTLSConfiguration(identity: CustomTLSIdentity) throws -> TLSConfiguration {
         var config = TLSConfiguration.makeServerConfiguration(
-            certificateChain: chain,
-            privateKey: .privateKey(privateKey)
+            certificateChain: try identity.certificateSources,
+            privateKey: try identity.privateKeySource
         )
         config.minimumTLSVersion = .tlsv12
         config.applicationProtocols = ["http/1.1"]
-
-        return try NIOSSLContext(configuration: config)
+        return config
     }
 
     nonisolated private func setupRawTunnel(
@@ -485,6 +481,7 @@ final class PostHandshakeHandler: ChannelInboundHandler, RemovableChannelHandler
         scriptPluginManager: ScriptPluginManager?,
         connectionLimiter: ConnectionLimiter,
         sslProxyingManager: SSLProxyingManager,
+        customCertificateManager: CustomCertificateManager = .shared,
         clientSourcePort: UInt16? = nil,
         onTransactionComplete: @escaping @Sendable (HTTPTransaction) -> Void,
         onBreakpointHit: (@Sendable (BreakpointRequestData) async -> (BreakpointDecision, BreakpointRequestData))? = nil
@@ -495,6 +492,7 @@ final class PostHandshakeHandler: ChannelInboundHandler, RemovableChannelHandler
         self.scriptPluginManager = scriptPluginManager
         self.connectionLimiter = connectionLimiter
         self.sslProxyingManager = sslProxyingManager
+        self.customCertificateManager = customCertificateManager
         self.clientSourcePort = clientSourcePort
         self.onTransactionComplete = onTransactionComplete
         self.onBreakpointHit = onBreakpointHit
@@ -518,6 +516,7 @@ final class PostHandshakeHandler: ChannelInboundHandler, RemovableChannelHandler
                 ruleEngine: ruleEngine,
                 scriptPluginManager: scriptPluginManager,
                 connectionLimiter: connectionLimiter,
+                customCertificateManager: customCertificateManager,
                 clientSourcePort: clientSourcePort,
                 onTransactionComplete: onTransactionComplete,
                 onBreakpointHit: onBreakpointHit
@@ -617,6 +616,7 @@ final class PostHandshakeHandler: ChannelInboundHandler, RemovableChannelHandler
     private let scriptPluginManager: ScriptPluginManager?
     private let connectionLimiter: ConnectionLimiter
     private let sslProxyingManager: SSLProxyingManager
+    private let customCertificateManager: CustomCertificateManager
     private let clientSourcePort: UInt16?
     private let onTransactionComplete: @Sendable (HTTPTransaction) -> Void
     private let onBreakpointHit: (@Sendable (BreakpointRequestData) async -> (

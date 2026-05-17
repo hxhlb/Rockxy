@@ -66,6 +66,19 @@ struct CallerValidationTests {
         #expect(!CallerValidation.teamIdentifiersMatch("9YNS969KZE", " "))
     }
 
+    @Test("DerivedData build product detection accepts only Xcode build outputs")
+    func derivedDataBuildProductDetection() {
+        let debugApp = "/Users/test/Library/Developer/Xcode/DerivedData/Rockxy-abc/Build/Products/Debug/Rockxy.app/Contents/MacOS/Rockxy"
+        let releaseApp = "/Users/test/Library/Developer/Xcode/DerivedData/Rockxy-abc/Build/Products/Release/Rockxy.app/Contents/MacOS/Rockxy"
+        let applicationsApp = "/Applications/Rockxy.app/Contents/MacOS/Rockxy"
+        let siblingPath = "/Users/test/Library/Developer/Xcode/Archives/Rockxy.app/Contents/MacOS/Rockxy"
+
+        #expect(CallerValidation.isXcodeDerivedDataBuildProduct(path: debugApp))
+        #expect(CallerValidation.isXcodeDerivedDataBuildProduct(path: releaseApp))
+        #expect(!CallerValidation.isXcodeDerivedDataBuildProduct(path: applicationsApp))
+        #expect(!CallerValidation.isXcodeDerivedDataBuildProduct(path: siblingPath))
+    }
+
     // MARK: - Live Caller Identity (TEST_HOST = signed Rockxy app)
 
     @Test("Live test host satisfies its own configured bundle identifiers")
