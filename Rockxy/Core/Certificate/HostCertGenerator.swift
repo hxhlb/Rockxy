@@ -15,6 +15,16 @@ nonisolated enum HostCertGenerator {
     )
         throws -> (certificate: Certificate, privateKey: P256.Signing.PrivateKey)
     {
+        try generate(host: host, issuer: issuer, issuerPrivateKey: .init(issuerKey))
+    }
+
+    static func generate(
+        host: String,
+        issuer: Certificate,
+        issuerPrivateKey: Certificate.PrivateKey
+    )
+        throws -> (certificate: Certificate, privateKey: P256.Signing.PrivateKey)
+    {
         let hostKey = P256.Signing.PrivateKey()
 
         let subjectName = try DistinguishedName {
@@ -61,11 +71,25 @@ nonisolated enum HostCertGenerator {
             notValidAfter: oneYearLater,
             issuer: issuer.subject,
             subject: subjectName,
-            signatureAlgorithm: .ecdsaWithSHA256,
+            signatureAlgorithm: signatureAlgorithm(for: issuerPrivateKey),
             extensions: extensions,
-            issuerPrivateKey: .init(issuerKey)
+            issuerPrivateKey: issuerPrivateKey
         )
 
         return (certificate, hostKey)
+    }
+
+    private static func signatureAlgorithm(for privateKey: Certificate.PrivateKey) -> Certificate.SignatureAlgorithm {
+        let description = privateKey.description
+        if description.hasPrefix("P384") {
+            return .ecdsaWithSHA384
+        }
+        if description.hasPrefix("P521") {
+            return .ecdsaWithSHA512
+        }
+        if description.hasPrefix("RSA") {
+            return .sha256WithRSAEncryption
+        }
+        return .ecdsaWithSHA256
     }
 }

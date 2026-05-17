@@ -306,6 +306,7 @@ Rockxy uses a privileged helper daemon (`RockxyHelperTool`) registered via `SMAp
 **Security model:**
 - `NSXPCConnection` with code-signing requirements
 - Certificate-chain comparison via `ConnectionValidator` (defense-in-depth beyond bundle ID)
+- Local Xcode ad-hoc helper repair is limited to DerivedData build products
 - Rate limiting on state-changing operations
 - Port range validation (1024-65535)
 

@@ -475,9 +475,45 @@ actor CertificateManager {
         return pemDocument.pemString
     }
 
+    func getRootCADER() throws -> Data? {
+        guard let certificate = rootCACertificate else {
+            return nil
+        }
+        return try certToDER(certificate)
+    }
+
+    func getRootCAPrivateKeyPEM() throws -> String? {
+        guard let privateKey = rootCAPrivateKey else {
+            return nil
+        }
+        return privateKey.pemRepresentation
+    }
+
+    func exportMaterial() throws -> CertificateExportMaterial {
+        CertificateExportMaterial(certificate: rootCACertificate, privateKey: rootCAPrivateKey)
+    }
+
     // MARK: - Host Certificates
 
     func certificateForHost(_ host: String) throws -> (certificate: Certificate, privateKey: P256.Signing.PrivateKey) {
+        if let customRoot = try CustomCertificateManager.shared.activeRootIssuer() {
+            let fingerprint = CustomCertificateManager.shared.metadata(kind: .root).last?.fingerprintSHA256 ?? "custom"
+            let cacheKey = "\(fingerprint):\(host)"
+            if let cached = hostCertCache[cacheKey] {
+                touchCacheEntry(cacheKey)
+                return (cached.certificate, cached.privateKey)
+            }
+
+            let result = try HostCertGenerator.generate(
+                host: host,
+                issuer: customRoot.certificate,
+                issuerPrivateKey: customRoot.privateKey
+            )
+            insertCacheEntry(cacheKey, entry: HostCertEntry(certificate: result.certificate, privateKey: result.privateKey))
+            Self.logger.debug("Generated certificate for host with custom root issuer: \(host)")
+            return result
+        }
+
         if let cached = hostCertCache[host] {
             touchCacheEntry(host)
             return (cached.certificate, cached.privateKey)

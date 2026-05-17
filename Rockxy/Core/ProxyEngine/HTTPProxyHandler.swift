@@ -32,6 +32,7 @@ final class HTTPProxyHandler: ChannelInboundHandler, RemovableChannelHandler, @u
         ruleEngine: RuleEngine,
         scriptPluginManager: ScriptPluginManager? = nil,
         connectionLimiter: ConnectionLimiter,
+        customCertificateManager: CustomCertificateManager = .shared,
         onTransactionComplete: @escaping @Sendable (HTTPTransaction) -> Void,
         onBreakpointHit: (@Sendable (BreakpointRequestData) async -> (BreakpointDecision, BreakpointRequestData))? = nil
     ) {
@@ -39,6 +40,7 @@ final class HTTPProxyHandler: ChannelInboundHandler, RemovableChannelHandler, @u
         self.ruleEngine = ruleEngine
         self.scriptPluginManager = scriptPluginManager
         self.connectionLimiter = connectionLimiter
+        self.customCertificateManager = customCertificateManager
         self.onTransactionComplete = onTransactionComplete
         self.onBreakpointHit = onBreakpointHit
     }
@@ -99,6 +101,7 @@ final class HTTPProxyHandler: ChannelInboundHandler, RemovableChannelHandler, @u
     private let ruleEngine: RuleEngine
     private let scriptPluginManager: ScriptPluginManager?
     private let connectionLimiter: ConnectionLimiter
+    private let customCertificateManager: CustomCertificateManager
     private let onTransactionComplete: @Sendable (HTTPTransaction) -> Void
     private let onBreakpointHit: (@Sendable (BreakpointRequestData) async -> (
         BreakpointDecision,
@@ -593,6 +596,7 @@ extension HTTPProxyHandler {
                 ruleEngine: self.ruleEngine,
                 scriptPluginManager: self.scriptPluginManager,
                 connectionLimiter: self.connectionLimiter,
+                customCertificateManager: self.customCertificateManager,
                 clientSourcePort: self.clientSourcePort,
                 onTransactionComplete: self.onTransactionComplete,
                 onBreakpointHit: self.onBreakpointHit
@@ -661,8 +665,9 @@ extension HTTPProxyHandler {
             .channelInitializer { channel in
                 if useTLS {
                     do {
-                        var tlsConfig = TLSConfiguration.makeClientConfiguration()
-                        tlsConfig.certificateVerification = .fullVerification
+                        let tlsConfig = try HTTPSProxyRelayHandler.makeClientTLSConfiguration(
+                            clientIdentity: self.customCertificateManager.clientIdentity(for: host)
+                        )
                         let sslContext = try NIOSSLContext(configuration: tlsConfig)
                         let sslHandler = try NIOSSLClientHandler(
                             context: sslContext,

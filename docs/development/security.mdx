@@ -44,8 +44,9 @@ Defense-in-depth includes:
 
 - App-side privileged XPC connection setup
 - Caller validation in `Shared/ConnectionValidator.swift` checks the caller against the configured set of allowed bundle identifiers (loaded from `RockxyIdentity.current.allowedCallerIdentifiers`)
-- Code-signing requirement enforcement (`anchor apple generic`)
+- Code-signing requirement enforcement (`anchor apple generic`) for signed release and development builds
 - Certificate-chain comparison — trust is not based only on bundle ID or team ID strings
+- Local Xcode ad-hoc fallback is restricted to DerivedData build products with the configured bundle identifier, so unsigned local builds can repair their own copied helper without relaxing release validation
 - Helper-side rate limiting for state-changing operations (proxy changes, certificate installs)
 - Input validation on all helper parameters (bypass domains, service names, proxy types)
 - Atomic temp file creation with restricted permissions (0o600)

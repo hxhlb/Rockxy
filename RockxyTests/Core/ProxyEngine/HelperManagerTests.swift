@@ -491,6 +491,40 @@ struct HelperManagerTests {
         #expect(error.localizedDescription.contains("signal 15"))
     }
 
+    @Test("force reset repair summary reports immediate reinstall success")
+    func forceResetRepairSummaryReportsImmediateReinstallSuccess() {
+        let result = HelperManager.ForceResetRepairResult(
+            removal: HelperManager.ForceRemoveResult(
+                resetBackgroundItems: false,
+                commandOutput: "removed"
+            ),
+            finalStatus: .installedCompatible,
+            isReachable: true,
+            lastErrorMessage: nil
+        )
+
+        #expect(!result.requiresApproval)
+        #expect(result.localizedSummary.contains("reinstalled the helper"))
+        #expect(result.localizedSummary.contains("reachable"))
+    }
+
+    @Test("force reset repair summary points approval state at Login Items")
+    func forceResetRepairSummaryReportsApprovalRequired() {
+        let result = HelperManager.ForceResetRepairResult(
+            removal: HelperManager.ForceRemoveResult(
+                resetBackgroundItems: true,
+                commandOutput: "removed"
+            ),
+            finalStatus: .requiresApproval,
+            isReachable: false,
+            lastErrorMessage: "Approve in System Settings"
+        )
+
+        #expect(result.requiresApproval)
+        #expect(result.localizedSummary.contains("System Settings"))
+        #expect(result.localizedSummary.contains("Login Items"))
+    }
+
     @Test("hard force remove script only resets Background Items when explicitly requested")
     func hardForceRemoveScriptIncludesBTMResetOnlyWhenRequested() {
         let script = HelperManager.forceRemoveShellScript(

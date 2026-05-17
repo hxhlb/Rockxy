@@ -41,6 +41,97 @@ extension HelperManager {
         }
     }
 
+    struct ForceResetRepairResult: Equatable {
+        let removal: ForceRemoveResult
+        let finalStatus: HelperStatus
+        let isReachable: Bool
+        let lastErrorMessage: String?
+
+        var requiresApproval: Bool {
+            finalStatus == .requiresApproval
+        }
+
+        var localizedSummary: String {
+            switch finalStatus {
+            case .installedCompatible:
+                return String(
+                    localized: """
+                    \(removal.localizedSummary)
+
+                    Rockxy reinstalled the helper from the current app bundle and verified that it is reachable.
+                    """
+                )
+            case .requiresApproval:
+                return String(
+                    localized: """
+                    \(removal.localizedSummary)
+
+                    Rockxy re-registered the helper from the current app bundle. macOS still needs you to approve it in System Settings > Login Items.
+                    """
+                )
+            case .installedOutdated:
+                return String(
+                    localized: """
+                    \(removal.localizedSummary)
+
+                    Rockxy reinstalled the helper, but the installed helper still appears older than this app build.
+                    """
+                )
+            case .installedIncompatible:
+                return String(
+                    localized: """
+                    \(removal.localizedSummary)
+
+                    Rockxy reinstalled the helper, but its protocol version is not compatible with this app build.
+                    """
+                )
+            case .unreachable:
+                return String(
+                    localized: """
+                    \(removal.localizedSummary)
+
+                    Rockxy reinstalled the helper, but macOS has not made the XPC service reachable yet.
+                    """
+                )
+            case .signingMismatch:
+                return String(
+                    localized: """
+                    \(removal.localizedSummary)
+
+                    Rockxy reinstalled the helper, but the app and helper signing identities still do not match.
+                    """
+                )
+            case .notInstalled:
+                return String(
+                    localized: """
+                    \(removal.localizedSummary)
+
+                    Rockxy removed stale helper state, but the helper is not installed.
+                    """
+                )
+            }
+        }
+    }
+
+    /// Hard-reset helper state, then immediately install from the current app bundle.
+    ///
+    /// This is the user-facing recovery path for both signed release apps and local
+    /// Xcode runs. Release apps reinstall through `SMAppService`; DerivedData builds
+    /// can fall back to the legacy LaunchDaemon repair path inside `performInstall()`.
+    @discardableResult
+    func forceResetAndReinstall(resetBackgroundItems: Bool) async throws -> ForceResetRepairResult {
+        let removal = try await forceRemoveHelper(resetBackgroundItems: resetBackgroundItems)
+        try? await Task.sleep(nanoseconds: 1_000_000_000)
+        try await install()
+
+        return ForceResetRepairResult(
+            removal: removal,
+            finalStatus: status,
+            isReachable: isReachable,
+            lastErrorMessage: lastErrorMessage
+        )
+    }
+
     nonisolated static func forceRemoveShellScript(
         identity: RockxyIdentity,
         resetBackgroundItems: Bool
