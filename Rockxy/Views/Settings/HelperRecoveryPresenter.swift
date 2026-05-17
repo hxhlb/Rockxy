@@ -12,7 +12,7 @@ enum HelperRecoveryPresenter {
         confirmation.informativeText = String(
             localized: """
             Rockxy will stop capture, request administrator approval, remove stale launchd and privileged helper files, \
-            then recheck the helper. System proxy settings may be restored during the reset.
+            then reinstall the helper from the current app bundle. System proxy settings may be restored during the reset.
 
             Use this only when install, uninstall, and recheck are stuck.
             """
@@ -39,7 +39,7 @@ enum HelperRecoveryPresenter {
         Task { @MainActor in
             do {
                 try await Task.sleep(nanoseconds: 750_000_000)
-                let result = try await HelperManager.shared.forceRemoveHelper(
+                let result = try await HelperManager.shared.forceResetAndReinstall(
                     resetBackgroundItems: resetBackgroundItems
                 )
                 await ReadinessCoordinator.shared.deepRefresh()
@@ -54,35 +54,18 @@ enum HelperRecoveryPresenter {
         }
     }
 
-    private static func presentSuccess(result: HelperManager.ForceRemoveResult) {
+    private static func presentSuccess(result: HelperManager.ForceResetRepairResult) {
         let alert = NSAlert()
         alert.alertStyle = .informational
         alert.messageText = String(localized: "Helper reset complete")
-        alert.informativeText = String(
-            localized: """
-            \(result.localizedSummary)
-
-            Install the helper again, then approve Rockxy in System Settings > Login Items if macOS asks.
-            """
-        )
-        alert.addButton(withTitle: String(localized: "Install Helper"))
-        alert.addButton(withTitle: String(localized: "Open Login Items"))
+        alert.informativeText = result.localizedSummary
+        if result.requiresApproval {
+            alert.addButton(withTitle: String(localized: "Open Login Items"))
+        }
         alert.addButton(withTitle: String(localized: "OK"))
 
         switch alert.runModal() {
-        case .alertFirstButtonReturn:
-            Task { @MainActor in
-                do {
-                    try await HelperManager.shared.install()
-                    await ReadinessCoordinator.shared.deepRefresh()
-                    if HelperManager.shared.status == .requiresApproval {
-                        SMAppService.openSystemSettingsLoginItems()
-                    }
-                } catch {
-                    presentInstallFailure(error)
-                }
-            }
-        case .alertSecondButtonReturn:
+        case .alertFirstButtonReturn where result.requiresApproval:
             SMAppService.openSystemSettingsLoginItems()
         default:
             break
@@ -138,14 +121,5 @@ enum HelperRecoveryPresenter {
         }
 
         runForceReset(stopCapture: stopCapture, resetBackgroundItems: true)
-    }
-
-    private static func presentInstallFailure(_ error: Error) {
-        let alert = NSAlert()
-        alert.alertStyle = .warning
-        alert.messageText = String(localized: "Helper install failed")
-        alert.informativeText = error.localizedDescription
-        alert.addButton(withTitle: String(localized: "OK"))
-        alert.runModal()
     }
 }

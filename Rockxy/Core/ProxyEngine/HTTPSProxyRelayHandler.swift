@@ -27,6 +27,7 @@ final class HTTPSProxyRelayHandler: ChannelInboundHandler, @unchecked Sendable {
         ruleEngine: RuleEngine,
         scriptPluginManager: ScriptPluginManager? = nil,
         connectionLimiter: ConnectionLimiter,
+        customCertificateManager: CustomCertificateManager = .shared,
         clientSourcePort: UInt16? = nil,
         onTransactionComplete: @escaping @Sendable (HTTPTransaction) -> Void,
         onBreakpointHit: (@Sendable (BreakpointRequestData) async -> (BreakpointDecision, BreakpointRequestData))? = nil
@@ -36,6 +37,7 @@ final class HTTPSProxyRelayHandler: ChannelInboundHandler, @unchecked Sendable {
         self.ruleEngine = ruleEngine
         self.scriptPluginManager = scriptPluginManager
         self.connectionLimiter = connectionLimiter
+        self.customCertificateManager = customCertificateManager
         self.clientSourcePort = clientSourcePort
         self.onTransactionComplete = onTransactionComplete
         self.onBreakpointHit = onBreakpointHit
@@ -45,6 +47,16 @@ final class HTTPSProxyRelayHandler: ChannelInboundHandler, @unchecked Sendable {
 
     typealias InboundIn = HTTPServerRequestPart
     typealias OutboundOut = HTTPServerResponsePart
+
+    nonisolated static func makeClientTLSConfiguration(clientIdentity: CustomTLSIdentity?) throws -> TLSConfiguration {
+        var clientTLSConfig = TLSConfiguration.makeClientConfiguration()
+        clientTLSConfig.certificateVerification = .fullVerification
+        if let clientIdentity {
+            clientTLSConfig.certificateChain = try clientIdentity.certificateSources
+            clientTLSConfig.privateKey = try clientIdentity.privateKeySource
+        }
+        return clientTLSConfig
+    }
 
     nonisolated func channelRead(context: ChannelHandlerContext, data: NIOAny) {
         let part = unwrapInboundIn(data)
@@ -93,6 +105,7 @@ final class HTTPSProxyRelayHandler: ChannelInboundHandler, @unchecked Sendable {
     private let ruleEngine: RuleEngine
     private let scriptPluginManager: ScriptPluginManager?
     private let connectionLimiter: ConnectionLimiter
+    private let customCertificateManager: CustomCertificateManager
     private let clientSourcePort: UInt16?
     private let onTransactionComplete: @Sendable (HTTPTransaction) -> Void
     private let onBreakpointHit: (@Sendable (BreakpointRequestData) async -> (
@@ -262,8 +275,9 @@ final class HTTPSProxyRelayHandler: ChannelInboundHandler, @unchecked Sendable {
         let limiter = connectionLimiter
 
         do {
-            var clientTLSConfig = TLSConfiguration.makeClientConfiguration()
-            clientTLSConfig.certificateVerification = .fullVerification
+            let clientTLSConfig = try Self.makeClientTLSConfiguration(
+                clientIdentity: customCertificateManager.clientIdentity(for: upstreamHost)
+            )
             let sslContext = try NIOSSLContext(configuration: clientTLSConfig)
 
             ClientBootstrap(group: context.eventLoop)
@@ -660,8 +674,9 @@ final class HTTPSProxyRelayHandler: ChannelInboundHandler, @unchecked Sendable {
         if scheme == "https" {
             let connectTime = DispatchTime.now()
             do {
-                var clientTLSConfig = TLSConfiguration.makeClientConfiguration()
-                clientTLSConfig.certificateVerification = .fullVerification
+                let clientTLSConfig = try Self.makeClientTLSConfiguration(
+                    clientIdentity: customCertificateManager.clientIdentity(for: remoteHost)
+                )
                 let sslContext = try NIOSSLContext(configuration: clientTLSConfig)
 
                 ClientBootstrap(group: context.eventLoop)

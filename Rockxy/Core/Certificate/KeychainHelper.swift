@@ -80,6 +80,63 @@ nonisolated enum KeychainHelper {
         }
     }
 
+    // MARK: - Generic Secure Data Operations
+
+    static func saveSecureData(_ data: Data, service: String, account: String) throws {
+        try deleteSecureData(service: service, account: account)
+
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlocked
+        ]
+
+        let status = SecItemAdd(query as CFDictionary, nil)
+        guard status == errSecSuccess else {
+            logger.error("Failed to save secure data: \(status)")
+            throw KeychainError.saveFailed(status)
+        }
+    }
+
+    static func loadSecureData(service: String, account: String) throws -> Data? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        if status == errSecItemNotFound {
+            return nil
+        }
+
+        guard status == errSecSuccess else {
+            logger.error("Failed to load secure data: \(status)")
+            throw KeychainError.loadFailed(status)
+        }
+
+        return result as? Data
+    }
+
+    static func deleteSecureData(service: String, account: String) throws {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account
+        ]
+
+        let status = SecItemDelete(query as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            logger.error("Failed to delete secure data: \(status)")
+            throw KeychainError.deleteFailed(status)
+        }
+    }
+
     // MARK: - Certificate Operations
 
     static func installCertificate(_ certData: Data, label: String) throws {

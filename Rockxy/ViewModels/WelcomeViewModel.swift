@@ -112,7 +112,7 @@ final class WelcomeViewModel {
         defer { isPerformingAction = false }
 
         do {
-            try await HelperManager.shared.forceResetRegistration()
+            try await HelperManager.shared.forceResetAndReinstall(resetBackgroundItems: false)
             await refreshStatus()
         } catch {
             Self.logger.error("Failed to force-reset helper: \(error.localizedDescription)")
