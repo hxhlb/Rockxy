@@ -185,7 +185,6 @@ struct ScriptEditorWindowView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             if viewModel.consolePanelVisible {
-                Divider()
                 ScriptConsolePanel(viewModel: viewModel)
                     .frame(width: 230)
             }

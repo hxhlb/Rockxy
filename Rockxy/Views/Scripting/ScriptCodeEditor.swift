@@ -106,6 +106,7 @@ struct ScriptCodeEditor: NSViewRepresentable {
         textView.delegate = context.coordinator
         scrollView.drawsBackground = true
         scrollView.backgroundColor = .textBackgroundColor
+        scrollView.borderType = .noBorder
         scrollView.hasHorizontalScroller = true
         scrollView.autohidesScrollers = true
 
