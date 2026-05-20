@@ -12,7 +12,7 @@ final class EditableHeaderOperation: Identifiable {
     init(
         id: UUID = UUID(),
         phase: HeaderModifyPhase = .request,
-        type: HeaderOperationType = .add,
+        type: HeaderOperationType = .replace,
         headerName: String = "",
         headerValue: String = ""
     ) {
@@ -49,7 +49,7 @@ final class EditableHeaderOperation: Identifiable {
             return String(localized: "Header Name is required")
         }
         if type != .remove, headerValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return String(localized: "Header Value is required for \(type.rawValue.capitalized)")
+            return String(localized: "Header Value is required for \(type.editorLabel)")
         }
         return nil
     }
@@ -217,9 +217,9 @@ struct ModifyHeaderEditorView: View {
                 get: { operation.type },
                 set: { operation.type = $0 }
             )) {
-                Text(String(localized: "Add")).tag(HeaderOperationType.add)
-                Text(String(localized: "Remove")).tag(HeaderOperationType.remove)
-                Text(String(localized: "Replace")).tag(HeaderOperationType.replace)
+                Text(HeaderOperationType.replace.editorLabel).tag(HeaderOperationType.replace)
+                Text(HeaderOperationType.add.editorLabel).tag(HeaderOperationType.add)
+                Text(HeaderOperationType.remove.editorLabel).tag(HeaderOperationType.remove)
             }
             .labelsHidden()
             .pickerStyle(.menu)
@@ -327,5 +327,20 @@ extension [HeaderOperation] {
             return "\(prefix)\(op.headerName)"
         }
         .joined(separator: ", ")
+    }
+}
+
+// MARK: - HeaderOperationType + Editor Labels
+
+extension HeaderOperationType {
+    var editorLabel: String {
+        switch self {
+        case .add:
+            String(localized: "Add")
+        case .remove:
+            String(localized: "Remove")
+        case .replace:
+            String(localized: "Set")
+        }
     }
 }
