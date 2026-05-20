@@ -151,12 +151,16 @@ final class HTTPProxyHandler: ChannelInboundHandler, RemovableChannelHandler, @u
         let ruleEngine = self.ruleEngine
 
         eventLoop.makeFutureWithTask {
-            await ruleEngine.evaluateRule(method: method, url: url, headers: headers)
+            let breakpointRule = await ruleEngine.evaluateBreakpointRule(method: method, url: url, headers: headers)
+            let matchedRule = await ruleEngine.evaluateRule(method: method, url: url, headers: headers)
+            return (breakpointRule, matchedRule)
         }.whenComplete { [weak self] result in
             guard let self else {
                 return
             }
-            let matchedRule: ProxyRule? = (try? result.get()) ?? nil
+            let evaluation = try? result.get()
+            let breakpointRule = evaluation?.0
+            let matchedRule = evaluation?.1
             let callback = self.makeTransactionCallback(for: matchedRule)
 
             // CONNECT policy: only .block is meaningful on tunnel establishment (sends
@@ -186,6 +190,21 @@ final class HTTPProxyHandler: ChannelInboundHandler, RemovableChannelHandler, @u
                     }
                 }
                 self.handleConnect(context: context, head: head)
+                return
+            }
+
+            if let breakpointRule,
+               case let .breakpoint(phase) = breakpointRule.action,
+               phase == .request || phase == .both
+            {
+                self.handleRuleAction(
+                    breakpointRule.action,
+                    context: context,
+                    head: head,
+                    requestData: requestData,
+                    callback: self.makeTransactionCallback(for: breakpointRule),
+                    urlPattern: breakpointRule.matchCondition.urlPattern
+                )
                 return
             }
 

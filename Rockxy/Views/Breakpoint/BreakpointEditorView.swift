@@ -49,6 +49,10 @@ struct BreakpointEditorView: View {
     @State private var rawMessage: String = ""
     @State private var rawMessageItemID: UUID?
     @State private var templateStore = BreakpointTemplateStore.shared
+    @State private var isSaveTemplateSheetPresented = false
+    @State private var saveTemplateName = ""
+    @State private var pendingTemplateKind: BreakpointTemplateKind = .request
+    @State private var pendingTemplateRawMessage = ""
 
     private var emptyState: some View {
         VStack(spacing: 4) {
@@ -281,6 +285,13 @@ struct BreakpointEditorView: View {
                     .foregroundStyle(validation.isValid ? Color.green : Color.red)
                 Spacer()
                 Menu {
+                    Button(String(localized: "Save current message as new template...")) {
+                        pendingTemplateKind = kind
+                        pendingTemplateRawMessage = rawMessage
+                        saveTemplateName = defaultTemplateName(for: kind)
+                        isSaveTemplateSheetPresented = true
+                    }
+                    Divider()
                     ForEach(templateStore.templates(for: kind)) { template in
                         Button(template.name.isEmpty ? String(localized: "Untitled") : template.name) {
                             applyTemplate(template, to: itemId)
@@ -289,7 +300,6 @@ struct BreakpointEditorView: View {
                 } label: {
                     Label(String(localized: "Template"), systemImage: "doc.text")
                 }
-                .disabled(templateStore.templates(for: kind).isEmpty)
             }
             .padding(.horizontal, 12)
             .padding(.top, 8)
@@ -310,6 +320,9 @@ struct BreakpointEditorView: View {
             if newValue == .raw {
                 syncRawMessageFromDraft(itemId: itemId, force: rawMessageItemID != itemId)
             }
+        }
+        .sheet(isPresented: $isSaveTemplateSheetPresented) {
+            saveTemplateSheet
         }
     }
 
@@ -464,6 +477,56 @@ struct BreakpointEditorView: View {
         rawMessageItemID = itemId
         rawMessage = template.rawMessage
         updateRawMessage(template.rawMessage, itemId: itemId)
+    }
+
+    private var saveTemplateSheet: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(String(localized: "Save Template"))
+                .font(.headline)
+
+            TextField(String(localized: "Template name"), text: $saveTemplateName)
+                .textFieldStyle(.roundedBorder)
+
+            let validation = BreakpointRawMessage.validation(for: pendingTemplateRawMessage, kind: pendingTemplateKind)
+            Label(validation.message, systemImage: "circle.fill")
+                .font(.caption)
+                .foregroundStyle(validation.isValid ? Color.green : Color.red)
+
+            HStack {
+                Spacer()
+                Button(String(localized: "Cancel")) {
+                    isSaveTemplateSheetPresented = false
+                }
+                .keyboardShortcut(.cancelAction)
+
+                Button(String(localized: "Save")) {
+                    savePendingTemplate()
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(!validation.isValid)
+            }
+        }
+        .padding(20)
+        .frame(width: 380)
+    }
+
+    private func defaultTemplateName(for kind: BreakpointTemplateKind) -> String {
+        switch kind {
+        case .request:
+            String(localized: "Saved Request")
+        case .response:
+            String(localized: "Saved Response")
+        }
+    }
+
+    private func savePendingTemplate() {
+        let template = templateStore.addTemplate(kind: pendingTemplateKind)
+        templateStore.updateTemplate(
+            id: template.id,
+            name: saveTemplateName,
+            rawMessage: pendingTemplateRawMessage
+        )
+        isSaveTemplateSheetPresented = false
     }
 }
 

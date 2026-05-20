@@ -173,17 +173,42 @@ final class HTTPSProxyRelayHandler: ChannelInboundHandler, @unchecked Sendable {
         let ruleEngine = self.ruleEngine
 
         eventLoop.makeFutureWithTask {
-            await ruleEngine.evaluateRule(
+            let breakpointRule = await ruleEngine.evaluateBreakpointRule(
                 method: head.method.rawValue,
                 url: parsedURL,
                 headers: requestData.headers
             )
+            let matchedRule = await ruleEngine.evaluateRule(
+                method: head.method.rawValue,
+                url: parsedURL,
+                headers: requestData.headers
+            )
+            return (breakpointRule, matchedRule)
         }.whenComplete { [weak self] result in
             guard let self else {
                 return
             }
-            let matchedRule: ProxyRule? = (try? result.get()) ?? nil
+            let evaluation = try? result.get()
+            let breakpointRule = evaluation?.0
+            let matchedRule = evaluation?.1
             let matchedRuleCallback = self.makeTransactionCallback(for: matchedRule)
+
+            if let breakpointRule,
+               case let .breakpoint(phase) = breakpointRule.action,
+               phase == .request || phase == .both
+            {
+                self.handleRuleAction(
+                    breakpointRule.action,
+                    context: context,
+                    head: head,
+                    requestData: requestData,
+                    graphQLInfo: graphQLInfo,
+                    startTime: startTime,
+                    callback: self.makeTransactionCallback(for: breakpointRule),
+                    urlPattern: breakpointRule.matchCondition.urlPattern
+                )
+                return
+            }
 
             if let matchedRule {
                 self.handleRuleAction(
