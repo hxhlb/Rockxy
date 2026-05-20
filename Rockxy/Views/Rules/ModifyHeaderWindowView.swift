@@ -529,6 +529,13 @@ private struct ModifyHeaderEditSheet: View {
                         .font(.system(size: 13, weight: .medium))
                     ScrollView {
                         ModifyHeaderEditorView(operations: $operations)
+                            .padding(10)
+                    }
+                    .background(Color(nsColor: .windowBackgroundColor))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
                     }
                     .frame(maxHeight: 300)
                 }
