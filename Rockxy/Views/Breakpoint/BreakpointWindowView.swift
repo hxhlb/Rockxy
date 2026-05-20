@@ -7,21 +7,18 @@ import SwiftUI
 private enum BreakpointQueueLayoutMode: String, CaseIterable {
     case horizontal
     case vertical
-    case reversed
 
     var next: BreakpointQueueLayoutMode {
         switch self {
         case .horizontal: .vertical
-        case .vertical: .reversed
-        case .reversed: .horizontal
+        case .vertical: .horizontal
         }
     }
 
     var systemImage: String {
         switch self {
-        case .horizontal: "rectangle.split.2x1"
-        case .vertical: "rectangle.split.1x2"
-        case .reversed: "rectangle.split.2x1"
+        case .horizontal: "rectangle.split.1x2"
+        case .vertical: "rectangle.split.2x1"
         }
     }
 
@@ -30,8 +27,6 @@ private enum BreakpointQueueLayoutMode: String, CaseIterable {
         case .horizontal:
             String(localized: "Switch Layout Mode: Vertical")
         case .vertical:
-            String(localized: "Switch Layout Mode: Reversed")
-        case .reversed:
             String(localized: "Switch Layout Mode: Horizontal")
         }
     }
@@ -63,6 +58,7 @@ struct BreakpointWindowView: View {
 
     private let manager = BreakpointManager.shared
     private let windowModel = BreakpointWindowModel.shared
+    private let queueRatio: CGFloat = 0.4
 
     private var layoutMode: BreakpointQueueLayoutMode {
         get { BreakpointQueueLayoutMode(rawValue: layoutModeRaw) ?? .horizontal }
@@ -71,23 +67,27 @@ struct BreakpointWindowView: View {
 
     @ViewBuilder
     private var mainContent: some View {
-        switch layoutMode {
-        case .horizontal:
-            HSplitView {
-                queueTable.frame(minWidth: 500, idealWidth: 620, maxHeight: .infinity)
-                editor.frame(minWidth: 420, maxHeight: .infinity)
-            }
-        case .vertical:
-            VSplitView {
-                queueTable.frame(minHeight: 180, idealHeight: 260, maxHeight: .infinity)
-                editor.frame(minHeight: 260, maxHeight: .infinity)
-            }
-        case .reversed:
-            HSplitView {
-                editor.frame(minWidth: 420, maxHeight: .infinity)
-                queueTable.frame(minWidth: 500, idealWidth: 620, maxHeight: .infinity)
+        GeometryReader { geometry in
+            switch layoutMode {
+            case .horizontal:
+                HStack(spacing: 0) {
+                    queueTable
+                        .frame(width: max(360, geometry.size.width * queueRatio))
+                    Divider()
+                    editor
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            case .vertical:
+                VStack(spacing: 0) {
+                    queueTable
+                        .frame(height: max(180, geometry.size.height * queueRatio))
+                    Divider()
+                    editor
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             }
         }
+        .onAppear(perform: normalizePersistedLayoutMode)
     }
 
     private var queueTable: some View {
@@ -240,6 +240,12 @@ struct BreakpointWindowView: View {
             return
         }
         manager.resolve(id: selectedId, decision: decision)
+    }
+
+    private func normalizePersistedLayoutMode() {
+        if BreakpointQueueLayoutMode(rawValue: layoutModeRaw) == nil {
+            layoutModeRaw = BreakpointQueueLayoutMode.horizontal.rawValue
+        }
     }
 }
 
