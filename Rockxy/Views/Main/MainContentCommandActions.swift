@@ -94,6 +94,11 @@ struct MainContentCommandActions {
         coordinator.replaySelectedRequest()
     }
 
+    func composeFreshRequest() {
+        ComposeStore.shared.requestBlankDraft()
+        NotificationCenter.default.post(name: .openComposeWindow, object: nil)
+    }
+
     func editAndRepeat() {
         guard let transaction = coordinator.selectedTransaction else {
             return

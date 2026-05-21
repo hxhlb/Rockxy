@@ -521,6 +521,13 @@ struct RockxyMenuCommands: Commands {
 
     private var flowMenu: some Commands {
         CommandMenu(String(localized: "Flow")) {
+            Button(String(localized: "Compose…")) {
+                actions?.composeFreshRequest()
+            }
+            .keyboardShortcut("n", modifiers: [.command, .option])
+
+            Divider()
+
             Button(String(localized: "Repeat")) {
                 actions?.replayRequest()
             }
