@@ -6,27 +6,23 @@
     <description>Rockxy release channel</description>
     <language>en</language>
     <item>
-      <title>Version 0.21.0 (build 33)</title>
-      <pubDate>Thu, 21 May 2026 00:00:00 +0000</pubDate>
+      <title>Version 0.21.1 (build 34)</title>
+      <pubDate>Fri, 22 May 2026 00:00:00 +0000</pubDate>
       <enclosure
-        url="https://github.com/RockxyApp/Rockxy/releases/download/v0.21.0/Rockxy-0.21.0-33.dmg"
-        sparkle:version="33"
-        sparkle:shortVersionString="0.21.0"
-        sparkle:edSignature="mO8bFTt7QRoUTbDDoBTctTRgb3RjVdjhqAfretCoUyHQXJZlBa8zyK5fik6Pxwp88QaFyVWm1h2mrwbJ9M+8Aw=="
-        length="22675325"
+        url="https://github.com/RockxyApp/Rockxy/releases/download/v0.21.1/Rockxy-0.21.1-34.dmg"
+        sparkle:version="34"
+        sparkle:shortVersionString="0.21.1"
+        sparkle:edSignature="FIfrq9y6/xrDn632fmFanlTBiyMBa2EFuZmg4/EPZI0Uq4JFnGelGu2LqUVEMWPKq8incxxYA1yhihQpTDTeCg=="
+        length="22685312"
         type="application/octet-stream" />
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:releaseNotesLink>https://github.com/RockxyApp/Rockxy/releases/tag/v0.21.0</sparkle:releaseNotesLink>
+      <sparkle:releaseNotesLink>https://github.com/RockxyApp/Rockxy/releases/tag/v0.21.1</sparkle:releaseNotesLink>
       <description><![CDATA[
-<h3>Added</h3>
-<ul>
-  <li>Improved Compose history so repeated request work is easier to resume and reuse.</li>
-  <li>Added a cleaner fresh-request flow in Compose for quickly starting over without carrying old request state forward.</li>
-  <li>Standardized keyboard shortcuts across capture, rules, breakpoints, Compose, scripting, and settings, with a searchable Help reference.</li>
-</ul>
 <h3>Fixed</h3>
 <ul>
-  <li>Fixed breakpoint rule persistence so saved interception rules remain available after restarting Rockxy.</li>
+  <li>Improved scripting stability so request and response scripts handle headers, console output, and runtime errors more reliably.</li>
+  <li>Strengthened redaction for local MCP exports so sensitive request and rule data stays protected when shared with connected tools.</li>
+  <li>Improved HAR imports and content-type detection for better handling of modern JSON-style responses and imported sessions.</li>
 </ul>
       ]]></description>
     </item>

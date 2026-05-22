@@ -41,17 +41,13 @@
 <!-- BEGIN GENERATED: latest-release -->
 ## Latest Tagged Release
 
-**v0.21.0** — 2026-05-21
-
-### Added
-
-- Improved Compose history so repeated request work is easier to resume and reuse.
-- Added a cleaner fresh-request flow in Compose for quickly starting over without carrying old request state forward.
-- Standardized keyboard shortcuts across capture, rules, breakpoints, Compose, scripting, and settings, with a searchable Help reference.
+**v0.21.1** — 2026-05-22
 
 ### Fixed
 
-- Fixed breakpoint rule persistence so saved interception rules remain available after restarting Rockxy.
+- Improved scripting stability so request and response scripts handle headers, console output, and runtime errors more reliably.
+- Strengthened redaction for local MCP exports so sensitive request and rule data stays protected when shared with connected tools.
+- Improved HAR imports and content-type detection for better handling of modern JSON-style responses and imported sessions.
 
 See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 <!-- END GENERATED: latest-release -->

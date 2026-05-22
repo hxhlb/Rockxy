@@ -12,6 +12,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+## [0.21.1] - 2026-05-22
+
+### Fixed
+
+- Improved scripting stability so request and response scripts handle headers, console output, and runtime errors more reliably.
+- Strengthened redaction for local MCP exports so sensitive request and rule data stays protected when shared with connected tools.
+- Improved HAR imports and content-type detection for better handling of modern JSON-style responses and imported sessions.
+
 ## [0.21.0] - 2026-05-21
 
 ### Added
