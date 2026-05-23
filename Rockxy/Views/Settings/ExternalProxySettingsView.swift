@@ -69,10 +69,11 @@ struct ExternalProxySettingsView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var store = UpstreamProxyStore.shared
-    @State private var selectedProtocol: ExternalProxyProtocolRow = .http
+    @State private var selectedProtocol: ExternalProxyProtocolSelection = .http
     @State private var isEnabled = false
     @State private var host = ""
     @State private var port = "8080"
+    @State private var pacURL = ""
     @State private var username = ""
     @State private var password = ""
     @State private var usesAuthentication = false
@@ -83,20 +84,44 @@ struct ExternalProxySettingsView: View {
     @State private var isTesting = false
     @State private var showHelp = false
 
+    private var httpServerLabel: String {
+        switch selectedProtocol {
+        case .https:
+            String(localized: "HTTPS Proxy Server:")
+        case .automatic,
+             .http,
+             .socks5:
+            String(localized: "HTTP Proxy Server:")
+        }
+    }
+
+    private var httpServerPlaceholder: String {
+        switch selectedProtocol {
+        case .https:
+            String(localized: "HTTPS Proxy Server:")
+        case .automatic,
+             .http,
+             .socks5:
+            String(localized: "HTTP Proxy Server:")
+        }
+    }
+
     private var protocolList: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "Select a protocol to configure:"))
                 .font(.system(size: 13))
 
             VStack(spacing: 0) {
-                ForEach(ExternalProxyProtocolRow.allCases) { row in
+                ForEach(ExternalProxyProtocolSelection.allCases) { row in
                     Button {
                         select(row)
                     } label: {
                         HStack(spacing: 10) {
                             Image(systemName: checkboxSymbol(for: row))
                                 .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(row.isEnabled(in: store) ? .primary : .tertiary)
+                                .foregroundStyle(
+                                    selectedProtocol == row ? Color.white : Color(nsColor: .tertiaryLabelColor)
+                                )
                                 .frame(width: 18)
 
                             Text(row.displayName)
@@ -117,7 +142,6 @@ struct ExternalProxySettingsView: View {
                         .background(selectedProtocol == row ? Color.accentColor : Color.clear)
                     }
                     .buttonStyle(.plain)
-                    .disabled(!row.isEnabled(in: store))
                 }
             }
             .frame(width: 350, height: 230, alignment: .top)
@@ -131,25 +155,25 @@ struct ExternalProxySettingsView: View {
         case .automatic:
             VStack(alignment: .leading, spacing: 10) {
                 Text(String(localized: "Proxy Configuration URL:"))
-                    .font(.system(size: 13))
-                TextField(String(localized: "http://my-server.com/proxy.pac"), text: .constant(""))
+                    .font(.system(size: 15))
+                TextField(String(localized: "http://my-server.com/proxy.pac"), text: $pacURL)
                     .textFieldStyle(.roundedBorder)
-                    .disabled(true)
-                Text(String(localized: "Automatic proxy configuration is not supported by this Upstream Proxy build."))
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: 470)
+                Text(
+                    String(
+                        localized: "If your network administrator provided you with the address of an automatic proxy configuration (.pac) file, enter it above."
+                    )
+                )
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
         case .http,
-             .https,
-             .socks5:
+             .https:
             VStack(alignment: .leading, spacing: 14) {
-                HStack(spacing: 12) {
-                    labeledTextField(
-                        String(localized: "\(selectedProtocol.proxyType?.displayName ?? "HTTP") Proxy Server:"),
-                        text: $host
-                    )
-                    labeledTextField(String(localized: "Port:"), text: $port, width: 96)
+                HStack(alignment: .top, spacing: 16) {
+                    labeledTextField(httpServerLabel, placeholder: httpServerPlaceholder, text: $host)
+                    labeledTextField(String(localized: "Port:"), placeholder: "8080", text: $port, width: 96)
                 }
 
                 Toggle(String(localized: "Proxy server requires password"), isOn: $usesAuthentication)
@@ -174,8 +198,54 @@ struct ExternalProxySettingsView: View {
                         }
                     }
                 }
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        case .socks5:
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(String(localized: "SOCKS Proxy Server"))
+                        .font(.system(size: 15))
+                    HStack(spacing: 8) {
+                        TextField(String(localized: "127.0.0.1"), text: $host)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(maxWidth: 390)
+                            .disabled(!store.canSelectSOCKS5)
+                        Text(":")
+                            .font(.system(size: 17, weight: .semibold))
+                        TextField(String(localized: "8080"), text: $port)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 86)
+                            .disabled(!store.canSelectSOCKS5)
+                    }
+                }
 
-                if selectedProtocol == .socks5, !store.canSelectSOCKS5 {
+                Toggle(String(localized: "Proxy Server requires password"), isOn: $usesAuthentication)
+                    .toggleStyle(.checkbox)
+                    .disabled(true)
+
+                HStack(spacing: 12) {
+                    Text(String(localized: "Username:"))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 92, alignment: .leading)
+                    TextField("", text: $username)
+                        .textFieldStyle(.roundedBorder)
+                        .disabled(true)
+                }
+
+                HStack(spacing: 12) {
+                    Text(String(localized: "Password:"))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 92, alignment: .leading)
+                    SecureField("", text: $password)
+                        .textFieldStyle(.roundedBorder)
+                        .disabled(true)
+                }
+
+                Text(String(localized: "SOCKS Proxy has not supported Authentication yet."))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+
+                if !store.canSelectSOCKS5 {
                     PolicyLockNotice(
                         title: String(localized: "SOCKS5 unavailable"),
                         message: String(localized: "SOCKS5 upstream proxy is disabled by the current app policy.")
@@ -217,39 +287,49 @@ struct ExternalProxySettingsView: View {
         }
     }
 
-    private func labeledTextField(_ title: String, text: Binding<String>, width: CGFloat? = nil) -> some View {
+    private func labeledTextField(
+        _ title: String,
+        placeholder: String? = nil,
+        text: Binding<String>,
+        width: CGFloat? = nil
+    )
+        -> some View
+    {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
                 .font(.system(size: 12))
-            TextField(title, text: text)
+            TextField(placeholder ?? title, text: text)
                 .textFieldStyle(.roundedBorder)
                 .frame(width: width)
         }
     }
 
-    private func select(_ row: ExternalProxyProtocolRow) {
-        guard row.isEnabled(in: store) else {
-            statusMessage = row.lockMessage
-            statusIsError = true
-            return
-        }
+    private func select(_ row: ExternalProxyProtocolSelection) {
         selectedProtocol = row
+        if row == .socks5, host.isEmpty {
+            host = "127.0.0.1"
+        }
+        if port.isEmpty {
+            port = "8080"
+        }
+        statusMessage = nil
+        statusIsError = false
     }
 
-    private func rowForeground(_ row: ExternalProxyProtocolRow) -> Color {
+    private func rowForeground(_ row: ExternalProxyProtocolSelection) -> Color {
         if selectedProtocol == row {
             return .white
         }
-        return row.isEnabled(in: store) ? .primary : .secondary
+        return .primary
     }
 
-    private func checkboxSymbol(for row: ExternalProxyProtocolRow) -> String {
+    private func checkboxSymbol(for row: ExternalProxyProtocolSelection) -> String {
         selectedProtocol == row ? "checkmark.square.fill" : "square.fill"
     }
 
     private func loadDraft() {
         let configuration = store.configuration
-        selectedProtocol = ExternalProxyProtocolRow(configuration.type, canSelectSOCKS5: store.canSelectSOCKS5)
+        selectedProtocol = ExternalProxyProtocolSelection(configuration.type)
         isEnabled = configuration.isEnabled
         host = configuration.host
         port = "\(configuration.port)"
@@ -259,28 +339,19 @@ struct ExternalProxySettingsView: View {
         bypassLocalhost = configuration.bypassLocalhost
     }
 
-    private func makeConfiguration() throws -> UpstreamProxyConfiguration {
-        guard let type = selectedProtocol.proxyType else {
-            throw UpstreamProxyConfigurationError.hostInvalid
-        }
-        let parsedPort = Int(port.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
-        return UpstreamProxyConfiguration(
+    private func makeDraft() -> ExternalProxySettingsDraft {
+        ExternalProxySettingsDraft(
             isEnabled: isEnabled,
-            type: type,
+            selectedProtocol: selectedProtocol,
             host: host,
-            port: parsedPort,
-            hasCredentials: usesAuthentication,
-            username: usesAuthentication ? username : nil,
-            bypassHostPatterns: parsedBypassPatterns(),
+            portText: port,
+            pacURL: pacURL,
+            usesAuthentication: usesAuthentication,
+            username: username,
+            password: password,
+            bypassText: bypassText,
             bypassLocalhost: bypassLocalhost
         )
-    }
-
-    private func parsedBypassPatterns() -> [String] {
-        bypassText
-            .split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
     }
 
     private func saveAndDismiss() {
@@ -294,8 +365,9 @@ struct ExternalProxySettingsView: View {
     }
 
     private func saveDraft() throws {
-        let configuration = try makeConfiguration()
-        let credentials = usesAuthentication ? UpstreamProxyCredentials(username: username, password: password) : nil
+        let draft = makeDraft()
+        let configuration = try draft.configuration()
+        let credentials = draft.credentials()
         try store.saveConfiguration(configuration, credentials: credentials)
         statusMessage = String(localized: "External Proxy settings saved.")
         statusIsError = false
@@ -320,85 +392,6 @@ struct ExternalProxySettingsView: View {
                 statusMessage = error.localizedDescription
                 statusIsError = true
             }
-        }
-    }
-}
-
-// MARK: - ExternalProxyProtocolRow
-
-private enum ExternalProxyProtocolRow: CaseIterable, Identifiable {
-    case automatic
-    case http
-    case https
-    case socks5
-
-    // MARK: Lifecycle
-
-    init(_ type: UpstreamProxyType, canSelectSOCKS5: Bool) {
-        switch type {
-        case .http:
-            self = .http
-        case .https:
-            self = .https
-        case .socks5:
-            self = canSelectSOCKS5 ? .socks5 : .http
-        }
-    }
-
-    // MARK: Internal
-
-    var id: String {
-        displayName
-    }
-
-    var displayName: String {
-        switch self {
-        case .automatic:
-            String(localized: "Automatic Proxy Configuration")
-        case .http:
-            String(localized: "Web Proxy (HTTP)")
-        case .https:
-            String(localized: "Secure Web Proxy (HTTPS)")
-        case .socks5:
-            String(localized: "SOCKS Proxy")
-        }
-    }
-
-    var proxyType: UpstreamProxyType? {
-        switch self {
-        case .automatic:
-            nil
-        case .http:
-            .http
-        case .https:
-            .https
-        case .socks5:
-            .socks5
-        }
-    }
-
-    var lockMessage: String {
-        switch self {
-        case .automatic:
-            String(localized: "Automatic proxy configuration is not supported.")
-        case .socks5:
-            String(localized: "SOCKS5 upstream proxy is unavailable in this build.")
-        case .http,
-             .https:
-            ""
-        }
-    }
-
-    @MainActor
-    func isEnabled(in store: UpstreamProxyStore) -> Bool {
-        switch self {
-        case .automatic:
-            false
-        case .socks5:
-            store.canSelectSOCKS5
-        case .http,
-             .https:
-            true
         }
     }
 }
