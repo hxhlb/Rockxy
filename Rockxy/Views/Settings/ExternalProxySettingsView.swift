@@ -184,7 +184,7 @@ struct ExternalProxySettingsView: View {
                     PolicyLockNotice(
                         title: String(localized: "Authentication unavailable"),
                         message: String(
-                            localized: "Credentials are rejected by the current app policy before they are saved."
+                            localized: "Authentication is available in the Rockxy Pro. Credentials are not saved."
                         )
                     )
                 } else if usesAuthentication {
