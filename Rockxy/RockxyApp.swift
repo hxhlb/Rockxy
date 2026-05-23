@@ -706,8 +706,15 @@ struct RockxyMenuCommands: Commands {
             .keyboardShortcut("b", modifiers: [.command, .option])
 
             Menu(String(localized: "Proxy Settings")) {
-                Toggle(String(localized: "Use External Proxy"), isOn: externalProxyEnabledBinding)
-                    .keyboardShortcut("e", modifiers: [.command, .option])
+                Button {
+                    setExternalProxyEnabled(!upstreamProxyStore.configuration.isEnabled)
+                } label: {
+                    Text(externalProxyMenuTitle)
+                }
+                .help(upstreamProxyStore.configuration.isEnabled
+                    ? String(localized: "External Proxy is on")
+                    : String(localized: "External Proxy is off"))
+                .keyboardShortcut("e", modifiers: [.command, .option])
 
                 Button(String(localized: "External Proxy Settings…")) {
                     openWindow(id: "externalProxySettings")
@@ -966,15 +973,10 @@ struct RockxyMenuCommands: Commands {
         }
     }
 
-    private var externalProxyEnabledBinding: Binding<Bool> {
-        Binding(
-            get: {
-                upstreamProxyStore.configuration.isEnabled
-            },
-            set: { isEnabled in
-                setExternalProxyEnabled(isEnabled)
-            }
-        )
+    private var externalProxyMenuTitle: String {
+        upstreamProxyStore.configuration.isEnabled
+            ? String(localized: "✓ Use External Proxy")
+            : String(localized: "Use External Proxy")
     }
 
     private func setExternalProxyEnabled(_ isEnabled: Bool) {
