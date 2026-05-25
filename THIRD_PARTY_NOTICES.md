@@ -8,6 +8,3 @@ Rockxy vendors a minimal subset of `swagger-ui-dist` for offline OpenAPI HTML ex
 - Version: `5.32.6`
 - License: Apache License 2.0
 - Source: https://github.com/swagger-api/swagger-ui
-
-The upstream license and bundled JavaScript license notice are preserved under
-`Rockxy/Resources/SwaggerUI/`.
