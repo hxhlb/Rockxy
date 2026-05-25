@@ -103,13 +103,16 @@ struct UpstreamProxyConfiguration: Codable, Equatable {
             throw UpstreamProxyConfigurationError.pacURLRequired
         }
         guard let url = resolvedPACURL,
-              url.host?.isEmpty == false else
+              let scheme = url.scheme?.lowercased(),
+              !scheme.isEmpty else
         {
             throw UpstreamProxyConfigurationError.pacURLInvalid
         }
-        let scheme = url.scheme?.lowercased()
         guard scheme == "http" || scheme == "https" else {
             throw UpstreamProxyConfigurationError.pacURLUnsupportedScheme
+        }
+        guard url.host?.isEmpty == false else {
+            throw UpstreamProxyConfigurationError.pacURLInvalid
         }
     }
 
