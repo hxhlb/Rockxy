@@ -41,7 +41,14 @@
 <!-- BEGIN GENERATED: latest-release -->
 ## Latest Tagged Release
 
-**v0.21.1** — 2026-05-22
+**v0.22.0** — 2026-05-26
+
+### Added
+
+- Added Upstream Proxy core support for routing outbound traffic through HTTP/HTTPS proxies, with Community caps for SOCKS5, authentication, and bypass-list size enforced by app policy.
+- Added WebSocket Protobuf heuristic decoding infrastructure for inspecting binary frame payloads without requiring schema uploads.
+- Added Tools menu windows for External Proxy Settings, SOCKS Proxy Settings, Protobuf mapping rules, and Protobuf schema list management.
+- Added an on-demand Protobuf view to the WebSocket frame inspector for heuristic field-tree rendering.
 
 ### Fixed
 

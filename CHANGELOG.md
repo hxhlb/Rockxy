@@ -17,6 +17,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+## [0.22.0] - 2026-05-26
+
+### Added
+
+- Added Upstream Proxy core support for routing outbound traffic through HTTP/HTTPS proxies, with Community caps for SOCKS5, authentication, and bypass-list size enforced by app policy.
+- Added WebSocket Protobuf heuristic decoding infrastructure for inspecting binary frame payloads without requiring schema uploads.
+- Added Tools menu windows for External Proxy Settings, SOCKS Proxy Settings, Protobuf mapping rules, and Protobuf schema list management.
+- Added an on-demand Protobuf view to the WebSocket frame inspector for heuristic field-tree rendering.
+
+### Fixed
+
+- Improved scripting stability so request and response scripts handle headers, console output, and runtime errors more reliably.
+- Strengthened redaction for local MCP exports so sensitive request and rule data stays protected when shared with connected tools.
+- Improved HAR imports and content-type detection for better handling of modern JSON-style responses and imported sessions.
+
 ## [0.21.1] - 2026-05-22
 
 ### Fixed
