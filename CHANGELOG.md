@@ -20,6 +20,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+## [0.23.0] - 2026-05-29
+
+### Added
+
+- Added a more powerful advanced filter builder for narrowing traffic by URL, method, status, headers, body, app, domain, and other request or response fields.
+- Added saved filter presets and inspector match highlighting so repeated investigations are faster to resume.
+- Added upstream HTTP/HTTPS proxy support for routing captured traffic through another proxy when your network or lab setup requires it.
+- Added Tools menu entries for external proxy settings, SOCKS proxy settings, Protobuf mappings, and Protobuf schema management.
+- Added WebSocket Protobuf previews that make binary frame payloads easier to inspect as readable field trees.
+
+### Fixed
+
+- Fixed bypass proxy handling during TLS setup so bypassed hosts avoid interception more reliably.
+- Improved scripting stability so request and response scripts handle headers, console output, and runtime errors more reliably.
+- Strengthened redaction for local integration exports so sensitive request and rule data stays protected.
+- Improved HAR imports and content-type detection for better handling of modern JSON-style responses and imported sessions.
+- Improved sidebar grouping cleanup when selected domain/app groups disappear, keeping active filters and sidebar state aligned.
+
+### Changed
+
+- Refined multi-tab workspace behavior so tabs, selection, and window placement feel more predictable.
+- Polished the proxy status indicator and workspace tab chrome for clearer capture state at a glance.
+
 ## [0.22.0] - 2026-05-26
 
 ### Added
