@@ -20,6 +20,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+## [0.25.0] - 2026-06-09
+
+### Added
+
+- Added Appearance controls for text size, row density, body text wrapping, and preview spacing, making long sessions easier to read.
+
+### Changed
+
+- Improved readability across request tables, inspectors, JSON trees, filters, and status bars so the workspace stays clearer at different display settings.
+
 ## [0.24.0] - 2026-06-02
 
 ### Fixed

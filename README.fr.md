@@ -41,13 +41,15 @@
 <!-- BEGIN GENERATED: latest-release -->
 ## Latest Tagged Release
 
-**v0.24.0** — 2026-06-02
+**v0.25.0** — 2026-06-09
 
-### Fixed
+### Added
 
-- Fixed capture startup so Rockxy begins capturing reliably after launch.
-- Fixed pinned and saved requests opened in a new tab so Rockxy shows the exact selected request, even when multiple requests share the same URL.
-- Kept full request URLs out of the visible search field when opening pinned or saved requests in a new tab.
+- Added Appearance controls for text size, row density, body text wrapping, and preview spacing, making long sessions easier to read.
+
+### Changed
+
+- Improved readability across request tables, inspectors, JSON trees, filters, and status bars so the workspace stays clearer at different display settings.
 
 See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 <!-- END GENERATED: latest-release -->
