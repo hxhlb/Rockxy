@@ -369,6 +369,13 @@ struct InspectorBodyTextEditor: NSViewRepresentable {
         textView.layoutManager?.showsInvisibleCharacters = editorSettings.showInvisibles
         textView.layoutManager?.showsControlCharacters = editorSettings.showInvisibles
 
+        if let ruler = scrollView.verticalRulerView as? ScriptCodeEditorRulerView {
+            ruler.applyEditorSettings(editorSettings)
+        } else {
+            scrollView.verticalRulerView?.needsDisplay = true
+        }
+        scrollView.tile()
+
         if editorSettings.wordWrap {
             textView.frame.size.width = max(scrollView.contentView.bounds.width, 1)
             textView.textContainer?.containerSize = NSSize(
@@ -385,7 +392,6 @@ struct InspectorBodyTextEditor: NSViewRepresentable {
             textView.textContainer?.widthTracksTextView = false
         }
         scrollView.tile()
-        scrollView.verticalRulerView?.needsDisplay = true
         applyTextStorageSettings(editorSettings, to: textView)
         textView.layoutManager?.invalidateLayout(forCharacterRange: NSRange(location: 0, length: textView.string.utf16.count), actualCharacterRange: nil)
         textView.needsDisplay = true
