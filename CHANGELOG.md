@@ -20,6 +20,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+## [0.27.1] - 2026-06-17
+
+### Fixed
+
+- Fixed code editors across scripting, breakpoints, map local, and inspectors so Appearance font-size settings scale more consistently.
+- Fixed compressed response bodies in the inspector so supported encoded payloads decode into readable previews without changing captured bytes.
+
 ## [0.27.0] - 2026-06-16
 
 ### Fixed
